@@ -8,16 +8,17 @@
         :root { --main-red: #ff4757; --gold: #f1c40f; }
         body { font-family: "PingFang TC", sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
         
+        /* 抽獎箱動畫 */
         .kuji-box { width: 260px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; }
         .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
         .shake { animation: shake 0.5s infinite; }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 20% { transform: translate(-3px, 0px) rotate(-1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
 
+        /* 結果顯示 */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.3s; }
         .prize-grade { font-size: 80px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; margin: 0; }
-        .prize-img { width: 250px; height: 250px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; box-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
+        .prize-img { width: 280px; height: 280px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; box-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
         button { padding: 12px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        #loading-text { color: var(--gold); margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -25,63 +26,9 @@
     <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
     <p id="status" style="color: #666; margin-top: 20px;">歡迎來到盲玩樂線上店</p>
-    <div id="loading-text">正在讀取開獎結果...</div>
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red); letter-spacing: 5px; margin-bottom: 0;">恭喜獲得</h2>
         <p class="prize-grade" id="p-grade">?</p>
         <img id="p-img" class="prize-img" src="" alt="獎品圖片">
-        <p id="p-name" style="font-size: 20px; color: #fff; margin: 10px 0;">獎品名稱</p>
-        <button onclick="location.reload()">確認</button>
-    </div>
-
-    <script>
-        // 請確保這是你最新部署的 Google Apps Script 網址
-        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        
-        // 圖片對照表（老闆可以隨時增加 B, C, D 的網址）
-        const PRIZE_IMAGES = {
-            "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
-            "B": "這裡放B賞圖片",
-            "C": "這裡放C賞圖片",
-            "D": "這裡放D賞圖片",
-            "LastOne": "這裡放LastOne圖片"
-        };
-
-        async function draw() {
-            const btn = document.getElementById('drawBtn');
-            const loadText = document.getElementById('loading-text');
-            btn.classList.add('shake');
-            btn.innerText = "開獎中...";
-            btn.style.pointerEvents = "none";
-            loadText.style.display = "block";
-
-            try {
-                // 1. 先執行 POST 扣除庫存
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
-
-                // 2. 等待 2 秒後，抓取最後一筆中獎紀錄
-                setTimeout(async () => {
-                    const response = await fetch(API_URL);
-                    const allData = await response.json();
-                    
-                    // 取得最後一筆中獎資訊
-                    // 注意：Google 端的 doGet 也要能回傳正確 JSON 格式
-                    const lastResult = allData[allData.length - 1]; 
-                    
-                    document.getElementById('p-grade').innerText = lastResult.grade;
-                    document.getElementById('p-name').innerText = lastResult.name;
-                    document.getElementById('p-img').src = PRIZE_IMAGES[lastResult.grade] || "";
-                    
-                    document.getElementById('result').style.display = 'flex';
-                    loadText.style.display = "none";
-                }, 2000);
-
-            } catch (e) {
-                alert("抽獎完成，請查看試算表紀錄！");
-                location.reload();
-            }
-        }
-    </script>
-</body>
-</html>
+        <p id="p-name" style="font-size: 20px; color: #fff;
