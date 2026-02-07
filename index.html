@@ -11,15 +11,10 @@
         .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: #ff3e3e; border-color: gold; }
-        
-        /* 預覽視窗：核心修復 - 三張圖片物理重疊 */
-        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; }
-        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
-        .prize-img.active { display: block; } /* 只有帶 active 的圖片會顯示，其餘物理消失 */
-
+        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+        .preview-img { width: 100%; height: 100%; object-fit: contain; }
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
         .draw-btn { width: 260px; height: 60px; background: #ff3e3e; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
-        
         #loadingLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; font-size: 24px; }
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
@@ -28,15 +23,13 @@
     <div class="user-bar">點數：<span id="display-pts">載入中</span> P</div>
     
     <div class="pool-tabs">
-        <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
-        <button id="btn1" class="tab-btn" onclick="switchTo(1)">Ａ區任選</button>
-        <button id="btn2" class="tab-btn" onclick="switchTo(2)">Ｂ區任選</button>
+        <button id="btn0" class="tab-btn active" onclick="forceSwitch(0, 'https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg')">單挑套</button>
+        <button id="btn1" class="tab-btn" onclick="forceSwitch(1, 'https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg')">Ａ區任選</button>
+        <button id="btn2" class="tab-btn" onclick="forceSwitch(2, 'https://i.postimg.cc/6pM0fDkC/S-9740516.jpg')">Ｂ區任選</button>
     </div>
 
     <div class="display-window">
-        <img id="img0" class="prize-img active" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
-        <img id="img1" class="prize-img" src="https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg">
-        <img id="img2" class="prize-img" src="https://i.postimg.cc/6pM0fDkC/S-9740516.jpg">
+        <img id="main-img" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
     </div>
 
     <div id="stock-display" class="info-bar">正在取得庫存...</div>
@@ -48,7 +41,7 @@
         <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
         <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
         <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px; cursor: pointer;">確認領取</button>
+        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px;">確認領取</button>
     </div>
 
     <script>
@@ -59,17 +52,23 @@
         let currentIdx = 0;
         let myUid = "";
         let stockData = {};
+        let currentAUrl = "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg";
 
-        // 核心切換：改用物理顯示隱藏，不依賴網址更換
-        function switchTo(idx) {
+        // 強力切換函數：直接接收網址，強行注入 <img> 標籤
+        function forceSwitch(idx, imgUrl) {
             currentIdx = idx;
-            // 1. 切換按鈕樣式
-            for(let i=0; i<3; i++) {
-                document.getElementById('btn'+i).classList.toggle('active', i === idx);
-                // 2. 切換圖片顯示 (display: block vs none)
-                document.getElementById('img'+i).classList.toggle('active', i === idx);
-            }
-            // 3. 更新文字
+            currentAUrl = imgUrl;
+
+            // 1. 強行更換圖片 src，並加上時間戳防止快取
+            const el = document.getElementById('main-img');
+            el.src = imgUrl + "?t=" + new Date().getTime();
+
+            // 2. 切換按鈕顏色樣式
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === idx);
+            });
+
+            // 3. 更新庫存文字
             refreshText();
         }
 
@@ -87,7 +86,6 @@
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
                 
-                // 請求庫存與點數
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
@@ -115,8 +113,8 @@
                 setTimeout(() => {
                     document.getElementById('win-grade').innerText = res.grade;
                     document.getElementById('win-name').innerText = res.name;
-                    // 中 A 賞就直接拿當前那一張圖的 src
-                    document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
+                    // 中獎圖片也強行帶時間戳
+                    document.getElementById('win-img').src = (res.grade === "A" ? currentAUrl : B_IMG_URL) + "?t=" + new Date().getTime();
                     document.getElementById('winPanel').style.display = 'flex';
                 }, 800);
             } else {
