@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-抽獎中心</title>
+    <title>盲玩樂-抽獎中心 V2.0</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
         .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 1000; }
-        .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; margin-top: 10px; }
+        .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; }
         .tab-btn.active { background: red; border-color: gold; }
         
-        /* 預覽視窗容器 */
         .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; }
         
-        /* 物理層：三張圖片預先存在 */
-        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
-        .prize-img.active { display: block; } /* 只有 active 的圖片會顯示 */
+        /* 物理層：強制三張圖片獨立存在 */
+        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; visibility: hidden; opacity: 0; transition: opacity 0.2s; }
+        .prize-img.active { visibility: visible; opacity: 1; z-index: 10; }
 
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
-        .main-draw-btn { width: 260px; height: 65px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 40px; font-weight: bold; font-size: 24px; box-shadow: 0 5px 15px rgba(255,0,0,0.4); }
+        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
         
-        /* 遮罩與結果 */
         #loadingLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; font-size: 24px; }
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
@@ -43,43 +41,45 @@
     </div>
 
     <div id="stock-display" class="info-bar">正在取得庫存...</div>
-    <div class="main-draw-btn" onclick="goDraw()">點擊開獎</div>
+    <div class="draw-btn" onclick="goDraw()">點擊開獎</div>
 
     <div id="loadingLayer">正在開獎，請稍候...</div>
 
     <div id="winPanel" class="win-overlay">
-        <h1 id="win-grade" style="font-size: 100px; color: gold; margin: 0;"></h1>
-        <img id="win-img" style="width: 300px; height: 300px; border: 3px solid gold; border-radius: 15px;" src="">
-        <p id="win-name" style="margin: 20px; font-size: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; background: white; border-radius: 50px; font-weight: bold;">確定收下</button>
+        <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
+        <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
+        <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
+        <button onclick="location.reload()" style="padding: 10px 40px; font-size: 18px;">確定</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const B_IMG_URL = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
         let currentIdx = 0;
         let myUid = "";
-        let myName = "";
         let stockData = {};
 
-        // 核心切換：不再依賴任何外部變數，純粹控制 DOM 顯隱
+        // 強制切換函數
         function switchTo(idx) {
             currentIdx = idx;
-            // 1. 切換按鈕
-            for(let i=0; i<3; i++) {
-                document.getElementById('btn'+i).classList.toggle('active', i === idx);
-                document.getElementById('img'+i).classList.toggle('active', i === idx);
-            }
-            // 2. 更新文字
+            // 1. 按鈕樣式
+            document.querySelectorAll('.tab-btn').forEach((b, i) => {
+                b.classList.toggle('active', i === idx);
+            });
+            // 2. 圖片樣式 (改用 visibility 確保物理佔位)
+            document.querySelectorAll('.prize-img').forEach((img, i) => {
+                img.classList.toggle('active', i === idx);
+            });
+            // 3. 更新庫存文字
             refreshText();
         }
 
         function refreshText() {
             const pName = POOLS[currentIdx];
             if (stockData[pName]) {
-                document.getElementById('stock-display').innerText = `A賞：${stockData[pName].a} | B賞：${stockData[pName].b} | 剩餘：${stockData[pName].total}`;
+                document.getElementById('stock-display').innerText = `A賞：${stockData[pName].a} | B賞：${stockData[pName].b} | 剩：${stockData[pName].total}`;
             }
         }
 
@@ -87,51 +87,40 @@
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                myUid = profile.userId;
-                myName = profile.displayName;
-                fetchServerData();
-            } catch (e) {
-                document.getElementById('stock-display').innerText = "連線失敗，請重新整理";
-            }
+                const p = await liff.getProfile();
+                myUid = p.userId;
+                
+                const s1 = document.createElement('script');
+                s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
+                const s2 = document.createElement('script');
+                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(p.displayName)}&callback=cb_pt`;
+                document.body.appendChild(s1);
+                document.body.appendChild(s2);
+            } catch (e) {}
         }
 
-        function fetchServerData() {
-            const s1 = document.createElement('script');
-            s1.src = `${API_URL}?action=getPoolStatus&callback=cb_stocks`;
-            document.body.appendChild(s1);
-            
-            const s2 = document.createElement('script');
-            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(myName)}&callback=cb_points`;
-            document.body.appendChild(s2);
-        }
-
-        window.cb_stocks = (res) => { stockData = res; refreshText(); };
-        window.cb_points = (res) => { document.getElementById('display-pts').innerText = res.points; };
+        window.cb_st = (res) => { stockData = res; refreshText(); };
+        window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw() {
             if(!myUid) return;
             document.getElementById('loadingLayer').style.display = 'flex';
             const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&callback=cb_draw_res`;
+            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&callback=cb_res`;
             document.body.appendChild(s);
         }
 
-        window.cb_draw_res = (res) => {
+        window.cb_res = (res) => {
             if (res.status === "success") {
-                setTimeout(() => {
-                    document.getElementById('win-grade').innerText = res.grade;
-                    document.getElementById('win-name').innerText = res.name;
-                    // 如果中 A 賞，就抓畫面上對應那一張圖的網址
-                    document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
-                    document.getElementById('winPanel').style.display = 'flex';
-                }, 1000);
+                document.getElementById('win-grade').innerText = res.grade;
+                document.getElementById('win-name').innerText = res.name;
+                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG);
+                document.getElementById('winPanel').style.display = 'flex';
             } else {
-                alert("餘額不足或已售完");
+                alert("點數不足或系統錯誤");
                 location.reload();
             }
         }
-
         window.onload = startLIFF;
     </script>
 </body>
