@@ -1,86 +1,55 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>盲玩樂-線上一番賞</title>
-    <style>
-        :root { --main-red: #ff4757; --gold: #f1c40f; }
-        body { font-family: "PingFang TC", sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
-        .kuji-box { width: 260px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; }
-        .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
-        .shake { animation: shake 0.5s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 20% { transform: translate(-3px, 0px) rotate(-1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .prize-grade { font-size: 80px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; margin: 0; }
-        .prize-img { width: 280px; height: 280px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; }
-        button { padding: 12px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
-    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
-    <p id="status" style="color: #666; margin-top: 20px;">歡迎來到盲玩樂</p>
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
+    
+    const PRIZE_IMAGES = {
+        "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
+        "B": "https://i.postimg.cc/X7p8FK3S/20260120-163208-538718-3-800x800.jpg",
+        "C": "https://i.postimg.cc/0jNCVDwq/20260120-163208-008820-2-800x800.jpg",
+        "D": "https://i.postimg.cc/cCjfTjW8/20260120-163211-555418-6-800x800.jpg"
+    };
 
-    <div id="result" class="overlay">
-        <h2 style="color: var(--main-red); letter-spacing: 5px; margin-bottom: 0;">恭喜獲得</h2>
-        <p class="prize-grade" id="p-grade">?</p>
-        <img id="p-img" class="prize-img" src="" alt="獎品圖片">
-        <p id="p-name" style="font-size: 20px; color: #fff; margin: 10px 0;">獎品名稱</p>
-        <button onclick="location.reload()">確認</button>
-    </div>
-
-    <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
+    async function draw() {
+        const btn = document.getElementById('drawBtn');
+        const status = document.getElementById('status');
         
-        const PRIZE_IMAGES = {
-            "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
-            "B": "https://i.postimg.cc/X7p8FK3S/20260120-163208-538718-3-800x800.jpg",
-            "C": "https://i.postimg.cc/0jNCVDwq/20260120-163208-008820-2-800x800.jpg",
-            "D": "https://i.postimg.cc/cCjfTjW8/20260120-163211-555418-6-800x800.jpg"
-        };
+        // 1. 立刻進入視覺動畫（減少體感等待）
+        btn.classList.add('shake');
+        btn.innerText = "正在搖出獎項...";
+        btn.style.pointerEvents = "none";
+        status.innerText = "正在連線盲玩樂後台...";
 
-        async function draw() {
-            const btn = document.getElementById('drawBtn');
-            const status = document.getElementById('status');
-            btn.classList.add('shake');
-            btn.innerText = "開獎中...";
-            btn.style.pointerEvents = "none";
-
-            try {
-                // 第一步：發送抽獎指令
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
-                status.innerText = "正在連線 Google 讀取紀錄...";
-
-                // 第二步：給 3 秒時間讓 Google 寫入並確保我們能讀到
-                setTimeout(fetchResult, 3000);
-            } catch (e) {
-                alert("連線失敗！");
-                location.reload();
-            }
-        }
-
-        async function fetchResult() {
-            try {
-                const response = await fetch(API_URL + "?t=" + Date.now());
-                const data = await response.json();
-                
-                if (data && data.length > 0) {
-                    const win = data[0];
-                    document.getElementById('p-grade').innerText = win.grade;
-                    document.getElementById('p-name').innerText = win.name;
-                    document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
-                    document.getElementById('result').style.display = 'flex';
-                } else {
-                    // 如果還是沒抓到，再等 2 秒重試一次
-                    document.getElementById('status').innerText = "稍等，正在重新抓取...";
-                    setTimeout(fetchResult, 2000);
+        try {
+            // 2. 同步發送抽獎請求（不等待它結束，我們先跑動畫）
+            const startTime = Date.now();
+            
+            // 使用更輕量化的請求
+            const fetchPromise = fetch(API_URL, { method: 'POST', mode: 'no-cors' });
+            
+            // 3. 固定等待 2 秒（讓動畫跑完，也讓 Google 有時間寫入）
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(API_URL + "?t=" + Date.now());
+                    const data = await response.json();
+                    
+                    if (data && data.length > 0) {
+                        const win = data[0];
+                        document.getElementById('p-grade').innerText = win.grade;
+                        document.getElementById('p-name').innerText = win.name;
+                        document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
+                        
+                        // 關閉動畫，顯示結果
+                        btn.classList.remove('shake');
+                        document.getElementById('result').style.display = 'flex';
+                    }
+                } catch (err) {
+                    console.error("讀取失敗", err);
+                    alert("抽獎完成，請重新整理確認結果！");
                 }
-            } catch (err) {
-                alert("讀取獎項失敗，請確認試算表 D 欄庫存！");
-                location.reload();
-            }
+            }, 2000); // 這裡控制動畫長度
+
+        } catch (e) {
+            alert("網路連線較慢，請重試！");
+            location.reload();
         }
-    </script>
-</body>
-</html>
+    }
+</script>
