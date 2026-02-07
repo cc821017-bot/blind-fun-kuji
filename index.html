@@ -3,54 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-旗艦抽獎中心</title>
+    <title>盲玩樂-旗艦抽獎</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold-bg: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow-x: hidden; }
-        
+        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; }
         .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
-        
-        /* 獎池切換 */
         .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }
-        .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); box-shadow: 0 0 10px rgba(255,62,62,0.5); }
+        .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); }
 
-        /* 11x11 轉盤佈局 */
         .game-container { 
             width: 95vw; height: 95vw; max-width: 400px; max-height: 400px; 
-            margin: 10px auto; position: relative; background: #000; border: 4px solid #333; border-radius: 15px;
+            margin: 5px auto; position: relative; background: #000; border: 4px solid #333; border-radius: 15px;
             display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; padding: 5px;
         }
+        .center-display { grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         
-        .center-display { 
-            grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-        }
-
-        /* 燈號格子樣式 */
-        .lamp { 
-            background: #222; border-radius: 3px; font-size: 9px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center; color: #555; border: 1px solid #333;
-        }
+        .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
         .lamp-a { color: #860; border-color: #540; }
-        
-        /* 已售出樣式 */
         .lamp.sold-out { background: var(--sold-bg) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.4; }
-        .lamp.sold-out::after { content: '×'; font-size: 14px; position: absolute; color: #333; }
+        .lamp.sold-out::after { content: '×'; font-size: 12px; position: absolute; }
 
-        /* 點亮效果 */
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
         .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 18px var(--gold); z-index: 10; }
 
-        .btn-skip { position: absolute; bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #888; padding: 5px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; display: none; }
+        /* 跳過按鈕加大加亮 */
+        .btn-skip { 
+            position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.8); border: none; 
+            color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 100;
+        }
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; }
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
     <div class="user-bar">點數：<span id="display-pts">----</span> P</div>
-    
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
         <button id="btn1" class="tab-btn" onclick="switchTo(1)">Ａ區任選</button>
@@ -59,42 +47,35 @@
 
     <div class="game-container" id="game-board">
         <div class="center-display">
-            <img id="main-preview" style="width:75%; max-height: 80%; object-fit: contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
-            <div id="status-text" style="color:var(--gold); font-weight:bold; margin-top:5px; font-size:13px;"></div>
+            <img id="main-preview" style="width:70%; max-height:70%;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <div id="status-text" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
             <button class="btn-skip" id="btn-skip" onclick="skipAnimation()">跳過動畫</button>
         </div>
     </div>
-
-    <div id="stock-detail" style="color: #888; font-size: 12px; margin-top: 5px;">庫存同步中...</div>
+    <div id="stock-info" style="font-size:12px; color:#666;">資料讀取中...</div>
 
     <div class="btn-group">
-        <button class="draw-btn" style="background:#333;" id="btn-s" onclick="goDraw(1)">單抽一次</button>
-        <button class="draw-btn" style="background:var(--red);" id="btn-m" onclick="goDraw(5)">五連抽！</button>
+        <button class="draw-btn" style="background:#333;" onclick="goDraw(1)">單抽</button>
+        <button class="draw-btn" style="background:var(--red);" onclick="goDraw(5)">五連抽</button>
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold);">🎉 恭喜中獎 🎉</h2>
-        <div id="res-list" style="width:85%; max-height: 55vh; overflow-y: auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding: 12px 60px; border-radius: 30px; border:none; font-weight:bold; background: #fff; color: #000;">確認</button>
+        <h2 style="color:var(--gold);">中獎結果</h2>
+        <div id="res-list" style="width:80%;"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:10px 50px; border-radius:20px;">確認</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const PREVIEWS = [
-            "https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480",
-            "https://i.meee.com.tw/d2cFJiy.jpg",
-            "https://i.meee.com.tw/B8xVcyj.jpg"
-        ];
-        
         const LAMP_COORDS = [];
         for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i});
         for(let i=2; i<=11; i++) LAMP_COORDS.push({r: i, c: 11});
         for(let i=10; i>=1; i--) LAMP_COORDS.push({r: 11, c: i});
         for(let i=10; i>=2; i--) LAMP_COORDS.push({r: i, c: 1});
 
-        let myUid = "", allStockData = {}, isAnimPlaying = false;
-        let pointers = [], finalResults = null, timerRefs = [];
+        let myUid = "", allData = {}, isAnim = false, currentIdx = 0;
+        let pointers = [], timerRefs = [], finalRes = null;
 
         function initBoard() {
             const board = document.getElementById('game-board');
@@ -103,45 +84,36 @@
                 const div = document.createElement('div');
                 div.className = 'lamp'; div.id = 'lamp-' + i;
                 div.style.gridRow = pos.r; div.style.gridColumn = pos.c;
-                if(i === 0 || i === 20) { div.innerText = 'A'; div.classList.add('lamp-a'); }
-                else { div.innerText = 'B'; }
+                div.innerText = (i===0 || i===20) ? 'A' : 'B';
+                if(i===0 || i===20) div.classList.add('lamp-a');
                 board.appendChild(div);
             });
         }
 
-        // 修復：切換分頁邏輯
         function switchTo(idx) {
-            if(isAnimPlaying) return;
+            if(isAnim) return;
             currentIdx = idx;
-            document.getElementById('main-preview').src = PREVIEWS[idx];
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-                btn.className = (i === idx) ? 'tab-btn active' : 'tab-btn';
-            });
-            updatePoolDisplay();
+            document.querySelectorAll('.tab-btn').forEach((b, i) => b.className = i===idx ? 'tab-btn active' : 'tab-btn');
+            updateUI();
         }
 
-        function updatePoolDisplay() {
-            const data = allStockData[POOLS[currentIdx]];
-            if (data) {
-                document.getElementById('stock-detail').innerText = `A賞：${data.a} | B賞：${data.b} | 剩餘：${data.total}張`;
-                // 精準熄燈：根據當前池子的剩餘量
-                const soldCount = 40 - data.total;
+        function updateUI() {
+            const poolName = POOLS[currentIdx];
+            const data = allData[poolName];
+            if(data) {
+                document.getElementById('stock-info').innerText = `剩餘：${data.total}張 (A:${data.a} B:${data.b})`;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('sold-out'));
-                for(let i=39; i > 39 - soldCount; i--) {
-                    const el = document.getElementById('lamp-' + i);
-                    if(el) el.classList.add('sold-out');
-                }
+                const sold = 40 - data.total;
+                for(let i=39; i > 39 - sold; i--) document.getElementById('lamp-'+i)?.classList.add('sold-out');
             }
         }
 
         async function initLIFF() {
-            try {
-                await liff.init({ liffId: "2009072982-6smlV2gu" });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                myUid = profile.userId;
-                fetchData(profile.displayName);
-            } catch (e) {}
+            await liff.init({ liffId: "2009072982-6smlV2gu" });
+            if (!liff.isLoggedIn()) liff.login();
+            const p = await liff.getProfile();
+            myUid = p.userId;
+            fetchData(p.displayName);
         }
 
         function fetchData(name) {
@@ -149,96 +121,77 @@
             const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`; document.body.appendChild(s2);
         }
 
-        window.cb_st = (res) => { 
-            allStockData = res; 
-            updatePoolDisplay(); 
-        };
+        window.cb_st = (res) => { allData = res; updateUI(); };
         window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw(count) {
-            if(!myUid || isAnimPlaying) return;
-            isAnimPlaying = true;
+            if(!myUid || isAnim) return;
+            isAnim = true;
             document.getElementById('btn-skip').style.display = 'block';
-            document.getElementById('status-text').innerText = "連線獎池中...";
+            document.getElementById('status-text').innerText = "開獎中...";
             
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            startMarquee(count);
-        }
-
-        function startMarquee(count) {
-            pointers = Array.from({length: count}, (_, i) => ({ pos: i * 3, finished: false, targetPos: null }));
+            pointers = Array.from({length: count}, (_, i) => ({ pos: i * 3, stop: false, target: null }));
             const run = () => {
-                if(!isAnimPlaying) return;
+                if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
                 pointers.forEach(p => {
-                    if(!p.finished) p.pos = (p.pos + 1) % 40;
+                    if(!p.stop) p.pos = (p.pos + 1) % 40;
                     const el = document.getElementById('lamp-' + p.pos);
-                    if(el) el.classList.add(el.innerText === 'A' ? 'active-a' : 'active-b');
+                    if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
-                timerRefs.push(setTimeout(run, 65));
+                timerRefs.push(setTimeout(run, 60));
             };
             run();
         }
 
         window.cb_res = (res) => {
             if(res.status === 'success') {
-                finalResults = res.results;
-                assignTargets();
-                setTimeout(() => stopSequentially(0), 1000);
-            } else { alert(res.message); location.reload(); }
-        }
-
-        function assignTargets() {
-            const availB = [], availA = [];
-            for(let i=0; i<40; i++) {
-                const el = document.getElementById('lamp-'+i);
-                if(!el.classList.contains('sold-out')) {
-                    if(el.innerText === 'A') availA.push(i); else availB.push(i);
+                finalRes = res.results;
+                const availA = [], availB = [];
+                for(let i=0; i<40; i++) {
+                    const el = document.getElementById('lamp-'+i);
+                    if(!el.classList.contains('sold-out')) (el.innerText==='A' ? availA : availB).push(i);
                 }
-            }
-            finalResults.forEach((res, i) => {
-                const list = (res.grade === 'A') ? availA : availB;
-                pointers[i].targetPos = list[Math.floor(Math.random() * list.length)];
-            });
-        }
+                finalRes.forEach((r, i) => {
+                    const list = r.grade==='A' ? availA : availB;
+                    pointers[i].target = list[Math.floor(Math.random()*list.length)];
+                });
+                stopOneByOne(0);
+            } else { alert(res.message); location.reload(); }
+        };
 
-        function stopSequentially(idx) {
-            if(!isAnimPlaying || idx >= pointers.length) { setTimeout(showWin, 800); return; }
-            let slowSteps = 0; const target = pointers[idx].targetPos;
-            const slowDown = () => {
-                if(!isAnimPlaying) return;
-                if(pointers[idx].pos === target && slowSteps > 8) {
-                    pointers[idx].finished = true;
-                    stopSequentially(idx + 1);
+        function stopOneByOne(idx) {
+            if(!isAnim || idx >= pointers.length) { setTimeout(showWin, 600); return; }
+            let count = 0;
+            const slow = () => {
+                if(!isAnim) return;
+                // 修正：只要對準 target 且轉夠久就停
+                if(pointers[idx].pos === pointers[idx].target && count > 5) {
+                    pointers[idx].stop = true;
+                    stopOneByOne(idx + 1);
                 } else {
-                    slowSteps++;
-                    setTimeout(slowDown, 65 + (slowSteps * 20));
+                    count++;
+                    setTimeout(slow, 60 + count * 10);
                 }
             };
-            slowDown();
+            slow();
         }
 
         function skipAnimation() {
-            isAnimPlaying = false;
+            isAnim = false;
             timerRefs.forEach(clearTimeout);
             showWin();
         }
 
         function showWin() {
-            isAnimPlaying = false;
-            document.getElementById('btn-skip').style.display = 'none';
-            const list = document.getElementById('res-list');
-            list.innerHTML = "";
-            finalResults.forEach(r => {
-                const div = document.createElement('div');
-                div.style.cssText = "background:#222; margin:10px 0; padding:15px; border-radius:12px; text-align:left; border-left:5px solid " + (r.grade === 'A' ? 'var(--gold)' : 'var(--red)');
-                div.innerHTML = `<b style="color:${r.grade==='A'? 'var(--gold)':'white'}">${r.grade}賞</b> | ${r.name}`;
-                list.appendChild(div);
-            });
+            isAnim = false;
             document.getElementById('winPanel').style.display = 'flex';
+            const div = document.getElementById('res-list');
+            div.innerHTML = finalRes.map(r => `<div style="padding:10px; border-bottom:1px solid #333; color:${r.grade==='A'?'var(--gold)':'white'}"><b>${r.grade}賞</b> ${r.name}</div>`).join('');
         }
 
         initBoard();
