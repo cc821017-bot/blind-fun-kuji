@@ -7,79 +7,73 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid #ff3e3e; z-index: 1000; }
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid red; z-index: 1000; }
         .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .tab-btn.active { background: #ff3e3e; border-color: gold; }
-        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
-        .preview-img { width: 100%; height: 100%; object-fit: contain; }
+        .tab-btn.active { background: red; border-color: gold; }
+        
+        /* 預覽視窗 */
+        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; }
+        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
+        .prize-img.active { display: block !important; }
+
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
-        .draw-btn { width: 260px; height: 60px; background: #ff3e3e; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
-        #loadingLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; font-size: 24px; }
-        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
+        
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div class="user-bar">點數：<span id="display-pts">載入中</span> P</div>
+    <div class="user-bar">餘額：<span id="display-pts">載入中</span> P</div>
     
     <div class="pool-tabs">
-        <button id="btn0" class="tab-btn active" onclick="forceSwitch(0, 'https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg')">單挑套</button>
-        <button id="btn1" class="tab-btn" onclick="forceSwitch(1, 'https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg')">Ａ區任選</button>
-        <button id="btn2" class="tab-btn" onclick="forceSwitch(2, 'https://i.postimg.cc/6pM0fDkC/S-9740516.jpg')">Ｂ區任選</button>
+        <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
+        <button id="btn1" class="tab-btn" onclick="switchTo(1)">Ａ區任選</button>
+        <button id="btn2" class="tab-btn" onclick="switchTo(2)">Ｂ區任選</button>
     </div>
 
     <div class="display-window">
-        <img id="main-img" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
+        <img id="img0" class="prize-img active" src="https://lh3.googleusercontent.com/d/1X_U9KshKIDtqS5G2BqO8j7VwUuIlRyPh">
+        <img id="img1" class="prize-img" src="https://lh3.googleusercontent.com/d/19F4Y8B8gS_9740517_Replacement_Link"> 
+        <img id="img2" class="prize-img" src="https://lh3.googleusercontent.com/d/16pM0fDkCS_9740516_Replacement_Link">
     </div>
 
-    <div id="stock-display" class="info-bar">正在取得庫存...</div>
+    <div id="stock-display" class="info-bar">連線中...</div>
     <div class="draw-btn" onclick="goDraw()">點擊開獎</div>
 
-    <div id="loadingLayer">連線中...</div>
-
-    <div id="winPanel" class="win-overlay">
+    <div id="winPanel" class="overlay">
         <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
         <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
         <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px;">確認領取</button>
+        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px;">確定</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const B_IMG_URL = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        const NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         
         let currentIdx = 0;
         let myUid = "";
         let stockData = {};
-        let currentAUrl = "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg";
 
-        // 強力切換函數：直接接收網址，強行注入 <img> 標籤
-        function forceSwitch(idx, imgUrl) {
+        function switchTo(idx) {
             currentIdx = idx;
-            currentAUrl = imgUrl;
-
-            // 1. 強行更換圖片 src，並加上時間戳防止快取
-            const el = document.getElementById('main-img');
-            el.src = imgUrl + "?t=" + new Date().getTime();
-
-            // 2. 切換按鈕顏色樣式
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', i === idx);
-            });
-
-            // 3. 更新庫存文字
+            // 物理切換：強制控制顯示
+            for(let i=0; i<3; i++) {
+                document.getElementById('btn'+i).className = (i === idx) ? 'tab-btn active' : 'tab-btn';
+                document.getElementById('img'+i).style.display = (i === idx) ? 'block' : 'none';
+            }
             refreshText();
         }
 
         function refreshText() {
-            const pName = POOLS[currentIdx];
+            const pName = NAMES[currentIdx];
             if (stockData[pName]) {
                 document.getElementById('stock-display').innerText = `A：${stockData[pName].a} | B：${stockData[pName].b} | 總：${stockData[pName].total}`;
             }
         }
 
-        async function initLIFF() {
+        async function init() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
@@ -92,9 +86,7 @@
                 s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
                 document.body.appendChild(s1);
                 document.body.appendChild(s2);
-            } catch (e) {
-                document.getElementById('stock-display').innerText = "連線失敗";
-            }
+            } catch (e) {}
         }
 
         window.cb_st = (res) => { stockData = res; refreshText(); };
@@ -102,27 +94,23 @@
 
         function goDraw() {
             if(!myUid) return;
-            document.getElementById('loadingLayer').style.display = 'flex';
             const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&callback=cb_res`;
+            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(NAMES[currentIdx])}&callback=cb_res`;
             document.body.appendChild(s);
         }
 
         window.cb_res = (res) => {
             if (res.status === "success") {
-                setTimeout(() => {
-                    document.getElementById('win-grade').innerText = res.grade;
-                    document.getElementById('win-name').innerText = res.name;
-                    // 中獎圖片也強行帶時間戳
-                    document.getElementById('win-img').src = (res.grade === "A" ? currentAUrl : B_IMG_URL) + "?t=" + new Date().getTime();
-                    document.getElementById('winPanel').style.display = 'flex';
-                }, 800);
+                document.getElementById('win-grade').innerText = res.grade;
+                document.getElementById('win-name').innerText = res.name;
+                document.getElementById('win-img').src = document.getElementById('img'+currentIdx).src;
+                document.getElementById('winPanel').style.display = 'flex';
             } else {
-                alert("錯誤：點數不足或系統忙碌");
+                alert("餘額不足");
                 location.reload();
             }
         }
-        window.onload = initLIFF;
+        window.onload = init;
     </script>
 </body>
 </html>
