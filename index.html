@@ -17,6 +17,7 @@
         .prize-grade { font-size: 80px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; margin: 0; }
         .prize-img { width: 250px; height: 250px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; box-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
         button { padding: 12px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        #loading-text { color: var(--gold); margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -24,51 +25,60 @@
     <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
     <p id="status" style="color: #666; margin-top: 20px;">歡迎來到盲玩樂線上店</p>
+    <div id="loading-text">正在讀取開獎結果...</div>
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red); letter-spacing: 5px; margin-bottom: 0;">恭喜獲得</h2>
-        <p class="prize-grade" id="p-grade">A</p>
+        <p class="prize-grade" id="p-grade">?</p>
         <img id="p-img" class="prize-img" src="" alt="獎品圖片">
         <p id="p-name" style="font-size: 20px; color: #fff; margin: 10px 0;">獎品名稱</p>
         <button onclick="location.reload()">確認</button>
     </div>
 
     <script>
+        // 請確保這是你最新部署的 Google Apps Script 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         
-        // 圖片對照表
+        // 圖片對照表（老闆可以隨時增加 B, C, D 的網址）
         const PRIZE_IMAGES = {
             "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
-            "B": "這裡放B賞圖片網址",
-            "C": "這裡放C賞圖片網址",
-            "D": "這裡放D賞圖片網址",
-            "LastOne": "這裡放LastOne圖片網址"
+            "B": "這裡放B賞圖片",
+            "C": "這裡放C賞圖片",
+            "D": "這裡放D賞圖片",
+            "LastOne": "這裡放LastOne圖片"
         };
 
         async function draw() {
             const btn = document.getElementById('drawBtn');
+            const loadText = document.getElementById('loading-text');
             btn.classList.add('shake');
             btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
+            loadText.style.display = "block";
 
             try {
-                // 發送 POST 請求並「直接」讀取回傳值
-                const response = await fetch(API_URL, { method: 'POST' });
-                // 注意：因為 CORS 限制，這裡我們預設 2 秒後從試算表抓取最後一筆紀錄
-                // 為了確保老闆立刻能看到圖片，我先模擬這個邏輯
-                
+                // 1. 先執行 POST 扣除庫存
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
+
+                // 2. 等待 2 秒後，抓取最後一筆中獎紀錄
                 setTimeout(async () => {
-                    // 這裡模擬抓取到的中獎賞別，假設抽到 A
-                    const winGrade = "A"; 
+                    const response = await fetch(API_URL);
+                    const allData = await response.json();
                     
-                    document.getElementById('p-grade').innerText = winGrade;
-                    document.getElementById('p-img').src = PRIZE_IMAGES[winGrade] || "";
-                    document.getElementById('p-name').innerText = "A 賞 公仔獎";
+                    // 取得最後一筆中獎資訊
+                    // 注意：Google 端的 doGet 也要能回傳正確 JSON 格式
+                    const lastResult = allData[allData.length - 1]; 
+                    
+                    document.getElementById('p-grade').innerText = lastResult.grade;
+                    document.getElementById('p-name').innerText = lastResult.name;
+                    document.getElementById('p-img').src = PRIZE_IMAGES[lastResult.grade] || "";
+                    
                     document.getElementById('result').style.display = 'flex';
+                    loadText.style.display = "none";
                 }, 2000);
 
             } catch (e) {
-                alert("通訊中，請稍後檢查試算表紀錄！");
+                alert("抽獎完成，請查看試算表紀錄！");
                 location.reload();
             }
         }
