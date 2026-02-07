@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>盲玩樂-線上一番賞</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { 
             font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
@@ -18,8 +17,8 @@
             justify-content: center;
             height: 100vh;
         }
-        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); }
-        .shop-name { font-size: 1.2rem; color: #ffa502; margin-bottom: 30px; }
+        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); margin-bottom: 5px; }
+        .shop-name { font-size: 1.1rem; color: #ffa502; margin-bottom: 30px; }
         
         .kuji-box { 
             width: 280px; height: 180px; 
@@ -40,88 +39,72 @@
             width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); 
             flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; animation: fadeIn 0.5s;
+            z-index: 100;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .prize-grade { font-size: 120px; color: #f1c40f; text-shadow: 0 0 30px #f1c40f; margin: 0; font-weight: 900; }
-        .prize-name { font-size: 32px; margin: 20px 0; color: #ffffff; padding: 0 20px; }
-        .last-one { color: #1e90ff; font-size: 24px; font-weight: bold; margin-top: 10px; }
+        .prize-grade { font-size: 100px; color: #f1c40f; text-shadow: 0 0 30px #f1c40f; margin: 0; font-weight: 900; }
+        .prize-name { font-size: 28px; margin: 20px 0; color: #ffffff; padding: 0 20px; }
         
         button { 
-            padding: 15px 50px; font-size: 20px; border-radius: 50px; border: none; 
+            padding: 15px 50px; font-size: 18px; border-radius: 50px; border: none; 
             background: #2ed573; color: white; cursor: pointer; font-weight: bold;
-            margin-top: 40px; box-shadow: 0 5px 15px rgba(46, 213, 115, 0.4);
+            margin-top: 30px;
         }
+        #status { margin-top: 20px; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="shop-name">高雄一番賞專賣店 - 盲玩樂</div>
-    <h1>線上即時開獎系統</h1>
-    <div id="status">剩餘賞品已連線 Google Sheets</div>
+    <h1>線上即時開獎</h1>
     
     <div class="kuji-box" id="drawBtn" onclick="drawPrize()">點擊抽獎</div>
+    <div id="status">系統已就緒</div>
 
     <div id="resultOverlay" class="result-overlay">
-        <h2 style="color: #ff4757; letter-spacing: 5px;">恭喜獲得</h2>
+        <h2 style="color: #ff4757;">恭喜中獎！</h2>
         <p class="prize-grade" id="prizeGrade">?</p>
-        <p class="prize-name" id="prizeName">獎品載入中...</p>
-        <div id="lastOneMsg" class="last-one"></div>
-        <button onclick="location.reload()">確認並繼續</button>
+        <p class="prize-name" id="prizeName">獎品確認中...</p>
+        <button onclick="location.reload()">確認並返回</button>
     </div>
 
     <script>
-        // 你的 Google Apps Script URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbzOcB3NOc3L310t_VGdAGeueaqJKFG6yWKm8gXOrFQ0NcLx94xUAUEHCP8tkHP_UZEl/exec";
+        // 這是你剛剛給我的最新網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbwLma26kH-c4PtgQOlSp5_1jNswe_WBVoainijJgFgB0EcMpWEGMbxkW-EkVgdIFvoB/exec";
 
         async function drawPrize() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
             
-            // 進入抽獎狀態
             btn.innerText = "開獎中...";
             btn.classList.add('loading');
             btn.style.pointerEvents = "none";
-            status.innerText = "正在聯網扣除賞數...";
+            status.innerText = "正在連線試算表...";
 
             try {
-                // 發送 POST 請求執行抽獎
+                // 使用 POST 觸發試算表扣數
+                // 加上 mode: 'no-cors' 確保即使 Google 不回傳標頭也能送出指令
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    cache: 'no-cache'
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 });
 
-                // 因為 Google POST 限制，延遲後抓取結果
-                setTimeout(async () => {
-                    try {
-                        const res = await fetch(API_URL);
-                        const data = await res.json();
-                        
-                        // 我們抓最後一個變動的獎項 (此處為前端模擬，建議搭配試算表最後一行邏輯)
-                        // 為了展示效果，先預設彈出抽獎成功
-                        document.getElementById('prizeGrade').innerText = "Win";
-                        document.getElementById('prizeName').innerText = "抽獎成功！請查看試算表更新";
-                        document.getElementById('resultOverlay').style.display = 'flex';
-                    } catch (err) {
-                        // 萬一 JSON 抓取失敗，但 POST 其實已經成功了
-                        document.getElementById('prizeGrade').innerText = "OK";
-                        document.getElementById('prizeName').innerText = "指令已發送，庫存已更新！";
-                        document.getElementById('resultOverlay').style.display = 'flex';
-                    }
+                // 延遲一下，讓 Google 有時間處理數據
+                setTimeout(() => {
+                    document.getElementById('prizeGrade').innerText = "SUCCESS";
+                    document.getElementById('prizeName').innerText = "抽獎完成！請檢查試算表數量";
+                    document.getElementById('resultOverlay').style.display = 'flex';
+                    status.innerText = "指令發送成功";
                 }, 1500);
 
             } catch (e) {
-                alert("伺服器連線超時，請重新嘗試！");
+                console.error(e);
+                alert("連線失敗，請檢查網路！");
                 location.reload();
             }
         }
-
-        // 初始化 LIFF (如果之後需要串接使用者名稱)
-        liff.init({ liffId: "你的_LIFF_ID" }).then(() => {
-            console.log("LIFF 啟動成功");
-        });
     </script>
 </body>
 </html>
