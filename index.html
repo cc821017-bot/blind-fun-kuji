@@ -7,18 +7,18 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 1000; }
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid #ff3e3e; z-index: 1000; }
         .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; }
-        .tab-btn.active { background: red; border-color: gold; }
+        .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .tab-btn.active { background: #ff3e3e; border-color: gold; }
         
-        /* 預覽視窗：三張圖片物理重疊 */
-        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; }
+        /* 預覽視窗：核心修復 - 三張圖片物理重疊 */
+        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; }
         .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
-        .prize-img.active { display: block; } /* 物理顯示 */
+        .prize-img.active { display: block; } /* 只有帶 active 的圖片會顯示，其餘物理消失 */
 
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
-        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
+        .draw-btn { width: 260px; height: 60px; background: #ff3e3e; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
         
         #loadingLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; font-size: 24px; }
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
@@ -42,13 +42,13 @@
     <div id="stock-display" class="info-bar">正在取得庫存...</div>
     <div class="draw-btn" onclick="goDraw()">點擊開獎</div>
 
-    <div id="loadingLayer">正在連線...</div>
+    <div id="loadingLayer">連線中...</div>
 
     <div id="winPanel" class="win-overlay">
         <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
         <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
         <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 10px 40px; font-size: 18px; border-radius: 50px;">確認</button>
+        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px; cursor: pointer;">確認領取</button>
     </div>
 
     <script>
@@ -60,15 +60,16 @@
         let myUid = "";
         let stockData = {};
 
-        // 核心切換：純物理控制 display: none/block
+        // 核心切換：改用物理顯示隱藏，不依賴網址更換
         function switchTo(idx) {
             currentIdx = idx;
-            // 1. 切換按鈕
+            // 1. 切換按鈕樣式
             for(let i=0; i<3; i++) {
                 document.getElementById('btn'+i).classList.toggle('active', i === idx);
+                // 2. 切換圖片顯示 (display: block vs none)
                 document.getElementById('img'+i).classList.toggle('active', i === idx);
             }
-            // 2. 更新文字
+            // 3. 更新文字
             refreshText();
         }
 
@@ -86,14 +87,16 @@
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
                 
-                // 請求庫存
+                // 請求庫存與點數
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
                 s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
                 document.body.appendChild(s1);
                 document.body.appendChild(s2);
-            } catch (e) {}
+            } catch (e) {
+                document.getElementById('stock-display').innerText = "連線失敗";
+            }
         }
 
         window.cb_st = (res) => { stockData = res; refreshText(); };
@@ -109,13 +112,15 @@
 
         window.cb_res = (res) => {
             if (res.status === "success") {
-                document.getElementById('win-grade').innerText = res.grade;
-                document.getElementById('win-name').innerText = res.name;
-                // 中 A 賞就抓當前選區的預覽圖
-                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
-                document.getElementById('winPanel').style.display = 'flex';
+                setTimeout(() => {
+                    document.getElementById('win-grade').innerText = res.grade;
+                    document.getElementById('win-name').innerText = res.name;
+                    // 中 A 賞就直接拿當前那一張圖的 src
+                    document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
+                    document.getElementById('winPanel').style.display = 'flex';
+                }, 800);
             } else {
-                alert("點數不足或系統錯誤");
+                alert("錯誤：點數不足或系統忙碌");
                 location.reload();
             }
         }
