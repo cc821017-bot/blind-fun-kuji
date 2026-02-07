@@ -7,20 +7,25 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 100; }
-        .pool-selector { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .pool-btn { flex: 1; padding: 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid red; z-index: 200; font-size: 14px; }
+        .pool-selector { display: flex; justify-content: center; gap: 5px; padding: 10px; margin-top: 10px; }
+        .pool-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .pool-btn.active { background: red; border-color: gold; }
-        .preview-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; }
-        .preview-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 0.3s; }
-        .preview-img.active { opacity: 1; z-index: 10; }
-        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
-        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; align-items: center; justify-content: center; }
+        
+        /* 預覽視窗：強制三張圖疊在一起 */
+        .preview-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; }
+        .preview-img { width: 100%; height: 100%; object-fit: contain; display: none; }
+        .preview-img.show { display: block; } /* 只有帶 show 的才會顯示 */
+
+        .status-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; height: 20px; }
+        .draw-btn { width: 260px; height: 65px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 40px; font-weight: bold; font-size: 24px; box-shadow: 0 5px 15px rgba(255,0,0,0.4); }
+        
+        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; align-items: center; justify-content: center; color: white; font-size: 30px; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div class="user-info">餘額：<span id="user-points">--</span> P</div>
+    <div class="user-info">點數餘額：<span id="user-points">載入中</span> P</div>
     
     <div class="pool-selector">
         <button class="pool-btn active" onclick="clickPool(0, this)">單挑套</button>
@@ -29,21 +34,21 @@
     </div>
 
     <div class="preview-window">
-        <img id="img-0" class="preview-img active" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
+        <img id="img-0" class="preview-img show" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
         <img id="img-1" class="preview-img" src="https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg">
         <img id="img-2" class="preview-img" src="https://i.postimg.cc/6pM0fDkC/S-9740516.jpg">
     </div>
 
-    <div id="status-msg" style="color: gold; font-size: 14px;">準備就緒</div>
+    <div id="status-msg" class="status-bar">準備就緒</div>
     <div class="draw-btn" onclick="startDraw()">點擊開獎</div>
 
-    <div id="tearLayer"><div style="color:white; font-size: 30px;">盲玩樂</div></div>
+    <div id="tearLayer">盲玩樂 - 抽獎中...</div>
 
     <div id="result" class="overlay">
-        <h1 id="res-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
-        <img id="res-img" style="width: 280px; height: 280px; border: 2px solid gold;" src="">
-        <p id="res-name" style="margin: 20px;"></p>
-        <button onclick="location.reload()" style="padding: 10px 40px;">確認</button>
+        <h1 id="res-grade" style="font-size: 100px; color: gold; margin: 0;"></h1>
+        <img id="res-img" style="width: 300px; height: 300px; border: 3px solid gold; border-radius: 15px;" src="">
+        <p id="res-name" style="margin: 20px; font-size: 20px; font-weight: bold;"></p>
+        <button onclick="location.reload()" style="padding: 12px 60px; background: white; border-radius: 50px; font-weight: bold;">確認領取</button>
     </div>
 
     <script>
@@ -55,16 +60,18 @@
         let userData = { uid: "", name: "" };
         let allStocks = {};
 
-        // 核心切換：只切換透明度 (CSS opacity)，不換 src，保證沒延遲
+        // 核心切換：改用物理顯示隱藏 (display: none/block)
         function clickPool(i, btn) {
             curIdx = i;
             // 1. 按鈕樣式
-            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
+            const btns = document.querySelectorAll('.pool-btn');
+            btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // 2. 圖片切換 (透過 CSS class)
-            document.querySelectorAll('.preview-img').forEach(img => img.classList.remove('active'));
-            document.getElementById('img-' + i).classList.add('active');
+            // 2. 圖片切換 (強制移除所有 show，只給當前顯示)
+            const imgs = document.querySelectorAll('.preview-img');
+            imgs.forEach(img => img.classList.remove('show'));
+            document.getElementById('img-' + i).classList.add('show');
             
             updateText();
         }
@@ -84,7 +91,9 @@
                 userData.uid = profile.userId;
                 userData.name = profile.displayName;
                 refreshData();
-            } catch (e) {}
+            } catch (e) {
+                document.getElementById('status-msg').innerText = "連線失敗";
+            }
         }
 
         function refreshData() {
@@ -100,6 +109,7 @@
         window.gotPoints = (res) => { document.getElementById('user-points').innerText = res.points; };
 
         function startDraw() {
+            if(!userData.uid) return;
             document.getElementById('tearLayer').style.display = 'flex';
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${userData.uid}&poolId=${encodeURIComponent(NAMES[curIdx])}&callback=showResult`;
@@ -111,12 +121,12 @@
                 setTimeout(() => {
                     document.getElementById('res-grade').innerText = res.grade;
                     document.getElementById('res-name').innerText = res.name;
-                    // 結果圖：如果中 A，直接抓當前顯示的那張圖的 src
+                    // 結果圖：直接從已經加載好的預覽圖中抓取網址
                     document.getElementById('res-img').src = (res.grade === "A" ? document.getElementById('img-'+curIdx).src : B_IMG);
                     document.getElementById('result').style.display = 'flex';
                 }, 1000);
             } else {
-                alert("錯誤");
+                alert("錯誤：點數不足或系統忙碌");
                 location.reload();
             }
         }
