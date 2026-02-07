@@ -61,3 +61,21 @@
     </script>
 </body>
 </html>
+// 讓網頁能讀取目前賞盤資訊
+function doGet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Sheet1");
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  
+  for (var i = 1; i < data.length; i++) {
+    result.push({
+      grade: data[i][0],
+      name: data[i][1],
+      remain: data[i][3]
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
