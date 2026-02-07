@@ -8,22 +8,16 @@
     <style>
         :root { --main-red: #ff4757; --gold: #f1c40f; }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; padding-top: 70px; }
-        
         .user-info { position: fixed; top: 0; width: 100%; background: #1e1e1e; padding: 12px 0; z-index: 50; border-bottom: 1px solid #333; }
         .points-display { color: var(--gold); font-weight: bold; font-size: 1.1rem; }
-
         .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; padding: 0 15px; overflow-x: auto; }
         .pool-btn { padding: 12px 20px; background: #222; border: 2px solid #444; color: #fff; border-radius: 12px; cursor: pointer; white-space: nowrap; transition: 0.3s; }
         .pool-btn.active { border-color: var(--gold); background: var(--main-red); box-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
-
-        .price-tag { color: var(--gold); font-size: 1.3rem; margin: 10px 0; font-weight: bold; letter-spacing: 1px; }
-
-        .kuji-box { width: 280px; height: 180px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 25px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; }
+        .price-tag { color: var(--gold); font-size: 1.3rem; margin: 10px 0; font-weight: bold; }
+        .kuji-box { width: 280px; height: 180px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 25px; cursor: pointer; box-shadow: 0 10px 0 #b33939; }
         .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
-        
         .shake { animation: shake 0.5s infinite; }
         @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(4deg); } 75% { transform: rotate(-4deg); } 100% { transform: rotate(0deg); } }
-
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
         .prize-grade { font-size: 90px; color: var(--gold); font-weight: 900; margin: 0; text-shadow: 0 0 20px var(--gold); }
         .prize-img { width: 280px; height: 280px; object-fit: cover; border: 3px solid var(--gold); border-radius: 20px; margin: 20px 0; }
@@ -33,26 +27,23 @@
 <body>
 
     <div class="user-info">
-        <span id="user-name">辨識中...</span> | 
-        <span class="points-display">餘額：<span id="user-points">0</span> P</span>
+        <span id="user-name">辨識中...</span> | <span class="points-display">餘額：<span id="user-points">0</span> P</span>
     </div>
 
-    <div class="pool-selector" id="poolSelector">
+    <div class="pool-selector">
         <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套</button>
         <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選</button>
         <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選</button>
     </div>
 
-    <h2 id="currentPoolTitle" style="color: #fff;">單挑套</h2>
+    <h2 id="currentPoolTitle">單挑套</h2>
     <div class="price-tag">一抽：<span id="currentPrice">360</span> P</div>
-    
     <div class="kuji-box" id="drawBtn">點擊抽獎</div>
-    <p id="status" style="color: #888;">請確保點數充足</p>
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red);">恭喜獲得</h2>
         <p class="prize-grade" id="p-grade"></p>
-        <img id="p-img" class="prize-img" src="" alt="獎項圖片">
+        <img id="p-img" class="prize-img" src="">
         <p id="p-name" style="font-size: 24px; font-weight: bold; margin-bottom: 25px;"></p>
         <button class="confirm-btn" onclick="location.reload()">確認收下</button>
     </div>
@@ -62,88 +53,10 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         
         let currentPoolId = "單挑套";
-        let currentUser = { uid: "", name: "", points: 0 };
+        let currentUser = { uid: "", name: "" };
 
-        // 統一更換 B 賞圖片，並保留 A 賞展示圖
         const POOL_IMAGES = {
-            "單挑套": {
-                "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", 
-                "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg"
-            },
-            "Ａ區任選": {
-                "A": "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg", 
-                "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg"
-            },
-            "Ｂ區任選": {
-                "A": "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg", 
-                "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg"
-            }
-        };
-
-        async function initLIFF() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                } else {
-                    const profile = await liff.getProfile();
-                    currentUser.uid = profile.userId;
-                    currentUser.name = profile.displayName;
-                    document.getElementById('user-name').innerText = currentUser.name;
-                    checkPoints();
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        function switchPool(id, btn, price) {
-            currentPoolId = id;
-            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('currentPoolTitle').innerText = id;
-            document.getElementById('currentPrice').innerText = price;
-            checkPoints();
-        }
-
-        function checkPoints() {
-            const script = document.createElement('script');
-            script.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePointsDisplay`;
-            document.body.appendChild(script);
-        }
-
-        window.updatePointsDisplay = function(data) {
-            currentUser.points = data.points;
-            document.getElementById('user-points').innerText = currentUser.points;
-            const btn = document.getElementById('drawBtn');
-            btn.onclick = draw;
-            btn.classList.remove('disabled');
-        };
-
-        function draw() {
-            const btn = document.getElementById('drawBtn');
-            btn.classList.add('shake');
-            btn.innerText = "開獎中...";
-            btn.onclick = null;
-
-            const script = document.createElement('script');
-            script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
-            document.body.appendChild(script);
-        }
-
-        window.handleResult = function(data) {
-            if (data.status === "success") {
-                document.getElementById('p-grade').innerText = data.grade;
-                document.getElementById('p-name').innerText = data.name;
-                // 根據池子與賞別顯示對應圖片
-                document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
-                document.getElementById('result').style.display = 'flex';
-                document.getElementById('user-points').innerText = data.newPoints;
-            } else {
-                alert(data.status === "no_points" ? "點數不足！請聯繫老闆儲值" : "此池已售罄！");
-                location.reload();
-            }
-        };
-
-        window.onload = initLIFF;
-    </script>
+            "單挑套": { "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
+            "Ａ區任選": { "A": "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
 </body>
 </html>
