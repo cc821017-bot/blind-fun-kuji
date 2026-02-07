@@ -18,10 +18,9 @@
     </style>
 </head>
 <body>
-
     <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
-    <p id="status" style="color: #666; margin-top: 20px;">歡迎來到盲玩樂線上店</p>
+    <p id="status" style="color: #666; margin-top: 20px;">系統就緒，準備開獎</p>
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red); letter-spacing: 5px; margin-bottom: 0;">恭喜獲得</h2>
@@ -32,7 +31,6 @@
     </div>
 
     <script>
-        // 請務必確認此網址與你最新部署的 Apps Script 一致
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         
         const PRIZE_IMAGES = {
@@ -44,74 +42,39 @@
 
         async function draw() {
             const btn = document.getElementById('drawBtn');
+            const status = document.getElementById('status');
             btn.classList.add('shake');
             btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
 
             try {
-                // 1. 執行抽獎
+                // 1. 先送 POST 去扣數
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
+                status.innerText = "正在讀取最終中獎結果...";
 
-                // 2. 延遲 2.5 秒後讀取真實的中獎紀錄
+                // 2. 延遲後去抓取結果
                 setTimeout(async () => {
-                    const response = await fetch(API_URL);
-                    const data = await response.json();
-                    
-                    if (data && data.length > 0) {
-                        const win = data[0]; // 讀取最新的一筆紀錄
-                        
-                        document.getElementById('p-grade').innerText = win.grade;
-                        document.getElementById('p-name').innerText = win.name;
-                        document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
-                        document.getElementById('result').style.display = 'flex';
-                    } else {
-                        alert("讀取紀錄失敗，請檢查試算表是否為空！");
+                    try {
+                        const response = await fetch(API_URL);
+                        const data = await response.json();
+                        if (data && data.length > 0) {
+                            const win = data[0];
+                            document.getElementById('p-grade').innerText = win.grade;
+                            document.getElementById('p-name').innerText = win.name;
+                            document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
+                            document.getElementById('result').style.display = 'flex';
+                        }
+                    } catch (err) {
+                        alert("通訊緩慢，請重新整理頁面檢查試算表！");
                         location.reload();
                     }
-                }, 2500);
+                }, 3000); // 延長到 3 秒確保 Google 寫入完成
 
             } catch (e) {
-                alert("網路異常，請稍後再試！");
+                alert("網路不穩，請再試一次！");
                 location.reload();
             }
         }
-async function draw() {
-        const btn = document.getElementById('drawBtn');
-        btn.classList.add('shake');
-        btn.innerText = "開獎中...";
-        btn.style.pointerEvents = "none";
-
-        try {
-            // 1. 執行抽獎
-            const postResponse = await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
-            console.log("POST 成功");
-
-            // 2. 延遲後讀取
-            setTimeout(async () => {
-                try {
-                    const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error("Google 沒回應");
-                    
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        const win = data[0];
-                        document.getElementById('p-grade').innerText = win.grade;
-                        document.getElementById('p-name').innerText = win.name;
-                        document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
-                        document.getElementById('result').style.display = 'flex';
-                    } else {
-                        alert("試算表是空的，請確認中獎紀錄分頁！");
-                    }
-                } catch (err) {
-                    alert("讀取失敗：" + err.message + "\n請確認 Google 部署是否為『所有人』");
-                    location.reload();
-                }
-            }, 2500);
-
-        } catch (e) {
-            alert("發送指令失敗，請檢查網路！");
-            location.reload();
-        }
-    }
+    </script>
 </body>
 </html>
