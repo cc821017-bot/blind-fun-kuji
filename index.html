@@ -3,24 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-抽獎中心</title>
+    <title>盲玩樂-線上抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid #ff3e3e; z-index: 1000; }
-        .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .tab-btn.active { background: #ff3e3e; border-color: gold; }
-        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0a0a0a; }
+        body { font-family: sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow-x: hidden; }
+        
+        /* 頂部資訊欄 */
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--main-red); z-index: 1000; font-weight: bold; }
+        
+        /* 獎池切換按鈕 */
+        .pool-tabs { display: flex; justify-content: center; gap: 6px; padding: 10px; }
+        .tab-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #444; color: #aaa; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .tab-btn.active { background: var(--main-red); border-color: var(--neon-gold); color: white; box-shadow: 0 0 10px rgba(255,62,62,0.5); }
+        
+        /* 預覽櫥窗 */
+        .display-window { width: 90%; max-width: 360px; margin: 15px auto; border: 2px solid #333; height: 230px; background: #111; position: relative; overflow: hidden; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
         .prize-img.active { display: block !important; }
-        .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
-        .draw-btn { width: 260px; height: 60px; background: #ff3e3e; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* 庫存與開獎 */
+        .info-bar { color: var(--neon-gold); font-size: 16px; margin: 10px 0; font-weight: bold; min-height: 24px; }
+        .draw-btn { width: 260px; height: 65px; background: linear-gradient(180deg, #ff5e5e, var(--main-red)); color: #fff; margin: 15px auto; display: flex; align-items: center; justify-content: center; border-radius: 40px; font-weight: bold; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,62,62,0.4); border: none; }
+        .draw-btn:active { transform: scale(0.95); }
+
+        /* 中獎彈窗 */
+        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .win-img { width: 300px; height: 300px; border: 4px solid var(--neon-gold); border-radius: 20px; background: #222; object-fit: contain; }
     </style>
 </head>
 <body>
-    <div class="user-bar">點數：<span id="display-pts">載入中</span> P</div>
+    <div class="user-bar">餘額：<span id="display-pts">載入中</span> P</div>
     
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="physicalSwitch(0)">單挑套</button>
@@ -30,31 +43,33 @@
 
     <div class="display-window">
         <img id="img0" class="prize-img active" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
-        <img id="img1" class="prize-img" src="https://www.gstatic.com/images/branding/product/2x/google_photos_96dp.png">
-        <img id="img2" class="prize-img" src="https://www.gstatic.com/images/branding/product/2x/google_calendar_96dp.png">
+        <img id="img1" class="prize-img" src="https://i.meee.com.tw/d2cFJiy.jpg">
+        <img id="img2" class="prize-img" src="https://i.meee.com.tw/B8xVcyj.jpg">
     </div>
 
-    <div id="stock-display" class="info-bar">連線中...</div>
+    <div id="stock-display" class="info-bar">準備中...</div>
     <div class="draw-btn" onclick="goDraw()">點擊開獎</div>
 
-    <div id="winPanel" class="overlay">
-        <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
-        <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
-        <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; border-radius: 50px;">確認</button>
+    <div id="winPanel" class="win-overlay">
+        <p style="color:white; font-size: 18px; margin-bottom: 5px;">恭喜獲得</p>
+        <h1 id="win-grade" style="font-size: 100px; color: var(--neon-gold); margin: 0; font-weight: 900;"></h1>
+        <img id="win-img" class="win-img" src="">
+        <p id="win-name" style="margin: 20px; font-size: 18px; font-weight: bold;"></p>
+        <button onclick="location.reload()" style="padding: 15px 80px; font-size: 18px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold;">確認領取</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const B_IMG_URL = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
         let currentIdx = 0;
         let myUid = "";
         let stockData = {};
 
+        // 物理顯隱切換，確保不失效
         function physicalSwitch(idx) {
             currentIdx = idx;
-            // 物理切換：強制控制顯示
             for(let i=0; i<3; i++) {
                 const btn = document.getElementById('btn'+i);
                 const img = document.getElementById('img'+i);
@@ -67,24 +82,23 @@
             }
         }
 
-        // 為了相容性保留 switchTo 名稱
         window.switchTo = physicalSwitch;
 
-        async function init() {
+        async function initLIFF() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
                 
+                // 獲取數據
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
                 s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
-                document.body.appendChild(s1); 
-                document.body.appendChild(s2);
+                document.body.appendChild(s1); document.body.appendChild(s2);
             } catch (e) {
-                document.getElementById('stock-display').innerText = "連線失敗";
+                document.getElementById('stock-display').innerText = "連線失敗，請重整";
             }
         }
 
@@ -102,11 +116,12 @@
             if (res.status === "success") {
                 document.getElementById('win-grade').innerText = res.grade;
                 document.getElementById('win-name').innerText = res.name;
-                document.getElementById('win-img').src = document.getElementById('img'+currentIdx).src;
+                // 中 A 就拿預覽窗那張圖的 src
+                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
                 document.getElementById('winPanel').style.display = 'flex';
-            } else { alert("餘額不足"); location.reload(); }
+            } else { alert("餘額不足或系統忙碌"); location.reload(); }
         }
-        window.onload = init;
+        window.onload = initLIFF;
     </script>
 </body>
 </html>
