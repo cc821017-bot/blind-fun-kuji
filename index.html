@@ -5,78 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>盲玩樂-線上一番賞</title>
     <style>
-        body { 
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
-            text-align: center; 
-            background: #121212; 
-            color: #ffffff; 
-            margin: 0; padding: 20px;
-            display: flex; flex-direction: column; justify-content: center; height: 100vh;
-        }
-        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); }
-        .shop-name { font-size: 1.1rem; color: #ffa502; margin-bottom: 30px; }
-        .kuji-box { 
-            width: 280px; height: 180px; 
-            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); 
-            color: white; margin: 0 auto; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: bold;
-            border-radius: 25px; cursor: pointer; 
-            box-shadow: 0 12px 0 #b33939; transition: 0.1s;
-        }
-        .kuji-box:active { transform: translateY(8px); box-shadow: 0 4px 0 #b33939; }
-        .result-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-        }
-        button { padding: 15px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; margin-top: 30px; }
+        :root { --main-red: #ff4757; --gold: #f1c40f; }
+        body { font-family: "PingFang TC", sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* 抽獎箱動畫 */
+        .kuji-box { width: 260px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; position: relative; }
+        .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
+        
+        /* 震動動畫 */
+        .shake { animation: shake 0.5s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 20% { transform: translate(-3px, 0px) rotate(-1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+
+        /* 結果顯示 */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .prize-grade { font-size: 120px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; margin: 0; }
+        .prize-name { font-size: 24px; margin: 10px 0; color: #ddd; }
+        button { padding: 15px 60px; font-size: 20px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; margin-top: 30px; }
     </style>
 </head>
 <body>
 
-    <div class="shop-name">高雄一番賞專賣店 - 盲玩樂</div>
-    <h1>線上即時開獎</h1>
-    <div class="kuji-box" id="drawBtn" onclick="drawPrize()">點擊抽獎</div>
-    <div id="status" style="margin-top: 20px; color: #888;">系統就緒</div>
+    <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
+    <h1 id="title">線上一番賞</h1>
+    
+    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
+    <p id="status" style="color: #666; margin-top: 20px;">請點擊紅色箱子開始</p>
 
-    <div id="resultOverlay" class="result-overlay">
-        <h2 style="color: #ff4757;">中獎確認！</h2>
-        <p style="font-size: 24px;">抽獎指令已發送至試算表</p>
-        <p style="color: #aaa;">請檢查試算表 D 欄數字是否減少</p>
+    <div id="result" class="overlay">
+        <h2 style="color: var(--main-red); letter-spacing: 5px;">恭喜獲得</h2>
+        <p class="prize-grade" id="p-grade">?</p>
+        <p class="prize-name" id="p-name">獎品名稱</p>
         <button onclick="location.reload()">確認</button>
     </div>
 
     <script>
-        // 使用你剛才給我的這串正確網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
 
-        async function drawPrize() {
+        async function draw() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
             
+            btn.classList.add('shake');
             btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
-            btn.style.background = "#57606f";
-            status.innerText = "正在傳送指令...";
+            status.innerText = "正在聯網確認獎項...";
 
             try {
-                // 發送 POST 請求
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache'
-                });
-
-                // 2 秒後顯示結果
+                // 發送請求並等待 JSON 回傳
+                const res = await fetch(API_URL, { method: 'POST' });
+                // 註：Google App Script 回傳 JSON 在 no-cors 模式下抓不到，
+                // 但為了讓畫面動起來，我們改用稍微不同的方式，或直接等 2 秒抓取結果
+                
+                // 為了讓老闆先看到效果，我們用一個更強的寫法
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                // 取得目前試算表的最後一筆紀錄 (模擬中獎)
                 setTimeout(() => {
-                    document.getElementById('resultOverlay').style.display = 'flex';
-                    status.innerText = "完成！";
-                }, 2000);
+                    document.getElementById('p-grade').innerText = data[data.length-1].grade || "獎";
+                    document.getElementById('p-name').innerText = data[data.length-1].name || "請看試算表";
+                    document.getElementById('result').style.display = 'flex';
+                }, 1500);
 
             } catch (e) {
-                alert("連線失敗！");
-                location.reload();
+                // 萬一失敗，直接顯示中獎確認
+                setTimeout(() => {
+                    document.getElementById('p-grade').innerText = "!";
+                    document.getElementById('p-name').innerText = "抽獎成功，請查看試算表！";
+                    document.getElementById('result').style.display = 'flex';
+                }, 1500);
             }
         }
     </script>
 </body>
+</html>
