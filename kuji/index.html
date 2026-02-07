@@ -1,81 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>盲玩樂-線上抽獎</title>
+    <title>盲玩樂-線上一番賞</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: "PingFang TC", sans-serif; text-align: center; background: #f4f4f4; padding-top: 50px; }
-        .kuji-box { width: 300px; height: 200px; background: #ff4757; color: white; margin: 0 auto; line-height: 200px; font-size: 24px; border-radius: 15px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: 0.3s; }
-        .kuji-box:active { transform: scale(0.95); }
-        .result-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; padding-top: 100px; z-index: 100; }
-        .prize-name { font-size: 48px; color: #f1c40f; margin: 20px 0; }
-        button { padding: 10px 30px; font-size: 18px; border-radius: 5px; border: none; background: #2ed573; color: white; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-    <h2>歡迎來到盲玩樂一番賞</h2>
-    <div class="kuji-box" onclick="drawPrize()">點擊抽獎</div>
-
-    <div id="resultOverlay" class="result-overlay">
-        <h3>恭喜獲得：</h3>
-        <div id="prizeGrade" style="font-size: 80px; font-weight: bold;">?</div>
-        <div id="prizeName" class="prize-name">獎品名稱</div>
-        <div id="lastOneMsg" style="color: #ff4757; font-weight: bold; margin-bottom: 20px;"></div>
-        <button onclick="location.reload()">再抽一次</button>
-    </div>
-
-    <script>
-        // 已修正網址結尾多出的字母
-        const API_URL = "https://script.google.com/macros/s/AKfycbzOcB3NOc3L310t_VGdAGeueaqJKFG6yWKm8gXOrFQ0NcLx94xUAUEHCP8tkHP_UZEl/exec";
-
-        async function drawPrize() {
-            const box = document.querySelector('.kuji-box');
-            box.innerText = "抽獎中...";
-            box.style.pointerEvents = "none"; // 防止重複點擊
-
-            try {
-                // 使用 POST 請求呼叫 Google Apps Script
-                const response = await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
-                
-                // 注意：因為 Google Apps Script 的 no-cors 限制，
-                // 如果直接 fetch 可能抓不到 JSON。
-                // 為了讓你現在能先看到效果，我們假設抽獎成功。
-                // 建議之後將 Google Script 的 doGet 也設定好。
-                
-                const res = await fetch(API_URL);
-                const result = await res.json();
-                
-                document.getElementById('prizeGrade').innerText = result.prize;
-                document.getElementById('prizeName').innerText = result.name;
-                document.getElementById('lastOneMsg').innerText = result.lastOne || "";
-                document.getElementById('resultOverlay').style.display = 'block';
-            } catch (e) {
-                console.log(e);
-                alert("抽獎完成！請查看試算表更新。");
-                location.reload();
-            }
+        body { 
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
+            text-align: center; 
+            background: #121212; 
+            color: #ffffff; 
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
         }
-    </script>
-</body>
-</html>
-// 讓網頁能讀取目前賞盤資訊
-function doGet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Sheet1");
-  var data = sheet.getDataRange().getValues();
-  var result = [];
-  
-  for (var i = 1; i < data.length; i++) {
-    result.push({
-      grade: data[i][0],
-      name: data[i][1],
-      remain: data[i][3]
-    });
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); }
+        .shop-name { font-size: 1.2rem; color: #ffa502; margin-bottom: 30px; }
+        
+        .kuji-box { 
+            width: 280px; height: 180px; 
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); 
+            color: white; margin: 0 auto; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold;
+            border-radius: 25px; cursor: pointer; 
+            box-shadow: 0 12px 0 #b33939, 0 20px 30px rgba(0,0,0,0.5); 
+            transition: 0.1s;
+            user-select: none;
+        }
+        .kuji-box:active { transform: translateY(8px); box-shadow: 0 4px 0 #b33939; }
+        .kuji-box.loading { background: #57606f; box-shadow: 0 12px 0 #2f3542; cursor: not-allowed; }
+
+        .result-overlay { 
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; animation: fadeIn 0.5s;
