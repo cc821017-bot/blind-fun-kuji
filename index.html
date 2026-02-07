@@ -6,42 +6,45 @@
     <title>盲玩樂-抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main-red: #ff4757; --gold: #f1c40f; }
-        body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; padding-top: 70px; }
-        .user-info { position: fixed; top: 0; width: 100%; background: #1e1e1e; padding: 12px 0; z-index: 50; border-bottom: 1px solid #333; }
-        .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; padding: 0 10px; }
-        .pool-btn { padding: 10px 15px; background: #222; border: 2px solid #444; color: #fff; border-radius: 12px; cursor: pointer; }
-        .pool-btn.active { border-color: var(--gold); background: var(--main-red); }
-        .price-tag { color: var(--gold); font-size: 1.3rem; margin: 10px 0; font-weight: bold; }
-        .kuji-box { width: 280px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 8px 0 #b33939; }
-        .shake { animation: shake 0.5s infinite; }
-        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .prize-img { width: 280px; height: 280px; object-fit: cover; border: 3px solid var(--gold); border-radius: 15px; margin: 15px 0; }
+        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0f0f0f; --panel-bg: #1a1a1a; }
+        body { font-family: 'PingFang TC', sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 80px; }
+        .user-info { position: fixed; top: 0; width: 100%; background: rgba(26,26,26,0.95); padding: 15px 0; z-index: 50; border-bottom: 2px solid var(--main-red); box-shadow: 0 0 15px rgba(255,62,62,0.3); backdrop-filter: blur(5px); }
+        .pool-selector { display: flex; justify-content: center; gap: 12px; margin: 20px 0; padding: 0 15px; }
+        .pool-btn { padding: 10px 15px; background: #222; border: 1px solid #444; color: #aaa; border-radius: 8px; cursor: pointer; transition: 0.3s; position: relative; }
+        .pool-btn.active { border-color: var(--neon-gold); background: var(--main-red); color: white; box-shadow: 0 0 15px var(--main-red); }
+        .stock-tag { display: block; font-size: 10px; margin-top: 4px; opacity: 0.8; }
+        .price-tag { color: var(--neon-gold); font-size: 1.5rem; margin: 15px 0; font-weight: 900; text-shadow: 0 0 10px rgba(241,196,15,0.5); }
+        .kuji-box { width: 300px; height: 180px; background: linear-gradient(145deg, #cc3333, #ff3e3e); color: white; margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 900; border-radius: 15px; cursor: pointer; box-shadow: 0 10px 0 #8b0000, 0 15px 30px rgba(0,0,0,0.5); letter-spacing: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .kuji-box:active { transform: translateY(6px); box-shadow: 0 4px 0 #8b0000; }
+        .shake { animation: shake 0.2s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -1px) rotate(-1deg); } 100% { transform: translate(1px, 1px) rotate(1deg); } }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.5s; }
+        .prize-img { width: 300px; height: 300px; object-fit: cover; border: 4px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 40px var(--neon-gold); margin: 20px 0; cursor: zoom-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="user-info">
-        <span id="user-name">辨識中...</span> | 餘額：<span id="user-points" style="color:var(--gold)">0</span> P
+        <span id="user-name">辨識中...</span> | 餘額：<span id="user-points" style="color:var(--neon-gold)">0</span> P
     </div>
 
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套</button>
-        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選</button>
-        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選</button>
+        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套<span class="stock-tag" id="stock-單挑套">--</span></button>
+        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選<span class="stock-tag" id="stock-Ａ區任選">--</span></button>
+        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選<span class="stock-tag" id="stock-Ｂ區任選">--</span></button>
     </div>
 
-    <h2 id="currentPoolTitle">單挑套</h2>
-    <div class="price-tag">一抽：<span id="currentPrice">360</span> P</div>
+    <h2 id="currentPoolTitle" style="letter-spacing: 2px;">單挑套</h2>
+    <div class="price-tag">一抽 <span id="currentPrice">360</span> P</div>
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
 
     <div id="result" class="overlay">
-        <h2 style="color: var(--main-red); margin: 0;">恭喜獲得</h2>
-        <p id="p-grade" style="font-size: 80px; color: var(--gold); margin: 0; font-weight: 900;"></p>
+        <h2 style="color: var(--main-red); font-size: 2rem;">CONGRATS!</h2>
+        <p id="p-grade" style="font-size: 100px; color: var(--neon-gold); margin: 0; font-weight: 900;"></p>
         <img id="p-img" class="prize-img" src="">
-        <p id="p-name" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;"></p>
-        <button style="padding: 12px 50px; background: #2ed573; color: white; border: none; border-radius: 50px; font-size: 18px;" onclick="location.reload()">確認收下</button>
+        <p id="p-name" style="font-size: 22px; font-weight: bold; padding: 0 20px;"></p>
+        <button style="margin-top:20px; padding: 15px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-size: 20px; font-weight: 900;" onclick="location.reload()">確認收下</button>
     </div>
 
     <script>
@@ -60,19 +63,30 @@
         async function initLIFF() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                } else {
+                if (!liff.isLoggedIn()) { liff.login(); }
+                else {
                     const profile = await liff.getProfile();
                     currentUser.uid = profile.userId;
                     currentUser.name = profile.displayName;
                     document.getElementById('user-name').innerText = currentUser.name;
+                    updateAllPoolStatus();
                     checkPoints();
                 }
-            } catch (err) {
-                document.getElementById('user-name').innerText = "連線失敗";
-            }
+            } catch (err) { console.error(err); }
         }
+
+        function updateAllPoolStatus() {
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getPoolStatus&callback=renderPoolStatus`;
+            document.body.appendChild(script);
+        }
+
+        window.renderPoolStatus = (data) => {
+            for (let name in data) {
+                const el = document.getElementById(`stock-${name}`);
+                if (el) el.innerText = `剩餘 ${data[name]} 抽`;
+            }
+        };
 
         function switchPool(id, btn, price) {
             currentPoolId = id;
@@ -85,31 +99,24 @@
 
         function checkPoints() {
             const script = document.createElement('script');
-            script.src = API_URL + "?action=checkUser&uid=" + currentUser.uid + "&name=" + encodeURIComponent(currentUser.name) + "&callback=updatePointsDisplay";
+            script.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePointsDisplay`;
             document.body.appendChild(script);
         }
 
-        window.updatePointsDisplay = function(data) {
-            document.getElementById('user-points').innerText = data.points;
-        };
+        window.updatePointsDisplay = (data) => { document.getElementById('user-points').innerText = data.points; };
 
         function draw() {
+            if (window.navigator.vibrate) window.navigator.vibrate(100);
             const btn = document.getElementById('drawBtn');
             if(btn.classList.contains('shake')) return;
-
             btn.classList.add('shake');
-            btn.innerText = "開獎中...";
-
+            btn.innerText = "OPENING...";
             const script = document.createElement('script');
-            script.src = API_URL + "?action=draw&uid=" + currentUser.uid + "&poolId=" + encodeURIComponent(currentPoolId) + "&callback=handleResult";
+            script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
             document.body.appendChild(script);
         }
 
-        window.handleResult = function(data) {
-            const btn = document.getElementById('drawBtn');
-            btn.classList.remove('shake');
-            btn.innerText = "點擊抽獎";
-
+        window.handleResult = (data) => {
             if (data.status === "success") {
                 document.getElementById('p-grade').innerText = data.grade;
                 document.getElementById('p-name').innerText = data.name;
@@ -121,7 +128,6 @@
                 location.reload();
             }
         };
-
         window.onload = initLIFF;
     </script>
 </body>
