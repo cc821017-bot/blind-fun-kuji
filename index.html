@@ -54,4 +54,153 @@
         .reveal-grade { font-size: 130px; color: var(--neon-gold); font-weight: 900; margin: 0; text-shadow: 0 0 40px var(--neon-gold); }
 
         /* 最終結果 */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 600; padding: 20px; }
+        .prize-img { width: 320px; height: 320px; object-fit: cover; border: 4px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 50px var(--neon-gold); }
+        
+        /* 震動效果 */
+        .vibrate { animation: vbt 0.1s infinite; }
+        @keyframes vbt { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, 2px); } }
+    </style>
+</head>
+<body>
+
+    <div class="user-info">
+        <span id="user-name">辨識中...</span> | <span id="user-points" style="color:var(--neon-gold)">0</span> P
+    </div>
+
+    <div class="pool-selector">
+        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套</button>
+        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選</button>
+        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選</button>
+    </div>
+
+    <div class="stock-info">
+        <div class="stock-item">A賞：<b id="stock-a">--</b></div>
+        <div class="stock-item">B賞：<b id="stock-b">--</b></div>
+        <div class="stock-item">總：<b id="stock-total">--</b></div>
+    </div>
+
+    <h2 id="currentPoolTitle">單挑套</h2>
+    <div style="color:var(--neon-gold); font-size: 26px; font-weight: 900; margin: 10px 0;"><span id="currentPrice">360</span> P</div>
+    
+    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊開獎</div>
+
+    <div id="tearLayer">
+        <div class="ticket-container" id="ticketBox">
+            <div class="prize-reveal">
+                <p class="reveal-grade" id="revealGrade">?</p>
+                <p style="color:white; font-size: 20px;" id="revealName">計算中...</p>
+            </div>
+            <div class="ticket-part tear-left">盲玩樂</div>
+            <div class="ticket-part tear-right">盲玩樂</div>
+        </div>
+    </div>
+
+    <div id="result" class="overlay">
+        <h2 style="color: var(--main-red); letter-spacing: 5px;">恭喜獲獎</h2>
+        <p id="p-grade" style="font-size: 110px; color: var(--neon-gold); margin: -10px 0; font-weight: 900;"></p>
+        <img id="p-img" class="prize-img" src="">
+        <p id="p-name" style="font-size: 22px; margin: 15px 0;"></p>
+        <button style="padding: 15px 80px; background: var(--main-red); color: white; border: none; border-radius: 50px; font-size: 24px; font-weight: 900;" onclick="location.reload()">收下獎項</button>
+    </div>
+
+    <script>
+        const LIFF_ID = "2009072982-6smlV2gu";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
+        
+        let currentPoolId = "單挑套";
+        let currentUser = { uid: "", name: "" };
+        let globalPoolStatus = {};
+
+        const POOL_IMAGES = {
+            "單挑套": { "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
+            "Ａ區任選": { "A": "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
+            "Ｂ區任選": { "A": "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" }
+        };
+
+        async function initLIFF() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); }
+                else {
+                    const profile = await liff.getProfile();
+                    currentUser.uid = profile.userId;
+                    currentUser.name = profile.displayName;
+                    document.getElementById('user-name').innerText = currentUser.name;
+                    refreshData();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function refreshData() {
+            callAPI("getPoolStatus", "", "updateUI");
+            callAPI("checkUser", `&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}`, "updatePoints");
+        }
+
+        function callAPI(action, params, callback) {
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=${action}${params}&callback=${callback}`;
+            document.body.appendChild(script);
+        }
+
+        window.updateUI = (data) => { globalPoolStatus = data; showStock(currentPoolId); };
+        window.updatePoints = (data) => { document.getElementById('user-points').innerText = data.points; };
+
+        function showStock(id) {
+            const s = globalPoolStatus[id];
+            if(s) {
+                document.getElementById('stock-a').innerText = s.a;
+                document.getElementById('stock-b').innerText = s.b;
+                document.getElementById('stock-total').innerText = s.total;
+            }
+        }
+
+        function switchPool(id, btn, price) {
+            currentPoolId = id;
+            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('currentPoolTitle').innerText = id;
+            document.getElementById('currentPrice').innerText = price;
+            showStock(id);
+        }
+
+        function draw() {
+            if (window.navigator.vibrate) window.navigator.vibrate(80);
+            
+            // 1. 顯示籤紙並開始震動 (模擬撕之前的緊張感)
+            document.getElementById('tearLayer').style.display = 'flex';
+            document.getElementById('ticketBox').classList.add('vibrate');
+            document.getElementById('ticketBox').classList.remove('is-tearing');
+            
+            // 2. 請求數據
+            callAPI("draw", `&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}`, "handleResult");
+        }
+
+        window.handleResult = (data) => {
+            if (data.status === "success") {
+                // 數據回來後，填入背景
+                document.getElementById('revealGrade').innerText = data.grade;
+                document.getElementById('revealName').innerText = data.name;
+                
+                // 停止震動，執行撕開
+                setTimeout(() => {
+                    document.getElementById('ticketBox').classList.remove('vibrate');
+                    document.getElementById('ticketBox').classList.add('is-tearing');
+                }, 800);
+
+                // 最後顯示大圖
+                setTimeout(() => {
+                    document.getElementById('p-grade').innerText = data.grade;
+                    document.getElementById('p-name').innerText = data.name;
+                    document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
+                    document.getElementById('result').style.display = 'flex';
+                }, 2800);
+            } else {
+                alert("抽獎失敗，請確認點數或聯繫老闆。");
+                location.reload();
+            }
+        };
+        window.onload = initLIFF;
+    </script>
+</body>
+</html>
