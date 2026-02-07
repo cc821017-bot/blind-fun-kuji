@@ -7,32 +7,32 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 100; }
+        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 100; font-size: 14px; }
         .pool-selector { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .pool-btn { flex: 1; padding: 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; }
+        .pool-btn { flex: 1; padding: 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .pool-btn.active { background: red; border-color: gold; }
         .preview-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; display: flex; align-items: center; justify-content: center; }
         .preview-img { width: 100%; height: 100%; object-fit: contain; }
-        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
+        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
         #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; align-items: center; justify-content: center; }
         .ticket { width: 250px; height: 350px; background: red; border: 4px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div class="user-info">餘額：<span id="user-points">--</span> P</div>
+    <div class="user-info">餘額：<span id="user-points">載入中</span> P</div>
     
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="change(0, this)">單挑套</button>
-        <button class="pool-btn" onclick="change(1, this)">Ａ區任選</button>
-        <button class="pool-btn" onclick="change(2, this)">Ｂ區任選</button>
+        <button class="pool-btn active" onclick="clickPool(0, this)">單挑套</button>
+        <button class="pool-btn" onclick="clickPool(1, this)">Ａ區任選</button>
+        <button class="pool-btn" onclick="clickPool(2, this)">Ｂ區任選</button>
     </div>
 
     <div class="preview-window">
-        <img id="main-view" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
+        <img id="main-preview" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
     </div>
 
-    <div id="st-msg" style="color: gold;">連線中...</div>
+    <div id="status-msg" style="color: gold; font-size: 14px;">準備就緒</div>
     <div class="draw-btn" onclick="startDraw()">點擊開獎</div>
 
     <div id="tearLayer"><div class="ticket">盲玩樂</div></div>
@@ -41,7 +41,7 @@
         <h1 id="res-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
         <img id="res-img" style="width: 280px; height: 280px; border: 2px solid gold;" src="">
         <p id="res-name" style="margin: 20px;"></p>
-        <button onclick="location.reload()" style="padding: 10px 40px;">確認離開</button>
+        <button onclick="location.reload()" style="padding: 10px 40px; border-radius: 20px;">確認</button>
     </div>
 
     <script>
@@ -52,73 +52,72 @@
             "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg"
         ];
         const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
-        const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         
         let curIdx = 0;
         let userData = { uid: "", name: "" };
         let allStocks = {};
 
-        // 初始化
-        async function startApp() {
+        // --- 1. 換圖邏輯 (放在最前面，確保不受連線影響) ---
+        function clickPool(i, btn) {
+            curIdx = i;
+            // 切換按鈕樣式
+            const btns = document.querySelectorAll('.pool-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 切換圖片
+            const preview = document.getElementById('main-preview');
+            preview.src = IMAGES[i] + "?v=" + new Date().getTime();
+            
+            // 更新文字 (如果有資料的話)
+            updateText();
+        }
+
+        function updateText() {
+            const name = NAMES[curIdx];
+            if (allStocks[name]) {
+                document.getElementById('status-msg').innerText = `A：${allStocks[name].a} | B：${allStocks[name].b} | 剩：${allStocks[name].total}`;
+            }
+        }
+
+        // --- 2. 連線邏輯 ---
+        async function initLiff() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 userData.uid = profile.userId;
                 userData.name = profile.displayName;
-                
-                // 立即請求資料
-                getData();
-            } catch (err) {
-                console.log(err);
+                refreshData();
+            } catch (e) {
+                document.getElementById('status-msg').innerText = "連線失敗";
             }
         }
 
-        function getData() {
+        function refreshData() {
             const s1 = document.createElement('script');
             s1.src = `${API_URL}?action=getPoolStatus&callback=gotStocks`;
+            document.body.appendChild(s1);
+            
             const s2 = document.createElement('script');
             s2.src = `${API_URL}?action=checkUser&uid=${userData.uid}&name=${encodeURIComponent(userData.name)}&callback=gotPoints`;
-            document.body.appendChild(s1);
             document.body.appendChild(s2);
         }
 
-        window.gotStocks = (res) => { allStocks = res; updateUI(); };
+        window.gotStocks = (res) => { allStocks = res; updateText(); };
         window.gotPoints = (res) => { document.getElementById('user-points').innerText = res.points; };
 
-        // 核心切換函數
-        function change(i, btn) {
-            console.log("切換到：" + i); // 除錯用
-            curIdx = i;
-            
-            // 1. 換按鈕顏色
-            const btns = document.querySelectorAll('.pool-btn');
-            btns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // 2. 換圖片 (加上時間戳避開緩存)
-            const view = document.getElementById('main-view');
-            view.src = IMAGES[i] + "?v=" + Date.now();
-            
-            // 3. 換庫存文字
-            updateUI();
-        }
-
-        function updateUI() {
-            const name = POOLS[curIdx];
-            if (allStocks[name]) {
-                document.getElementById('st-msg').innerText = `A賞：${allStocks[name].a} | B賞：${allStocks[name].b} | 剩：${allStocks[name].total}`;
-            }
-        }
-
+        // --- 3. 抽獎邏輯 ---
         function startDraw() {
+            if (!userData.uid) { alert("尚未登入"); return; }
             document.getElementById('tearLayer').style.display = 'flex';
             const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${userData.uid}&poolId=${encodeURIComponent(POOLS[curIdx])}&callback=showRes`;
+            s.src = `${API_URL}?action=draw&uid=${userData.uid}&poolId=${encodeURIComponent(NAMES[curIdx])}&callback=showResult`;
             document.body.appendChild(s);
         }
 
-        window.showRes = (res) => {
+        window.showResult = (res) => {
             if (res.status === "success") {
                 setTimeout(() => {
                     document.getElementById('res-grade').innerText = res.grade;
@@ -127,12 +126,12 @@
                     document.getElementById('result').style.display = 'flex';
                 }, 1000);
             } else {
-                alert("餘額不足或系統忙碌");
+                alert("點數不足或系統錯誤");
                 location.reload();
             }
         }
 
-        window.onload = startApp;
+        window.onload = initLiff;
     </script>
 </body>
 </html>
