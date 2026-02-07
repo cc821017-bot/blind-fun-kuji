@@ -71,3 +71,31 @@
         async function drawPrize() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
+            
+            btn.innerText = "通訊中...";
+            btn.classList.add('loading');
+            btn.style.pointerEvents = "none";
+            status.innerText = "正在傳輸抽獎指令...";
+
+            try {
+                // 發送 POST 請求
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+
+                // 模擬動畫等待，確保後端有時間執行
+                setTimeout(() => {
+                    document.getElementById('resultOverlay').style.display = 'flex';
+                    status.innerText = "更新成功";
+                }, 1500);
+
+            } catch (e) {
+                alert("伺服器回應逾時，請檢查 Google 權限設定！");
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
