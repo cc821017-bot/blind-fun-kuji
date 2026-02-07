@@ -11,16 +11,16 @@
         .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
         .shake { animation: shake 0.5s infinite; }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 20% { transform: translate(-3px, 0px) rotate(-1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.3s; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
         .prize-grade { font-size: 80px; color: var(--gold); text-shadow: 0 0 20px var(--gold); font-weight: 900; margin: 0; }
-        .prize-img { width: 280px; height: 280px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; box-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
+        .prize-img { width: 280px; height: 280px; object-fit: cover; border-radius: 15px; border: 3px solid var(--gold); margin: 15px 0; }
         button { padding: 12px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">盲玩樂 BLIND FUN</div>
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
-    <p id="status" style="color: #666; margin-top: 20px;">系統就緒，準備開獎</p>
+    <p id="status" style="color: #666; margin-top: 20px;">歡迎來到盲玩樂</p>
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red); letter-spacing: 5px; margin-bottom: 0;">恭喜獲得</h2>
@@ -48,30 +48,36 @@
             btn.style.pointerEvents = "none";
 
             try {
-                // 1. 先送 POST 去扣數
+                // 第一步：發送抽獎指令
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
-                status.innerText = "正在讀取最終中獎結果...";
+                status.innerText = "正在連線 Google 讀取紀錄...";
 
-                // 2. 延遲後去抓取結果
-                setTimeout(async () => {
-                    try {
-                        const response = await fetch(API_URL);
-                        const data = await response.json();
-                        if (data && data.length > 0) {
-                            const win = data[0];
-                            document.getElementById('p-grade').innerText = win.grade;
-                            document.getElementById('p-name').innerText = win.name;
-                            document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
-                            document.getElementById('result').style.display = 'flex';
-                        }
-                    } catch (err) {
-                        alert("通訊緩慢，請重新整理頁面檢查試算表！");
-                        location.reload();
-                    }
-                }, 3000); // 延長到 3 秒確保 Google 寫入完成
-
+                // 第二步：給 3 秒時間讓 Google 寫入並確保我們能讀到
+                setTimeout(fetchResult, 3000);
             } catch (e) {
-                alert("網路不穩，請再試一次！");
+                alert("連線失敗！");
+                location.reload();
+            }
+        }
+
+        async function fetchResult() {
+            try {
+                const response = await fetch(API_URL + "?t=" + Date.now());
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const win = data[0];
+                    document.getElementById('p-grade').innerText = win.grade;
+                    document.getElementById('p-name').innerText = win.name;
+                    document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
+                    document.getElementById('result').style.display = 'flex';
+                } else {
+                    // 如果還是沒抓到，再等 2 秒重試一次
+                    document.getElementById('status').innerText = "稍等，正在重新抓取...";
+                    setTimeout(fetchResult, 2000);
+                }
+            } catch (err) {
+                alert("讀取獎項失敗，請確認試算表 D 欄庫存！");
                 location.reload();
             }
         }
