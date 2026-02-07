@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-抽獎中心 V2.0</title>
+    <title>盲玩樂-抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
@@ -12,11 +12,10 @@
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; }
         .tab-btn.active { background: red; border-color: gold; }
         
-        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; }
-        
-        /* 物理層：強制三張圖片獨立存在 */
-        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; visibility: hidden; opacity: 0; transition: opacity 0.2s; }
-        .prize-img.active { visibility: visible; opacity: 1; z-index: 10; }
+        /* 預覽視窗：三張圖片物理重疊 */
+        .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; }
+        .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
+        .prize-img.active { display: block; } /* 物理顯示 */
 
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
         .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
@@ -43,57 +42,55 @@
     <div id="stock-display" class="info-bar">正在取得庫存...</div>
     <div class="draw-btn" onclick="goDraw()">點擊開獎</div>
 
-    <div id="loadingLayer">正在開獎，請稍候...</div>
+    <div id="loadingLayer">正在連線...</div>
 
     <div id="winPanel" class="win-overlay">
         <h1 id="win-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
         <img id="win-img" style="width: 280px; height: 280px; border: 3px solid gold; border-radius: 15px;" src="">
         <p id="win-name" style="margin: 20px; font-weight: bold;"></p>
-        <button onclick="location.reload()" style="padding: 10px 40px; font-size: 18px;">確定</button>
+        <button onclick="location.reload()" style="padding: 10px 40px; font-size: 18px; border-radius: 50px;">確認</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        const B_IMG_URL = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
         let currentIdx = 0;
         let myUid = "";
         let stockData = {};
 
-        // 強制切換函數
+        // 核心切換：純物理控制 display: none/block
         function switchTo(idx) {
             currentIdx = idx;
-            // 1. 按鈕樣式
-            document.querySelectorAll('.tab-btn').forEach((b, i) => {
-                b.classList.toggle('active', i === idx);
-            });
-            // 2. 圖片樣式 (改用 visibility 確保物理佔位)
-            document.querySelectorAll('.prize-img').forEach((img, i) => {
-                img.classList.toggle('active', i === idx);
-            });
-            // 3. 更新庫存文字
+            // 1. 切換按鈕
+            for(let i=0; i<3; i++) {
+                document.getElementById('btn'+i).classList.toggle('active', i === idx);
+                document.getElementById('img'+i).classList.toggle('active', i === idx);
+            }
+            // 2. 更新文字
             refreshText();
         }
 
         function refreshText() {
             const pName = POOLS[currentIdx];
             if (stockData[pName]) {
-                document.getElementById('stock-display').innerText = `A賞：${stockData[pName].a} | B賞：${stockData[pName].b} | 剩：${stockData[pName].total}`;
+                document.getElementById('stock-display').innerText = `A：${stockData[pName].a} | B：${stockData[pName].b} | 總：${stockData[pName].total}`;
             }
         }
 
-        async function startLIFF() {
+        async function initLIFF() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
-                const p = await liff.getProfile();
-                myUid = p.userId;
+                const profile = await liff.getProfile();
+                myUid = profile.userId;
                 
+                // 請求庫存
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
-                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(p.displayName)}&callback=cb_pt`;
+                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
                 document.body.appendChild(s1);
                 document.body.appendChild(s2);
             } catch (e) {}
@@ -114,14 +111,15 @@
             if (res.status === "success") {
                 document.getElementById('win-grade').innerText = res.grade;
                 document.getElementById('win-name').innerText = res.name;
-                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG);
+                // 中 A 賞就抓當前選區的預覽圖
+                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
                 document.getElementById('winPanel').style.display = 'flex';
             } else {
                 alert("點數不足或系統錯誤");
                 location.reload();
             }
         }
-        window.onload = startLIFF;
+        window.onload = initLIFF;
     </script>
 </body>
 </html>
