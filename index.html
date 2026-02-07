@@ -9,32 +9,40 @@
         :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0f0f0f; }
         body { font-family: 'PingFang TC', sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 80px; overflow-x: hidden; }
         
-        /* 頂部導航欄優化 */
+        /* 導航與資訊 */
         .user-info { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.9); padding: 15px 0; z-index: 50; border-bottom: 2px solid var(--main-red); backdrop-filter: blur(10px); }
-        
-        /* 獎池選擇器 */
-        .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; padding: 0 10px; }
-        .pool-btn { flex: 1; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 10px; cursor: pointer; transition: 0.3s; }
-        .pool-btn.active { border-color: var(--neon-gold); background: linear-gradient(180deg, #333, #000); color: var(--neon-gold); box-shadow: 0 0 10px rgba(241,196,15,0.3); }
-        
-        /* 詳細庫存顯示 */
+        .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 15px 0; padding: 0 10px; }
+        .pool-btn { flex: 1; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 10px; font-size: 14px; }
+        .pool-btn.active { border-color: var(--neon-gold); background: #333; color: var(--neon-gold); box-shadow: 0 0 10px rgba(241,196,15,0.3); }
         .stock-info { background: #151515; width: 90%; margin: 10px auto; padding: 10px; border-radius: 8px; border: 1px dashed #333; display: flex; justify-content: space-around; font-size: 13px; }
         .stock-item b { color: var(--neon-gold); }
 
-        .price-tag { color: var(--main-red); font-size: 1.8rem; margin: 15px 0; font-weight: 900; letter-spacing: 2px; }
+        /* 抽獎箱 */
+        .kuji-box { width: 260px; height: 160px; background: #222; border: 3px solid var(--main-red); color: white; margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; border-radius: 20px; cursor: pointer; box-shadow: 0 0 20px rgba(255,62,62,0.2); }
 
-        /* 抽獎箱動畫優化 */
-        .kuji-box { width: 280px; height: 180px; background: #222; border: 3px solid var(--main-red); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; border-radius: 20px; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(255,62,62,0.2); }
-        .kuji-box::before { content: ""; position: absolute; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent); transform: translateX(-100%); transition: 0.5s; }
-        .kuji-box:hover::before { transform: translateX(100%); }
+        /* --- 撕籤紙動畫層 --- */
+        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; align-items: center; justify-content: center; }
         
-        .drawing-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; flex-direction: column; }
-        .ticket-anim { width: 150px; animation: jump 0.5s infinite alternate; }
-        @keyframes jump { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+        .ticket-container { position: relative; width: 280px; height: 400px; }
+        
+        /* 籤紙本體 */
+        .ticket-part { position: absolute; width: 100%; height: 100%; background: var(--main-red); border: 4px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; color: white; box-shadow: 0 0 30px rgba(0,0,0,0.5); backface-visibility: hidden; }
+        
+        /* 撕開動畫控制 */
+        .tear-left { clip-path: inset(0 50% 0 0); transition: transform 0.8s ease-in; }
+        .tear-right { clip-path: inset(0 0 0 50%); transition: transform 0.8s ease-in; }
+        
+        .is-tearing .tear-left { transform: translateX(-150%) rotate(-15deg); }
+        .is-tearing .tear-right { transform: translateX(150%) rotate(15deg); }
 
-        /* 結果畫面 */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 300; }
-        .prize-img { width: 320px; height: 320px; object-fit: cover; border: 5px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 50px var(--neon-gold); }
+        /* 後方獎項揭曉 */
+        .prize-reveal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5); opacity: 0; transition: 0.5s 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; width: 100%; }
+        .is-tearing .prize-reveal { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        .reveal-grade { font-size: 120px; color: var(--neon-gold); font-weight: 900; margin: 0; text-shadow: 0 0 30px var(--neon-gold); }
+
+        /* 結果最後畫面 */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 600; padding: 20px; }
+        .prize-img { width: 300px; height: 300px; object-fit: cover; border: 5px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 50px var(--neon-gold); }
     </style>
 </head>
 <body>
@@ -44,122 +52,4 @@
     </div>
 
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套</button>
-        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選</button>
-        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選</button>
-    </div>
-
-    <div class="stock-info">
-        <div class="stock-item">A賞剩：<b id="stock-a">--</b></div>
-        <div class="stock-item">B賞剩：<b id="stock-b">--</b></div>
-        <div class="stock-item">總剩餘：<b id="stock-total">--</b></div>
-    </div>
-
-    <h2 id="currentPoolTitle">單挑套</h2>
-    <div class="price-tag"><span id="currentPrice">360</span> P / 抽</div>
-    
-    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊開獎</div>
-
-    <div id="drawingAnim" class="drawing-layer">
-        <img src="https://cdn-icons-png.flaticon.com/512/5900/5900355.png" class="ticket-anim">
-        <h2 style="color:var(--neon-gold); margin-top:20px;">正在撕開抽獎券...</h2>
-    </div>
-
-    <div id="result" class="overlay">
-        <h2 style="color: var(--main-red); font-size: 2.5rem; margin: 0;">🎉 恭喜中獎 🎉</h2>
-        <p id="p-grade" style="font-size: 120px; color: var(--neon-gold); margin: -10px 0; font-weight: 900; text-shadow: 0 0 20px var(--neon-gold);"></p>
-        <img id="p-img" class="prize-img" src="">
-        <p id="p-name" style="font-size: 20px; margin-top: 15px;"></p>
-        <button style="margin-top:30px; padding: 15px 80px; background: var(--main-red); color: white; border: none; border-radius: 50px; font-size: 22px; font-weight: bold;" onclick="location.reload()">收下獎項</button>
-    </div>
-
-    <script>
-        const LIFF_ID = "2009072982-6smlV2gu";
-        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        
-        let currentPoolId = "單挑套";
-        let currentUser = { uid: "", name: "" };
-        let globalPoolStatus = {};
-
-        const POOL_IMAGES = {
-            "單挑套": { "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
-            "Ａ區任選": { "A": "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
-            "Ｂ區任選": { "A": "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" }
-        };
-
-        async function initLIFF() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); }
-                else {
-                    const profile = await liff.getProfile();
-                    currentUser.uid = profile.userId;
-                    currentUser.name = profile.displayName;
-                    document.getElementById('user-name').innerText = currentUser.name;
-                    refreshStatus();
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        function refreshStatus() {
-            const script = document.createElement('script');
-            script.src = `${API_URL}?action=getPoolStatus&callback=updateUI`;
-            document.body.appendChild(script);
-            // 順便讀點數
-            const pScript = document.createElement('script');
-            pScript.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePoints`;
-            document.body.appendChild(pScript);
-        }
-
-        window.updateUI = (data) => {
-            globalPoolStatus = data;
-            showStock(currentPoolId);
-        };
-
-        window.updatePoints = (data) => { document.getElementById('user-points').innerText = data.points; };
-
-        function showStock(id) {
-            const s = globalPoolStatus[id];
-            if(s) {
-                document.getElementById('stock-a').innerText = s.a;
-                document.getElementById('stock-b').innerText = s.b;
-                document.getElementById('stock-total').innerText = s.total;
-            }
-        }
-
-        function switchPool(id, btn, price) {
-            currentPoolId = id;
-            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('currentPoolTitle').innerText = id;
-            document.getElementById('currentPrice').innerText = price;
-            showStock(id);
-        }
-
-        function draw() {
-            if (window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
-            document.getElementById('drawingAnim').style.display = 'flex';
-            
-            const script = document.createElement('script');
-            script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
-            document.body.appendChild(script);
-        }
-
-        window.handleResult = (data) => {
-            setTimeout(() => { // 強制延遲 1.5 秒讓動畫跑一下，增加期待感
-                document.getElementById('drawingAnim').style.display = 'none';
-                if (data.status === "success") {
-                    document.getElementById('p-grade').innerText = data.grade;
-                    document.getElementById('p-name').innerText = data.name;
-                    document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
-                    document.getElementById('result').style.display = 'flex';
-                } else {
-                    alert(data.status === "no_points" ? "點數不足！" : "此池已售罄！");
-                    location.reload();
-                }
-            }, 1500);
-        };
-        window.onload = initLIFF;
-    </script>
-</body>
-</html>
+        <button class="pool-btn active" onclick="switchPool('單挑套', this, 3
