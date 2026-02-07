@@ -28,7 +28,7 @@
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
         .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 18px var(--gold); z-index: 10; }
 
-        .btn-skip { position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.9); border: none; color: white; padding: 10px 25px; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 200; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .btn-skip { position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.9); border: none; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 200; }
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; }
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
@@ -48,7 +48,7 @@
             <button class="btn-skip" onclick="skipAnimation()">跳過動畫</button>
         </div>
     </div>
-    <div id="stock-info" style="font-size:12px; color:#666;">庫存載入中...</div>
+    <div id="stock-info" style="font-size:12px; color:#666;">載入中...</div>
 
     <div class="btn-group">
         <button class="draw-btn" style="background:#333;" onclick="goDraw(1)">單抽</button>
@@ -119,25 +119,18 @@
             if(!myUid || isAnim) return;
             isAnim = true;
             document.querySelector('.btn-skip').style.display = 'block';
-            document.getElementById('status-text').innerText = "運勢抽取中...";
+            document.getElementById('status-text').innerText = "連線中...";
             
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            // 每個指標記錄自己的位置、圈數、是否停止
-            pointers = Array.from({length: count}, (_, i) => ({ pos: (i * 5) % 40, stop: false, target: null, laps: 0 }));
-            
+            pointers = Array.from({length: count}, (_, i) => ({ pos: (i * 2) % 40, stop: false, target: null, speed: 60 }));
             const run = () => {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
-                
                 pointers.forEach(p => {
-                    if(!p.stop) {
-                        let next = (p.pos + 1) % 40;
-                        if(next === 0) p.laps++; // 累計圈數
-                        p.pos = next;
-                    }
+                    if(!p.stop) p.pos = (p.pos + 1) % 40;
                     const el = document.getElementById('lamp-' + p.pos);
                     if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
@@ -158,40 +151,36 @@
                     const list = (r.grade==='A' && availA.length > 0) ? availA : availB;
                     const targetIdx = Math.floor(Math.random()*list.length);
                     pointers[i].target = list[targetIdx];
-                    list.splice(targetIdx, 1); // 避免五連抽停在同一格
+                    list.splice(targetIdx, 1);
                 });
-                // 開始階梯式停止流程
-                processStop(0);
+                // 收到結果後立刻開始依次減速停止，不再多跑圈
+                stopOneByOne(0);
             } else { alert(res.message); location.reload(); }
         };
 
-        function processStop(idx) {
-            if(!isAnim || idx >= pointers.length) { setTimeout(showWin, 800); return; }
+        function stopOneByOne(idx) {
+            if(!isAnim || idx >= pointers.length) { setTimeout(showWin, 500); return; }
             
             const p = pointers[idx];
-            const startLap = p.laps;
-            let speed = 60;
+            let steps = 0;
             const isLast = (idx === pointers.length - 1);
 
-            const check = () => {
+            const decel = () => {
                 if(!isAnim) return;
                 
-                // 兩圈定一燈：當圈數增加 >= 2 且對準 target 時停下
-                const lapDiff = p.laps - startLap;
-                
-                if (lapDiff >= 2 && p.pos === p.target) {
+                // 關鍵優化：減小等待步數 (steps > 2 即可停)，讓它一旦對準 target 且略有減速感就停下
+                if (p.pos === p.target && steps > 2) {
                     p.stop = true;
-                    // 當前燈停穩後，過 300ms 再開始停下一個燈，節奏更好
-                    setTimeout(() => processStop(idx + 1), 300);
+                    // 縮短間隔時間 (150ms)，讓五個燈停下來的節奏更快
+                    setTimeout(() => stopOneByOne(idx + 1), 150);
                 } else {
-                    // 如果是最後一抽，進入最後一圈時開始大幅減速
-                    if(isLast && lapDiff >= 1) {
-                        speed += 15; // 每一幀都變慢，產生滑行感
-                    }
-                    setTimeout(check, speed);
+                    steps++;
+                    // 加速進入減速判斷，最後一個燈才大幅度變慢
+                    let currentSpeed = 60 + (steps * (isLast ? 15 : 8));
+                    setTimeout(decel, currentSpeed);
                 }
             };
-            check();
+            decel();
         }
 
         function skipAnimation() {
@@ -205,7 +194,7 @@
             document.querySelector('.btn-skip').style.display = 'none';
             document.getElementById('winPanel').style.display = 'flex';
             const div = document.getElementById('res-list');
-            div.innerHTML = finalRes.map(r => `<div style="padding:15px; margin-bottom:5px; background:#222; border-radius:10px; border-left:5px solid ${r.grade==='A'?'var(--gold)':'var(--red)'}"><b>${r.grade}賞</b> - ${r.name}</div>`).join('');
+            div.innerHTML = finalRes.map(r => `<div style="padding:12px; margin-bottom:5px; background:#222; border-radius:10px; border-left:5px solid ${r.grade==='A'?'var(--gold)':'var(--red)'}"><b>${r.grade}賞</b> - ${r.name}</div>`).join('');
         }
 
         initBoard();
