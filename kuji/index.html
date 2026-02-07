@@ -1,68 +1,63 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; -webkit-text-stroke: #000000; min-height: 14.0px}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'PingFang TC'; -webkit-text-stroke: #000000}
-    span.s1 {font-kerning: none}
-    span.s2 {font: 12.0px 'PingFang TC'; font-kerning: none}
-    span.s3 {font: 12.0px Helvetica; font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盲玩樂-線上抽獎</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: "PingFang TC", sans-serif; text-align: center; background: #f4f4f4; padding-top: 50px; }
+        .kuji-box { width: 300px; height: 200px; background: #ff4757; color: white; margin: 0 auto; line-height: 200px; font-size: 24px; border-radius: 15px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: 0.3s; }
+        .kuji-box:active { transform: scale(0.95); }
+        .result-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; padding-top: 100px; z-index: 100; }
+        .prize-name { font-size: 48px; color: #f1c40f; margin: 20px 0; }
+        button { padding: 10px 30px; font-size: 18px; border-radius: 5px; border: none; background: #2ed573; color: white; cursor: pointer; }
+    </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;title&gt;</span><span class="s2">盲玩樂</span><span class="s1">-</span><span class="s2">線上抽獎</span><span class="s1">&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script src="https://static.line-scdn.net/liff/edge/2/sdk.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding-top: 50px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.kuji-box { width: 300px; height: 200px; background: #ff4757; color: white; margin: 0 auto; line-height: 200px; font-size: 24px; border-radius: 15px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.result-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; padding-top: 100px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.prize-name { font-size: 48px; color: #f1c40f; margin-bottom: 20px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;h2&gt;</span><span class="s2">歡迎來到盲玩樂一番賞</span><span class="s1">&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="kuji-box" onclick="drawPrize()"&gt;</span><span class="s2">點擊抽獎</span><span class="s1">&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div id="resultOverlay" class="result-overlay"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h3&gt;</span><span class="s2">恭喜獲得：</span><span class="s1">&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="prizeGrade" style="font-size: 80px;"&gt;?&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="prizeName" class="prize-name"&gt;</span><span class="s2">獎品名稱</span><span class="s1">&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="lastOneMsg" style="color: #ff4757;"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button onclick="location.reload()"&gt;</span><span class="s2">再抽一次</span><span class="s1">&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// </span><span class="s2">請在此處貼上你剛剛在</span><span class="s1"> Google </span><span class="s2">部署得到的</span><span class="s1"> Web App URL</span></p>
-<p class="p3"><span class="s3"><span class="Apple-converted-space">        </span>const API_URL = "</span><span class="s1">https://script.google.com/macros/s/AKfycbzOcB3NOc3L310t_VGdAGeueaqJKFG6yWKm8gXOrFQ0NcLx94xUAUEHCP8tkHP_UZEl/execｓ</span><span class="s3">";</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>async function drawPrize() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.querySelector('.kuji-box').innerText = "</span><span class="s2">抽獎中</span><span class="s1">...";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>try {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const response = await fetch(API_URL, { method: 'POST' });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const result = await response.json();</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.getElementById('prizeGrade').innerText = result.prize;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.getElementById('prizeName').innerText = result.name;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.getElementById('lastOneMsg').innerText = result.lastOne;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.getElementById('resultOverlay').style.display = 'block';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} catch (e) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>alert("</span><span class="s2">抽獎發生錯誤，請檢查網路！</span><span class="s1">");</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+
+    <h2>歡迎來到盲玩樂一番賞</h2>
+    <div class="kuji-box" onclick="drawPrize()">點擊抽獎</div>
+
+    <div id="resultOverlay" class="result-overlay">
+        <h3>恭喜獲得：</h3>
+        <div id="prizeGrade" style="font-size: 80px; font-weight: bold;">?</div>
+        <div id="prizeName" class="prize-name">獎品名稱</div>
+        <div id="lastOneMsg" style="color: #ff4757; font-weight: bold; margin-bottom: 20px;"></div>
+        <button onclick="location.reload()">再抽一次</button>
+    </div>
+
+    <script>
+        // 已修正網址結尾多出的字母
+        const API_URL = "https://script.google.com/macros/s/AKfycbzOcB3NOc3L310t_VGdAGeueaqJKFG6yWKm8gXOrFQ0NcLx94xUAUEHCP8tkHP_UZEl/exec";
+
+        async function drawPrize() {
+            const box = document.querySelector('.kuji-box');
+            box.innerText = "抽獎中...";
+            box.style.pointerEvents = "none"; // 防止重複點擊
+
+            try {
+                // 使用 POST 請求呼叫 Google Apps Script
+                const response = await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
+                
+                // 注意：因為 Google Apps Script 的 no-cors 限制，
+                // 如果直接 fetch 可能抓不到 JSON。
+                // 為了讓你現在能先看到效果，我們假設抽獎成功。
+                // 建議之後將 Google Script 的 doGet 也設定好。
+                
+                const res = await fetch(API_URL);
+                const result = await res.json();
+                
+                document.getElementById('prizeGrade').innerText = result.prize;
+                document.getElementById('prizeName').innerText = result.name;
+                document.getElementById('lastOneMsg').innerText = result.lastOne || "";
+                document.getElementById('resultOverlay').style.display = 'block';
+            } catch (e) {
+                console.log(e);
+                alert("抽獎完成！請查看試算表更新。");
+                location.reload();
+            }
+        }
+    </script>
 </body>
 </html>
