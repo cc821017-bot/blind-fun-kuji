@@ -43,7 +43,7 @@
 
     <div class="game-container" id="game-board">
         <div class="center-display">
-            <img id="main-preview" style="width:70%; max-height:70%;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <img id="main-preview" style="width:70%; max-height:70%; object-fit: contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status-text" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
             <button class="btn-skip" onclick="skipAnimation()">跳過動畫</button>
         </div>
@@ -56,14 +56,22 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold); font-size: 28px; margin-bottom: 20px;">🎉 開獎結果 🎉</h2>
+        <h2 style="color:var(--gold);">中獎結果</h2>
         <div id="res-list" style="width:80%; max-height:60vh; overflow-y:auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認領取</button>
+        <button onclick="location.reload()" style="margin-top:20px; padding:10px 50px; border-radius:20px; background:white; font-weight:bold;">確認</button>
     </div>
 
     <script>
+        // 已填入您的最新 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
+        
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const PREVIEWS = [
+            "https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480",
+            "https://i.meee.com.tw/d2cFJiy.jpg",
+            "https://i.meee.com.tw/B8xVcyj.jpg"
+        ];
+        
         const LAMP_COORDS = [];
         for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i});
         for(let i=2; i<=11; i++) LAMP_COORDS.push({r: i, c: 11});
@@ -89,6 +97,7 @@
         function switchTo(idx) {
             if(isAnim) return;
             currentIdx = idx;
+            document.getElementById('main-preview').src = PREVIEWS[idx];
             document.querySelectorAll('.tab-btn').forEach((b, i) => b.className = i===idx ? 'tab-btn active' : 'tab-btn');
             updateUI();
         }
@@ -114,15 +123,88 @@
         }
 
         function fetchData(name) {
-            const s1 = document.createElement('script'); s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`; document.body.appendChild(s1);
-            const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`; document.body.appendChild(s2);
+            const s1 = document.createElement('script');
+            s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
+            document.body.appendChild(s1);
+
+            const s2 = document.createElement('script');
+            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`;
+            document.body.appendChild(s2);
         }
 
         window.cb_st = (res) => { allData = res; updateUI(); };
-        window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
+        window.cb_pt = (res) => { if(res && res.points !== undefined) document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw(count) {
             if(!myUid || isAnim) return;
             isAnim = true;
             document.querySelector('.btn-skip').style.display = 'block';
-            document.getElementById('status
+            document.getElementById('status-text').innerText = "連線中...";
+            
+            const s = document.createElement('script');
+            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
+            document.body.appendChild(s);
+            
+            pointers = Array.from({length: count}, (_, i) => ({ pos: (i * 3) % 40, stop: false, target: null, isClosing: false, delay: 0 }));
+            const run = () => {
+                if(!isAnim) return;
+                document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
+                let allStopped = true;
+                pointers.forEach((p, i) => {
+                    if(!p.stop) {
+                        allStopped = false;
+                        if(p.isClosing) {
+                            p.delay++;
+                            if(p.delay % (i + 1) === 0) p.pos = (p.pos + 1) % 40;
+                            if(p.pos === p.target && p.delay > (i * 15 + 10)) p.stop = true;
+                        } else {
+                            p.pos = (p.pos + 1) % 40;
+                        }
+                    }
+                    const el = document.getElementById('lamp-' + p.pos);
+                    if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
+                });
+                if(allStopped) showWin();
+                else timerRefs.push(setTimeout(run, 60));
+            };
+            run();
+        }
+
+        window.cb_res = (res) => {
+            if(res.status === 'success') {
+                // 結果排序：大獎壓軸
+                finalRes = res.results.sort((a, b) => (a.grade === 'A' ? 1 : -1));
+                const availA = [], availB = [];
+                for(let i=0; i<40; i++) {
+                    const el = document.getElementById('lamp-'+i);
+                    if(!el.classList.contains('sold-out')) (el.innerText==='A' ? availA : availB).push(i);
+                }
+                finalRes.forEach((r, i) => {
+                    const list = (r.grade==='A' && availA.length > 0) ? availA : availB;
+                    const tIdx = Math.floor(Math.random()*list.length);
+                    pointers[i].target = list[tIdx];
+                    list.splice(tIdx, 1);
+                    setTimeout(() => { pointers[i].isClosing = true; }, i * 400);
+                });
+            } else { alert(res.message); location.reload(); }
+        };
+
+        function skipAnimation() {
+            isAnim = false;
+            timerRefs.forEach(clearTimeout);
+            showWin();
+        }
+
+        function showWin() {
+            isAnim = false;
+            document.querySelector('.btn-skip').style.display = 'none';
+            document.getElementById('winPanel').style.display = 'flex';
+            const div = document.getElementById('res-list');
+            div.innerHTML = finalRes.map(r => `<div style="padding:15px; margin-bottom:10px; background:#222; border-radius:10px; border-left:6px solid ${r.grade==='A'?'var(--gold)':'var(--red)'}; text-align:left;"><b style="color:${r.grade==='A'?'var(--gold)':'white'}">${r.grade}賞</b><br>${r.name}</div>`).join('');
+        }
+
+        initBoard();
+        initLIFF();
+    </script>
+</body>
+</html>
