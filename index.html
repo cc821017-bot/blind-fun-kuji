@@ -56,21 +56,15 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold);">中獎結果</h2>
+        <h2 style="color:var(--gold); font-size: 28px; margin-bottom: 20px;">🎉 開獎結果 🎉</h2>
         <div id="res-list" style="width:80%; max-height:60vh; overflow-y:auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:10px 50px; border-radius:20px; background:white; font-weight:bold;">確認</button>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認收下</button>
     </div>
 
     <script>
-        // 已填入您的最新 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const PREVIEWS = [
-            "https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480",
-            "https://i.meee.com.tw/d2cFJiy.jpg",
-            "https://i.meee.com.tw/B8xVcyj.jpg"
-        ];
+        const PREVIEWS = ["https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480", "https://i.meee.com.tw/d2cFJiy.jpg", "https://i.meee.com.tw/B8xVcyj.jpg"];
         
         const LAMP_COORDS = [];
         for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i});
@@ -78,8 +72,7 @@
         for(let i=10; i>=1; i--) LAMP_COORDS.push({r: 11, c: i});
         for(let i=10; i>=2; i--) LAMP_COORDS.push({r: i, c: 1});
 
-        let myUid = "", allData = {}, isAnim = false, currentIdx = 0;
-        let pointers = [], timerRefs = [], finalRes = null;
+        let myUid = "", allData = {}, isAnim = false, currentIdx = 0, pointers = [], timerRefs = [], finalRes = null;
 
         function initBoard() {
             const board = document.getElementById('game-board');
@@ -115,21 +108,16 @@
         async function initLIFF() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
-                if (!liff.isLoggedIn()) liff.login();
-                const p = await liff.getProfile();
-                myUid = p.userId;
-                fetchData(p.displayName);
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                myUid = profile.userId;
+                fetchData(profile.displayName);
             } catch(e) {}
         }
 
         function fetchData(name) {
-            const s1 = document.createElement('script');
-            s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
-            document.body.appendChild(s1);
-
-            const s2 = document.createElement('script');
-            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`;
-            document.body.appendChild(s2);
+            const s1 = document.createElement('script'); s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`; document.body.appendChild(s1);
+            const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`; document.body.appendChild(s2);
         }
 
         window.cb_st = (res) => { allData = res; updateUI(); };
@@ -156,23 +144,24 @@
                         if(p.isClosing) {
                             p.delay++;
                             if(p.delay % (i + 1) === 0) p.pos = (p.pos + 1) % 40;
-                            if(p.pos === p.target && p.delay > (i * 15 + 10)) p.stop = true;
-                        } else {
-                            p.pos = (p.pos + 1) % 40;
-                        }
+                            // 縮短最後一抽判斷
+                            if(p.pos === p.target && p.delay > (i * 10 + 5)) p.stop = true;
+                        } else { p.pos = (p.pos + 1) % 40; }
                     }
                     const el = document.getElementById('lamp-' + p.pos);
                     if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
-                if(allStopped) showWin();
-                else timerRefs.push(setTimeout(run, 60));
+                
+                if(allStopped) {
+                    // 暫停 1.5 秒再開獎
+                    setTimeout(showWin, 1500); 
+                } else { timerRefs.push(setTimeout(run, 60)); }
             };
             run();
         }
 
         window.cb_res = (res) => {
             if(res.status === 'success') {
-                // 結果排序：大獎壓軸
                 finalRes = res.results.sort((a, b) => (a.grade === 'A' ? 1 : -1));
                 const availA = [], availB = [];
                 for(let i=0; i<40; i++) {
@@ -184,7 +173,8 @@
                     const tIdx = Math.floor(Math.random()*list.length);
                     pointers[i].target = list[tIdx];
                     list.splice(tIdx, 1);
-                    setTimeout(() => { pointers[i].isClosing = true; }, i * 400);
+                    // 縮短階梯間隔至 250ms
+                    setTimeout(() => { pointers[i].isClosing = true; }, i * 250);
                 });
             } else { alert(res.message); location.reload(); }
         };
