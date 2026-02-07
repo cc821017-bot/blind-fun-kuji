@@ -6,21 +6,35 @@
     <title>盲玩樂-抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0f0f0f; --panel-bg: #1a1a1a; }
-        body { font-family: 'PingFang TC', sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 80px; }
-        .user-info { position: fixed; top: 0; width: 100%; background: rgba(26,26,26,0.95); padding: 15px 0; z-index: 50; border-bottom: 2px solid var(--main-red); box-shadow: 0 0 15px rgba(255,62,62,0.3); backdrop-filter: blur(5px); }
-        .pool-selector { display: flex; justify-content: center; gap: 12px; margin: 20px 0; padding: 0 15px; }
-        .pool-btn { padding: 10px 15px; background: #222; border: 1px solid #444; color: #aaa; border-radius: 8px; cursor: pointer; transition: 0.3s; position: relative; }
-        .pool-btn.active { border-color: var(--neon-gold); background: var(--main-red); color: white; box-shadow: 0 0 15px var(--main-red); }
-        .stock-tag { display: block; font-size: 10px; margin-top: 4px; opacity: 0.8; }
-        .price-tag { color: var(--neon-gold); font-size: 1.5rem; margin: 15px 0; font-weight: 900; text-shadow: 0 0 10px rgba(241,196,15,0.5); }
-        .kuji-box { width: 300px; height: 180px; background: linear-gradient(145deg, #cc3333, #ff3e3e); color: white; margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 900; border-radius: 15px; cursor: pointer; box-shadow: 0 10px 0 #8b0000, 0 15px 30px rgba(0,0,0,0.5); letter-spacing: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .kuji-box:active { transform: translateY(6px); box-shadow: 0 4px 0 #8b0000; }
-        .shake { animation: shake 0.2s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -1px) rotate(-1deg); } 100% { transform: translate(1px, 1px) rotate(1deg); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.5s; }
-        .prize-img { width: 300px; height: 300px; object-fit: cover; border: 4px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 40px var(--neon-gold); margin: 20px 0; cursor: zoom-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0f0f0f; }
+        body { font-family: 'PingFang TC', sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 80px; overflow-x: hidden; }
+        
+        /* 頂部導航欄優化 */
+        .user-info { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.9); padding: 15px 0; z-index: 50; border-bottom: 2px solid var(--main-red); backdrop-filter: blur(10px); }
+        
+        /* 獎池選擇器 */
+        .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; padding: 0 10px; }
+        .pool-btn { flex: 1; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .pool-btn.active { border-color: var(--neon-gold); background: linear-gradient(180deg, #333, #000); color: var(--neon-gold); box-shadow: 0 0 10px rgba(241,196,15,0.3); }
+        
+        /* 詳細庫存顯示 */
+        .stock-info { background: #151515; width: 90%; margin: 10px auto; padding: 10px; border-radius: 8px; border: 1px dashed #333; display: flex; justify-content: space-around; font-size: 13px; }
+        .stock-item b { color: var(--neon-gold); }
+
+        .price-tag { color: var(--main-red); font-size: 1.8rem; margin: 15px 0; font-weight: 900; letter-spacing: 2px; }
+
+        /* 抽獎箱動畫優化 */
+        .kuji-box { width: 280px; height: 180px; background: #222; border: 3px solid var(--main-red); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; border-radius: 20px; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(255,62,62,0.2); }
+        .kuji-box::before { content: ""; position: absolute; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent); transform: translateX(-100%); transition: 0.5s; }
+        .kuji-box:hover::before { transform: translateX(100%); }
+        
+        .drawing-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; flex-direction: column; }
+        .ticket-anim { width: 150px; animation: jump 0.5s infinite alternate; }
+        @keyframes jump { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+
+        /* 結果畫面 */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 300; }
+        .prize-img { width: 320px; height: 320px; object-fit: cover; border: 5px solid var(--neon-gold); border-radius: 20px; box-shadow: 0 0 50px var(--neon-gold); }
     </style>
 </head>
 <body>
@@ -30,21 +44,33 @@
     </div>
 
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套<span class="stock-tag" id="stock-單挑套">--</span></button>
-        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選<span class="stock-tag" id="stock-Ａ區任選">--</span></button>
-        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選<span class="stock-tag" id="stock-Ｂ區任選">--</span></button>
+        <button class="pool-btn active" onclick="switchPool('單挑套', this, 360)">單挑套</button>
+        <button class="pool-btn" onclick="switchPool('Ａ區任選', this, 280)">Ａ區任選</button>
+        <button class="pool-btn" onclick="switchPool('Ｂ區任選', this, 220)">Ｂ區任選</button>
     </div>
 
-    <h2 id="currentPoolTitle" style="letter-spacing: 2px;">單挑套</h2>
-    <div class="price-tag">一抽 <span id="currentPrice">360</span> P</div>
-    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
+    <div class="stock-info">
+        <div class="stock-item">A賞剩：<b id="stock-a">--</b></div>
+        <div class="stock-item">B賞剩：<b id="stock-b">--</b></div>
+        <div class="stock-item">總剩餘：<b id="stock-total">--</b></div>
+    </div>
+
+    <h2 id="currentPoolTitle">單挑套</h2>
+    <div class="price-tag"><span id="currentPrice">360</span> P / 抽</div>
+    
+    <div class="kuji-box" id="drawBtn" onclick="draw()">點擊開獎</div>
+
+    <div id="drawingAnim" class="drawing-layer">
+        <img src="https://cdn-icons-png.flaticon.com/512/5900/5900355.png" class="ticket-anim">
+        <h2 style="color:var(--neon-gold); margin-top:20px;">正在撕開抽獎券...</h2>
+    </div>
 
     <div id="result" class="overlay">
-        <h2 style="color: var(--main-red); font-size: 2rem;">CONGRATS!</h2>
-        <p id="p-grade" style="font-size: 100px; color: var(--neon-gold); margin: 0; font-weight: 900;"></p>
+        <h2 style="color: var(--main-red); font-size: 2.5rem; margin: 0;">🎉 恭喜中獎 🎉</h2>
+        <p id="p-grade" style="font-size: 120px; color: var(--neon-gold); margin: -10px 0; font-weight: 900; text-shadow: 0 0 20px var(--neon-gold);"></p>
         <img id="p-img" class="prize-img" src="">
-        <p id="p-name" style="font-size: 22px; font-weight: bold; padding: 0 20px;"></p>
-        <button style="margin-top:20px; padding: 15px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-size: 20px; font-weight: 900;" onclick="location.reload()">確認收下</button>
+        <p id="p-name" style="font-size: 20px; margin-top: 15px;"></p>
+        <button style="margin-top:30px; padding: 15px 80px; background: var(--main-red); color: white; border: none; border-radius: 50px; font-size: 22px; font-weight: bold;" onclick="location.reload()">收下獎項</button>
     </div>
 
     <script>
@@ -53,6 +79,7 @@
         
         let currentPoolId = "單挑套";
         let currentUser = { uid: "", name: "" };
+        let globalPoolStatus = {};
 
         const POOL_IMAGES = {
             "單挑套": { "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
@@ -69,24 +96,36 @@
                     currentUser.uid = profile.userId;
                     currentUser.name = profile.displayName;
                     document.getElementById('user-name').innerText = currentUser.name;
-                    updateAllPoolStatus();
-                    checkPoints();
+                    refreshStatus();
                 }
             } catch (err) { console.error(err); }
         }
 
-        function updateAllPoolStatus() {
+        function refreshStatus() {
             const script = document.createElement('script');
-            script.src = `${API_URL}?action=getPoolStatus&callback=renderPoolStatus`;
+            script.src = `${API_URL}?action=getPoolStatus&callback=updateUI`;
             document.body.appendChild(script);
+            // 順便讀點數
+            const pScript = document.createElement('script');
+            pScript.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePoints`;
+            document.body.appendChild(pScript);
         }
 
-        window.renderPoolStatus = (data) => {
-            for (let name in data) {
-                const el = document.getElementById(`stock-${name}`);
-                if (el) el.innerText = `剩餘 ${data[name]} 抽`;
-            }
+        window.updateUI = (data) => {
+            globalPoolStatus = data;
+            showStock(currentPoolId);
         };
+
+        window.updatePoints = (data) => { document.getElementById('user-points').innerText = data.points; };
+
+        function showStock(id) {
+            const s = globalPoolStatus[id];
+            if(s) {
+                document.getElementById('stock-a').innerText = s.a;
+                document.getElementById('stock-b').innerText = s.b;
+                document.getElementById('stock-total').innerText = s.total;
+            }
+        }
 
         function switchPool(id, btn, price) {
             currentPoolId = id;
@@ -94,39 +133,31 @@
             btn.classList.add('active');
             document.getElementById('currentPoolTitle').innerText = id;
             document.getElementById('currentPrice').innerText = price;
-            checkPoints();
+            showStock(id);
         }
-
-        function checkPoints() {
-            const script = document.createElement('script');
-            script.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePointsDisplay`;
-            document.body.appendChild(script);
-        }
-
-        window.updatePointsDisplay = (data) => { document.getElementById('user-points').innerText = data.points; };
 
         function draw() {
-            if (window.navigator.vibrate) window.navigator.vibrate(100);
-            const btn = document.getElementById('drawBtn');
-            if(btn.classList.contains('shake')) return;
-            btn.classList.add('shake');
-            btn.innerText = "OPENING...";
+            if (window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
+            document.getElementById('drawingAnim').style.display = 'flex';
+            
             const script = document.createElement('script');
             script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
             document.body.appendChild(script);
         }
 
         window.handleResult = (data) => {
-            if (data.status === "success") {
-                document.getElementById('p-grade').innerText = data.grade;
-                document.getElementById('p-name').innerText = data.name;
-                document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
-                document.getElementById('result').style.display = 'flex';
-                document.getElementById('user-points').innerText = data.newPoints;
-            } else {
-                alert(data.status === "no_points" ? "點數不足！" : "此池已售罄！");
-                location.reload();
-            }
+            setTimeout(() => { // 強制延遲 1.5 秒讓動畫跑一下，增加期待感
+                document.getElementById('drawingAnim').style.display = 'none';
+                if (data.status === "success") {
+                    document.getElementById('p-grade').innerText = data.grade;
+                    document.getElementById('p-name').innerText = data.name;
+                    document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
+                    document.getElementById('result').style.display = 'flex';
+                } else {
+                    alert(data.status === "no_points" ? "點數不足！" : "此池已售罄！");
+                    location.reload();
+                }
+            }, 1500);
         };
         window.onload = initLIFF;
     </script>
