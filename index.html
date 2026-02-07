@@ -75,6 +75,43 @@
                 location.reload();
             }
         }
-    </script>
+async function draw() {
+        const btn = document.getElementById('drawBtn');
+        btn.classList.add('shake');
+        btn.innerText = "開獎中...";
+        btn.style.pointerEvents = "none";
+
+        try {
+            // 1. 執行抽獎
+            const postResponse = await fetch(API_URL, { method: 'POST', mode: 'no-cors' });
+            console.log("POST 成功");
+
+            // 2. 延遲後讀取
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error("Google 沒回應");
+                    
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const win = data[0];
+                        document.getElementById('p-grade').innerText = win.grade;
+                        document.getElementById('p-name').innerText = win.name;
+                        document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
+                        document.getElementById('result').style.display = 'flex';
+                    } else {
+                        alert("試算表是空的，請確認中獎紀錄分頁！");
+                    }
+                } catch (err) {
+                    alert("讀取失敗：" + err.message + "\n請確認 Google 部署是否為『所有人』");
+                    location.reload();
+                }
+            }, 2500);
+
+        } catch (e) {
+            alert("發送指令失敗，請檢查網路！");
+            location.reload();
+        }
+    }
 </body>
 </html>
