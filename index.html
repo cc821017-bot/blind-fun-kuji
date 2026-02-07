@@ -8,9 +8,9 @@
         :root { --main-red: #ff4757; --gold: #f1c40f; }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* 標題與標籤 */
-        .shop-name { font-size: 1.2rem; color: var(--gold); margin-bottom: 5px; letter-spacing: 2px; }
-        h1 { font-size: 1.8rem; margin-top: 0; margin-bottom: 30px; }
+        /* 店名與標題 */
+        .shop-name { font-size: 1.2rem; color: var(--gold); margin-bottom: 5px; letter-spacing: 2px; font-weight: bold; }
+        h1 { font-size: 1.8rem; margin-top: 0; margin-bottom: 30px; color: #eee; }
 
         /* 抽獎箱樣式 */
         .kuji-box { width: 260px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; position: relative; }
@@ -31,7 +31,7 @@
         /* 確認按鈕 */
         .confirm-btn { padding: 15px 60px; font-size: 20px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4); }
         
-        #status { color: #888; margin-top: 25px; font-size: 0.9rem; }
+        #status { color: #888; margin-top: 25px; font-size: 0.9rem; min-height: 1.2rem; }
     </style>
 </head>
 <body>
@@ -44,7 +44,7 @@
 
     <div id="result" class="overlay">
         <h2 style="color: var(--main-red); letter-spacing: 8px; margin-bottom: 5px;">恭喜獲得</h2>
-        <p class="prize-grade" id="p-grade">A</p>
+        <p class="prize-grade" id="p-grade">?</p>
         <img id="p-img" class="prize-img" src="" alt="獎品圖片">
         <p class="prize-name" id="p-name">獎品讀取中...</p>
         <button class="confirm-btn" onclick="location.reload()">確認收下</button>
@@ -54,7 +54,7 @@
         // 你的 Google Apps Script 部署網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         
-        // 獎項對應圖片
+        // 獎項對應圖片連結
         const PRIZE_IMAGES = {
             "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
             "B": "https://i.postimg.cc/X7p8FK3S/20260120-163208-538718-3-800x800.jpg",
@@ -62,51 +62,74 @@
             "D": "https://i.postimg.cc/cCjfTjW8/20260120-163211-555418-6-800x800.jpg"
         };
 
+        let retryCount = 0;
+        const MAX_RETRIES = 10; // 最多重試 10 次
+
         async function draw() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
             
-            // 進入抽獎動畫
+            // 視覺動畫啟動
             btn.classList.add('shake');
             btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
-            status.innerText = "正在連線盲玩樂伺服器...";
+            status.innerText = "正在搖動抽獎箱...";
 
             try {
-                // 1. 同步送出 POST 指令 (扣庫存)
+                // 1. 發送抽獎指令 (使用 POST 扣除庫存)
+                // 注意：no-cors 模式下我們無法讀取回應，所以隨後啟動輪詢機制
                 fetch(API_URL, { method: 'POST', mode: 'no-cors' });
 
-                // 2. 體感優化：讓動畫至少跑 2.5 秒，這段時間剛好讓 Google 寫入資料
-                setTimeout(async () => {
-                    try {
-                        // 加上時間戳記防止瀏覽器快取舊資料
-                        const response = await fetch(API_URL + "?t=" + Date.now());
-                        const data = await response.json();
-                        
-                        if (data && data.length > 0) {
-                            const win = data[0]; // 取得最新一筆紀錄
-                            
-                            // 更新結果畫面
-                            document.getElementById('p-grade').innerText = win.grade;
-                            document.getElementById('p-name').innerText = win.name;
-                            document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
-                            
-                            // 停止搖晃並顯示結果
-                            btn.classList.remove('shake');
-                            document.getElementById('result').style.display = 'flex';
-                        } else {
-                            throw new Error("Empty data");
-                        }
-                    } catch (err) {
-                        alert("讀取失敗，請確認試算表庫存是否充足！");
-                        location.reload();
-                    }
-                }, 2500);
+                // 2. 延遲 2 秒後開始追蹤結果
+                retryCount = 0;
+                setTimeout(pollResult, 2000);
 
             } catch (e) {
-                alert("網路異常，請稍後再試！");
+                alert("網路異常，請重新整理！");
                 location.reload();
             }
+        }
+
+        // 輪詢機制：每秒向 Google 要一次最新中獎資料
+        async function pollResult() {
+            const status = document.getElementById('status');
+            try {
+                // 加上時間戳防止快取舊資料
+                const response = await fetch(API_URL + "?t=" + new Date().getTime());
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const win = data[0]; // 取得「中獎紀錄」分頁的最新一筆
+                    displayWinner(win);
+                } else {
+                    throw new Error("No record found");
+                }
+            } catch (err) {
+                retryCount++;
+                if (retryCount <= MAX_RETRIES) {
+                    status.innerText = "獎項確認中 (" + retryCount + "/" + MAX_RETRIES + ")...";
+                    setTimeout(pollResult, 1000); // 1秒後重試
+                } else {
+                    alert("伺服器回應超時，請檢查試算表庫存或網路狀態！");
+                    location.reload();
+                }
+            }
+        }
+
+        function displayWinner(win) {
+            const btn = document.getElementById('drawBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // 更新圖片與文字
+            document.getElementById('p-grade').innerText = win.grade;
+            document.getElementById('p-name').innerText = win.name;
+            document.getElementById('p-img').src = PRIZE_IMAGES[win.grade] || "";
+            
+            // 顯示結果彈窗
+            btn.classList.remove('shake');
+            btn.innerText = "抽獎完成";
+            resultDiv.style.display = 'flex';
+            document.getElementById('status').innerText = "恭喜獲得 " + win.grade + " 賞！";
         }
     </script>
 </body>
