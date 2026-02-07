@@ -14,7 +14,7 @@
         .pool-btn { padding: 12px 20px; background: #222; border: 2px solid #444; color: #fff; border-radius: 12px; cursor: pointer; white-space: nowrap; transition: 0.3s; }
         .pool-btn.active { border-color: var(--gold); background: var(--main-red); box-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
         .price-tag { color: var(--gold); font-size: 1.3rem; margin: 10px 0; font-weight: bold; }
-        .kuji-box { width: 280px; height: 180px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 25px; cursor: pointer; box-shadow: 0 10px 0 #b33939; }
+        .kuji-box { width: 280px; height: 180px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 25px; cursor: pointer; box-shadow: 0 10px 0 #b33939; transition: 0.1s; }
         .kuji-box:active { transform: translateY(5px); box-shadow: 0 5px 0 #b33939; }
         .shake { animation: shake 0.5s infinite; }
         @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(4deg); } 75% { transform: rotate(-4deg); } 100% { transform: rotate(0deg); } }
@@ -58,5 +58,62 @@
         const POOL_IMAGES = {
             "單挑套": { "A": "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
             "Ａ區任選": { "A": "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" },
+            "Ｂ區任選": { "A": "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg", "B": "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg" }
+        };
+
+        async function initLIFF() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); }
+                else {
+                    const profile = await liff.getProfile();
+                    currentUser.uid = profile.userId;
+                    currentUser.name = profile.displayName;
+                    document.getElementById('user-name').innerText = currentUser.name;
+                    checkPoints();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function switchPool(id, btn, price) {
+            currentPoolId = id;
+            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('currentPoolTitle').innerText = id;
+            document.getElementById('currentPrice').innerText = price;
+            checkPoints();
+        }
+
+        function checkPoints() {
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePointsDisplay`;
+            document.body.appendChild(script);
+        }
+
+        window.updatePointsDisplay = (data) => { document.getElementById('user-points').innerText = data.points; };
+
+        function draw() {
+            const btn = document.getElementById('drawBtn');
+            btn.classList.add('shake');
+            btn.innerText = "開獎中...";
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
+            document.body.appendChild(script);
+        }
+
+        window.handleResult = (data) => {
+            if (data.status === "success") {
+                document.getElementById('p-grade').innerText = data.grade;
+                document.getElementById('p-name').innerText = data.name;
+                document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
+                document.getElementById('result').style.display = 'flex';
+                document.getElementById('user-points').innerText = data.newPoints;
+            } else {
+                alert(data.status === "no_points" ? "點數不足！" : "此池已售罄或分頁名稱不符！");
+                location.reload();
+            }
+        };
+        window.onload = initLIFF;
+    </script>
 </body>
 </html>
