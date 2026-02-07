@@ -17,7 +17,7 @@
             justify-content: center;
             height: 100vh;
         }
-        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); margin-bottom: 5px; }
+        h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); }
         .shop-name { font-size: 1.1rem; color: #ffa502; margin-bottom: 30px; }
         
         .kuji-box { 
@@ -29,7 +29,6 @@
             border-radius: 25px; cursor: pointer; 
             box-shadow: 0 12px 0 #b33939, 0 20px 30px rgba(0,0,0,0.5); 
             transition: 0.1s;
-            user-select: none;
         }
         .kuji-box:active { transform: translateY(8px); box-shadow: 0 4px 0 #b33939; }
         .kuji-box.loading { background: #57606f; box-shadow: 0 12px 0 #2f3542; cursor: not-allowed; }
@@ -43,8 +42,6 @@
         }
         
         .prize-grade { font-size: 100px; color: #f1c40f; text-shadow: 0 0 30px #f1c40f; margin: 0; font-weight: 900; }
-        .prize-name { font-size: 28px; margin: 20px 0; color: #ffffff; padding: 0 20px; }
-        
         button { 
             padding: 15px 50px; font-size: 18px; border-radius: 50px; border: none; 
             background: #2ed573; color: white; cursor: pointer; font-weight: bold;
@@ -59,52 +56,18 @@
     <h1>線上即時開獎</h1>
     
     <div class="kuji-box" id="drawBtn" onclick="drawPrize()">點擊抽獎</div>
-    <div id="status">系統已就緒</div>
+    <div id="status">系統就緒</div>
 
     <div id="resultOverlay" class="result-overlay">
-        <h2 style="color: #ff4757;">恭喜中獎！</h2>
-        <p class="prize-grade" id="prizeGrade">?</p>
-        <p class="prize-name" id="prizeName">獎品確認中...</p>
-        <button onclick="location.reload()">確認並返回</button>
+        <h2 style="color: #ff4757;">中獎確認！</h2>
+        <p class="prize-grade">OK!</p>
+        <p style="font-size: 24px;">請查看試算表更新狀態</p>
+        <button onclick="location.reload()">返回</button>
     </div>
 
     <script>
-        // 這是你剛剛給我的最新網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwLma26kH-c4PtgQOlSp5_1jNswe_WBVoainijJgFgB0EcMpWEGMbxkW-EkVgdIFvoB/exec";
 
         async function drawPrize() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
-            
-            btn.innerText = "開獎中...";
-            btn.classList.add('loading');
-            btn.style.pointerEvents = "none";
-            status.innerText = "正在連線試算表...";
-
-            try {
-                // 使用 POST 觸發試算表扣數
-                // 加上 mode: 'no-cors' 確保即使 Google 不回傳標頭也能送出指令
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
-
-                // 延遲一下，讓 Google 有時間處理數據
-                setTimeout(() => {
-                    document.getElementById('prizeGrade').innerText = "SUCCESS";
-                    document.getElementById('prizeName').innerText = "抽獎完成！請檢查試算表數量";
-                    document.getElementById('resultOverlay').style.display = 'flex';
-                    status.innerText = "指令發送成功";
-                }, 1500);
-
-            } catch (e) {
-                console.error(e);
-                alert("連線失敗，請檢查網路！");
-                location.reload();
-            }
-        }
-    </script>
-</body>
-</html>
