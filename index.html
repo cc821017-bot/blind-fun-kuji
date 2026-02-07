@@ -9,14 +9,13 @@
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
         .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 100; }
         .pool-selector { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .pool-btn { flex: 1; padding: 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; font-weight: bold; }
+        .pool-btn { flex: 1; padding: 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; }
         .pool-btn.active { background: red; border-color: gold; }
-        .preview-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #333; height: 220px; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .preview-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; display: flex; align-items: center; justify-content: center; }
         .preview-img { width: 100%; height: 100%; object-fit: contain; }
-        .draw-btn { width: 260px; height: 60px; background: linear-gradient(to bottom, #ff0000, #aa0000); color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; box-shadow: 0 4px 10px rgba(255,0,0,0.3); }
-        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; align-items: center; justify-content: center; }
-        .ticket { width: 260px; height: 380px; background: red; border: 5px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; transition: 0.5s; }
-        .is-tearing { transform: scale(0.5); opacity: 0; }
+        .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; }
+        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; align-items: center; justify-content: center; }
+        .ticket { width: 250px; height: 350px; background: red; border: 4px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
@@ -24,105 +23,116 @@
     <div class="user-info">餘額：<span id="user-points">--</span> P</div>
     
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="sel(0, this)">單挑套</button>
-        <button class="pool-btn" onclick="sel(1, this)">Ａ區任選</button>
-        <button class="pool-btn" onclick="sel(2, this)">Ｂ區任選</button>
+        <button class="pool-btn active" onclick="change(0, this)">單挑套</button>
+        <button class="pool-btn" onclick="change(1, this)">Ａ區任選</button>
+        <button class="pool-btn" onclick="change(2, this)">Ｂ區任選</button>
     </div>
 
     <div class="preview-window">
-        <img id="p-view" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
+        <img id="main-view" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
     </div>
 
-    <div id="st-text" style="font-size: 14px; color: gold;">載入中...</div>
-    <div class="draw-btn" onclick="draw()">點擊開獎</div>
+    <div id="st-msg" style="color: gold;">連線中...</div>
+    <div class="draw-btn" onclick="startDraw()">點擊開獎</div>
 
-    <div id="tearLayer"><div id="t-box" class="ticket">盲玩樂</div></div>
+    <div id="tearLayer"><div class="ticket">盲玩樂</div></div>
 
     <div id="result" class="overlay">
-        <h1 id="r-grade" style="font-size: 100px; color: gold; margin: 0;"></h1>
-        <img id="r-img" style="width: 300px; height: 300px; border-radius: 15px; border: 3px solid gold;" src="">
-        <p id="r-name" style="margin: 20px; font-size: 18px;"></p>
-        <button onclick="location.reload()" style="padding: 12px 60px; font-size: 18px; background: white; border-radius: 50px;">確認</button>
+        <h1 id="res-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
+        <img id="res-img" style="width: 280px; height: 280px; border: 2px solid gold;" src="">
+        <p id="res-name" style="margin: 20px;"></p>
+        <button onclick="location.reload()" style="padding: 10px 40px;">確認離開</button>
     </div>
 
     <script>
-        const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        // 為了防止緩存，網址後方會在切換時動態加上參數
-        const IMGS = [
+        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
+        const IMAGES = [
             "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
             "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg",
             "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg"
         ];
         const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
-        const NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         
         let curIdx = 0;
-        let u = { uid: "", name: "" };
-        let stocks = {};
+        let userData = { uid: "", name: "" };
+        let allStocks = {};
 
-        async function init() {
-            await liff.init({ liffId: "2009072982-6smlV2gu" });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            const p = await liff.getProfile();
-            u.uid = p.userId; u.name = p.displayName;
-            refresh();
+        // 初始化
+        async function startApp() {
+            try {
+                await liff.init({ liffId: "2009072982-6smlV2gu" });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                userData.uid = profile.userId;
+                userData.name = profile.displayName;
+                
+                // 立即請求資料
+                getData();
+            } catch (err) {
+                console.log(err);
+            }
         }
 
-        function refresh() {
+        function getData() {
             const s1 = document.createElement('script');
-            s1.src = `${API}?action=getPoolStatus&callback=cb_st`;
+            s1.src = `${API_URL}?action=getPoolStatus&callback=gotStocks`;
             const s2 = document.createElement('script');
-            s2.src = `${API}?action=checkUser&uid=${u.uid}&name=${encodeURIComponent(u.name)}&callback=cb_pt`;
-            document.body.appendChild(s1); document.body.appendChild(s2);
+            s2.src = `${API_URL}?action=checkUser&uid=${userData.uid}&name=${encodeURIComponent(userData.name)}&callback=gotPoints`;
+            document.body.appendChild(s1);
+            document.body.appendChild(s2);
         }
 
-        window.cb_st = (d) => { stocks = d; updateUI(); };
-        window.cb_pt = (d) => { document.getElementById('user-points').innerText = d.points; };
+        window.gotStocks = (res) => { allStocks = res; updateUI(); };
+        window.gotPoints = (res) => { document.getElementById('user-points').innerText = res.points; };
 
-        function sel(i, btn) {
+        // 核心切換函數
+        function change(i, btn) {
+            console.log("切換到：" + i); // 除錯用
             curIdx = i;
-            // 處理按鈕樣式
-            document.querySelectorAll('.pool-btn').forEach(b => b.classList.remove('active'));
+            
+            // 1. 換按鈕顏色
+            const btns = document.querySelectorAll('.pool-btn');
+            btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // 強迫圖片重新載入 (加上隨機參數避開 Vercel 緩存)
-            const imgEl = document.getElementById('p-view');
-            imgEl.src = IMGS[i] + "?t=" + new Date().getTime();
+            // 2. 換圖片 (加上時間戳避開緩存)
+            const view = document.getElementById('main-view');
+            view.src = IMAGES[i] + "?v=" + Date.now();
             
+            // 3. 換庫存文字
             updateUI();
         }
 
         function updateUI() {
-            const n = NAMES[curIdx];
-            if (stocks[n]) {
-                document.getElementById('st-text').innerText = `A賞：${stocks[n].a} | B賞：${stocks[n].b} | 總剩餘：${stocks[n].total}`;
+            const name = POOLS[curIdx];
+            if (allStocks[name]) {
+                document.getElementById('st-msg').innerText = `A賞：${allStocks[name].a} | B賞：${allStocks[name].b} | 剩：${allStocks[name].total}`;
             }
         }
 
-        function draw() {
+        function startDraw() {
             document.getElementById('tearLayer').style.display = 'flex';
             const s = document.createElement('script');
-            s.src = `${API}?action=draw&uid=${u.uid}&poolId=${encodeURIComponent(NAMES[curIdx])}&callback=cb_res`;
+            s.src = `${API_URL}?action=draw&uid=${userData.uid}&poolId=${encodeURIComponent(POOLS[curIdx])}&callback=showRes`;
             document.body.appendChild(s);
         }
 
-        window.cb_res = (d) => {
-            if (d.status === "success") {
-                document.getElementById('t-box').classList.add('is-tearing');
+        window.showRes = (res) => {
+            if (res.status === "success") {
                 setTimeout(() => {
-                    document.getElementById('r-grade').innerText = d.grade;
-                    document.getElementById('r-name').innerText = d.name;
-                    // 結果圖也要防緩存
-                    const finalImg = (d.grade === "A") ? IMGS[curIdx] : B_IMG;
-                    document.getElementById('r-img').src = finalImg + "?t=" + new Date().getTime();
+                    document.getElementById('res-grade').innerText = res.grade;
+                    document.getElementById('res-name').innerText = res.name;
+                    document.getElementById('res-img').src = (res.grade === "A" ? IMAGES[curIdx] : B_IMG);
                     document.getElementById('result').style.display = 'flex';
-                }, 700);
+                }, 1000);
             } else {
-                alert("餘額不足或已售完");
+                alert("餘額不足或系統忙碌");
                 location.reload();
             }
         }
-        window.onload = init;
+
+        window.onload = startApp;
     </script>
 </body>
 </html>
