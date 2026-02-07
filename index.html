@@ -10,16 +10,11 @@
             text-align: center; 
             background: #121212; 
             color: #ffffff; 
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100vh;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; justify-content: center; height: 100vh;
         }
         h1 { color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); }
         .shop-name { font-size: 1.1rem; color: #ffa502; margin-bottom: 30px; }
-        
         .kuji-box { 
             width: 280px; height: 180px; 
             background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); 
@@ -27,72 +22,60 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 32px; font-weight: bold;
             border-radius: 25px; cursor: pointer; 
-            box-shadow: 0 12px 0 #b33939, 0 20px 30px rgba(0,0,0,0.5); 
-            transition: 0.1s;
+            box-shadow: 0 12px 0 #b33939; transition: 0.1s;
         }
         .kuji-box:active { transform: translateY(8px); box-shadow: 0 4px 0 #b33939; }
-        .kuji-box.loading { background: #57606f; box-shadow: 0 12px 0 #2f3542; cursor: not-allowed; }
-
         .result-overlay { 
-            display: none; position: fixed; top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); 
-            flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
-        
-        .prize-grade { font-size: 100px; color: #f1c40f; text-shadow: 0 0 30px #f1c40f; margin: 0; font-weight: 900; }
-        button { 
-            padding: 15px 50px; font-size: 18px; border-radius: 50px; border: none; 
-            background: #2ed573; color: white; cursor: pointer; font-weight: bold;
-            margin-top: 30px;
-        }
-        #status { margin-top: 20px; color: #888; font-size: 14px; }
+        button { padding: 15px 50px; font-size: 18px; border-radius: 50px; border: none; background: #2ed573; color: white; cursor: pointer; margin-top: 30px; }
     </style>
 </head>
 <body>
 
     <div class="shop-name">高雄一番賞專賣店 - 盲玩樂</div>
     <h1>線上即時開獎</h1>
-    
     <div class="kuji-box" id="drawBtn" onclick="drawPrize()">點擊抽獎</div>
-    <div id="status">系統就緒</div>
+    <div id="status" style="margin-top: 20px; color: #888;">準備就緒</div>
 
     <div id="resultOverlay" class="result-overlay">
         <h2 style="color: #ff4757;">中獎確認！</h2>
-        <p class="prize-grade">OK!</p>
-        <p style="font-size: 24px;">請查看試算表更新狀態</p>
+        <p style="font-size: 24px;">指令已送達試算表</p>
+        <p style="color: #aaa;">請確認 D 欄「剩餘數量」是否減少</p>
         <button onclick="location.reload()">返回</button>
     </div>
 
     <script>
+        // 這是你剛剛給我的最新網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwLma26kH-c4PtgQOlSp5_1jNswe_WBVoainijJgFgB0EcMpWEGMbxkW-EkVgdIFvoB/exec";
 
         async function drawPrize() {
             const btn = document.getElementById('drawBtn');
             const status = document.getElementById('status');
             
-            btn.innerText = "通訊中...";
-            btn.classList.add('loading');
+            btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
-            status.innerText = "正在傳輸抽獎指令...";
+            btn.style.background = "#57606f";
+            status.innerText = "正在傳送抽獎指令至 Google Sheets...";
 
             try {
-                // 發送 POST 請求
+                // 使用 POST 請求觸發 doPost
+                // no-cors 模式雖然抓不到回傳值，但能成功讓 Google 執行動作
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     cache: 'no-cache'
                 });
 
-                // 模擬動畫等待，確保後端有時間執行
+                // 延遲一下顯示結果，讓使用者有開獎的感覺
                 setTimeout(() => {
                     document.getElementById('resultOverlay').style.display = 'flex';
-                    status.innerText = "更新成功";
-                }, 1500);
+                    status.innerText = "完成！";
+                }, 2000);
 
             } catch (e) {
-                alert("伺服器回應逾時，請檢查 Google 權限設定！");
+                alert("連線失敗，請檢查網路或 API 網址！");
                 location.reload();
             }
         }
