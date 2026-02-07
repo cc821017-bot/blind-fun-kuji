@@ -6,68 +6,71 @@
     <title>盲玩樂-旗艦抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #050505; --card-bg: #1a1a1a; }
-        body { font-family: 'PingFang TC', sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow-x: hidden; }
+        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #050505; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 70px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         
-        /* UI 質感升級：頂部與背景 */
-        .user-bar { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); padding: 12px 0; border-bottom: 2px solid var(--main-red); z-index: 1000; font-weight: bold; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        /* 頂部質感提升 */
+        .user-bar { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.9); backdrop-filter: blur(15px); padding: 15px 0; border-bottom: 2px solid var(--main-red); z-index: 1000; font-weight: bold; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
         
         /* 獎池切換 */
-        .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 15px; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #252525; border: 1px solid #444; color: #888; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px 15px; }
+        .tab-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-size: 14px; }
         .tab-btn.active { background: linear-gradient(145deg, #ff5e5e, var(--main-red)); border-color: var(--neon-gold); color: white; box-shadow: 0 0 15px rgba(255,62,62,0.6); transform: translateY(-2px); }
 
-        /* 櫥窗優化：玻璃質感與光影 */
+        /* 櫥窗優化 */
         .display-window { 
-            width: 92%; max-width: 380px; margin: 10px auto; border: 2px solid #333; height: 260px; 
-            background: #000; position: relative; overflow: hidden; border-radius: 20px;
-            box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.8);
+            width: 92%; max-width: 380px; margin: 10px auto; border: 1px solid #333; height: 260px; 
+            background: #000; position: relative; overflow: hidden; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
-        .display-window::after { /* 玻璃反光 */
+        .display-window::after {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.05) 50%, transparent 55%);
-            animation: shine 5s infinite; pointer-events: none;
+            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.08) 50%, transparent 55%);
+            animation: shine 6s infinite; pointer-events: none;
         }
-        @keyframes shine { 0% { transform: translateX(-30%); } 100% { transform: translateX(30%); } }
+        @keyframes shine { 0% { transform: translateX(-35%) translateY(-35%); } 100% { transform: translateX(35%) translateY(35%); } }
         
         .prize-img { width: 100%; height: 100%; object-fit: cover; object-position: center top; position: absolute; top: 0; left: 0; display: none; }
-        .prize-img.show { display: block !important; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .prize-img.show { display: block !important; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
 
-        /* 庫存進度條 */
-        .stock-container { width: 85%; margin: 10px auto; text-align: left; }
-        .stock-info { display: flex; justify-content: space-between; font-size: 14px; color: var(--neon-gold); margin-bottom: 5px; font-weight: bold; }
-        .progress-bg { width: 100%; height: 8px; background: #333; border-radius: 10px; overflow: hidden; }
-        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff3e3e, #f1c40f); transition: width 1s ease-in-out; }
+        /* 進度條優化 */
+        .stock-container { width: 88%; margin: 15px auto; text-align: left; }
+        .stock-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--neon-gold); margin-bottom: 6px; font-weight: bold; letter-spacing: 0.5px; }
+        .progress-bg { width: 100%; height: 6px; background: #222; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff3e3e, #f1c40f); transition: width 1.2s cubic-bezier(0.1, 0.7, 1.0, 0.1); }
 
         /* 按鈕區 */
-        .btn-group { display: flex; justify-content: center; gap: 15px; margin: 20px auto; }
+        .btn-group { display: flex; justify-content: center; gap: 15px; margin: 25px auto; }
         .draw-btn { 
-            width: 140px; height: 55px; border-radius: 30px; border: none; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; color: #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 130px; height: 55px; border-radius: 16px; border: none; font-weight: bold; font-size: 17px; cursor: pointer; transition: 0.2s; color: #fff;
+            display: flex; align-items: center; justify-content: center;
         }
-        .single-btn { background: #333; border: 1px solid #555; }
-        .multi-btn { background: linear-gradient(180deg, #ff5e5e, var(--main-red)); box-shadow: 0 5px 15px rgba(255,62,62,0.4); }
-        .draw-btn:active { transform: scale(0.92); }
+        .single-btn { background: #222; border: 1px solid #444; color: #ccc; }
+        .multi-btn { background: linear-gradient(180deg, #ff5e5e, var(--main-red)); box-shadow: 0 8px 20px rgba(255,62,62,0.3); }
+        .draw-btn:active { transform: scale(0.94); opacity: 0.8; }
 
-        /* 開獎儀式層 (撕獎券) */
+        /* 撕票動畫 */
         #draw-anim { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
             z-index: 4000; align-items: center; justify-content: center; flex-direction: column;
         }
-        .ticket { width: 200px; height: 100px; background: var(--main-red); border: 4px dashed #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; animation: shake 0.2s infinite; }
-        @keyframes shake { 0% { transform: rotate(2deg); } 100% { transform: rotate(-2deg); } }
+        .ticket-box { width: 220px; height: 110px; background: #cc0000; border: 4px dashed #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; animation: shakeTicket 0.1s infinite; color: white; }
+        @keyframes shakeTicket { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -2px) rotate(-1deg); } 100% { transform: translate(1px, 1px) rotate(1deg); } }
 
-        /* 中獎彈窗優化 */
+        /* 結果彈窗 */
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0; }
-        .win-card { background: #222; padding: 20px; border-radius: 20px; border: 2px solid var(--neon-gold); width: 85%; max-width: 350px; }
-        .win-img { width: 100%; border-radius: 15px; margin: 15px 0; object-fit: contain; background: #000; height: 250px; }
-        .multi-res-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin-top: 10px; }
-        .multi-item { background: #333; padding: 10px; border-radius: 10px; font-size: 12px; border-left: 4px solid var(--main-red); }
+        .win-card { background: #111; padding: 25px; border-radius: 28px; border: 1px solid #333; width: 85%; max-width: 360px; position: relative; box-shadow: 0 0 40px rgba(0,0,0,1); }
+        .win-img { width: 100%; border-radius: 18px; margin: 15px 0; object-fit: contain; background: #050505; height: 260px; border: 1px solid #222; }
+        .multi-res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 92%; margin-top: 10px; }
+        .multi-item { background: #181818; padding: 12px; border-radius: 14px; font-size: 13px; border: 1px solid #222; text-align: left; position: relative; overflow: hidden; }
+        .multi-item::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--main-red); }
+        .grade-a { border-color: var(--neon-gold) !important; box-shadow: 0 0 10px rgba(241,196,15,0.2); }
+        .grade-a::before { background: var(--neon-gold); }
     </style>
 </head>
 <body>
-    <div class="user-bar">餘額：<span id="display-pts">...</span> P</div>
+    <div class="user-bar">點數餘額：<span id="display-pts">...</span> P</div>
     
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="physicalSwitch(0)">單挑套</button>
@@ -83,30 +86,30 @@
 
     <div class="stock-container">
         <div class="stock-info">
-            <span id="stock-text">獎池載入中...</span>
+            <span id="stock-text">獎池同步中...</span>
             <span id="stock-percent">0%</span>
         </div>
         <div class="progress-bg"><div id="stock-bar" class="progress-bar"></div></div>
     </div>
 
     <div class="btn-group">
-        <button class="draw-btn single-btn" onclick="goDraw(1)">單抽</button>
-        <button class="draw-btn multi-btn" onclick="goDraw(5)">五連抽</button>
+        <button class="draw-btn single-btn" onclick="goDraw(1)">單抽一次</button>
+        <button class="draw-btn multi-btn" onclick="goDraw(5)">五連抽！</button>
     </div>
 
     <div id="draw-anim">
-        <div class="ticket">撕開獎券中...</div>
-        <p style="margin-top:20px; color: var(--neon-gold);">好運降臨！！</p>
+        <div class="ticket-box">撕票中...</div>
+        <p style="margin-top:25px; color: var(--neon-gold); font-weight: bold; letter-spacing: 2px;">LUCKY CHANCE!</p>
     </div>
 
     <div id="winPanel" class="win-overlay">
         <div class="win-card" id="singleWin">
-            <h2 id="win-grade" style="font-size: 60px; color: var(--neon-gold); margin: 0;">A</h2>
+            <h2 id="win-grade" style="font-size: 70px; color: var(--neon-gold); margin: 0; font-weight: 900; letter-spacing: -2px;">A</h2>
             <img id="win-img" class="win-img" src="">
-            <p id="win-name" style="font-weight: bold;"></p>
+            <p id="win-name" style="font-weight: bold; font-size: 18px; margin: 10px 0;"></p>
         </div>
-        <div class="multi-res-container" id="multiWin" style="display:none;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding: 15px 60px; border-radius: 50px; background: #fff; font-weight: bold; border: none; cursor: pointer;">確認收下</button>
+        <div class="multi-res-grid" id="multiWin" style="display:none;"></div>
+        <button onclick="location.reload()" style="margin-top:30px; padding: 18px 80px; border-radius: 50px; background: #fff; color: #000; font-weight: bold; border: none; font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">確認收下</button>
     </div>
 
     <script>
@@ -131,8 +134,9 @@
             const data = stockData[POOLS[currentIdx]];
             if (data) {
                 const total = parseInt(data.total);
-                // 假設初始滿包為 80 張（老闆可自行修改基數）
-                const percent = Math.min(100, (total / 80) * 100);
+                // 老闆這裡可以根據不同池子設定總數基數，目前設定單挑套 80，任選池 50
+                const base = currentIdx === 0 ? 80 : 50;
+                const percent = Math.min(100, (total / base) * 100);
                 document.getElementById('stock-text').innerText = `A賞：${data.a} | B賞：${data.b} | 剩餘：${total}張`;
                 document.getElementById('stock-percent').innerText = Math.floor(percent) + "%";
                 document.getElementById('stock-bar').style.width = percent + "%";
@@ -145,15 +149,15 @@
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
-                fetchData();
+                fetchData(profile.displayName);
             } catch (e) {}
         }
 
-        function fetchData() {
+        function fetchData(name) {
             const s1 = document.createElement('script');
             s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
             const s2 = document.createElement('script');
-            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&callback=cb_pt`;
+            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`;
             document.body.appendChild(s1); document.body.appendChild(s2);
         }
 
@@ -162,40 +166,39 @@
 
         function goDraw(count) {
             if(!myUid) return;
-            // 顯示開獎動畫
             document.getElementById('draw-anim').style.display = 'flex';
-            
             setTimeout(() => {
                 const s = document.createElement('script');
-                // 修改 API 調用，增加 count 參數
                 s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
                 document.body.appendChild(s);
-            }, 1200); // 模擬撕票 1.2 秒
+            }, 1000);
         }
 
         window.cb_res = (res) => {
             document.getElementById('draw-anim').style.display = 'none';
             if (res.status === "success") {
-                const results = res.results || [res]; // 相容單抽與多抽回傳
+                const results = res.results || [res];
                 if (results.length === 1) {
-                    // 單抽顯示
                     document.getElementById('singleWin').style.display = 'block';
                     document.getElementById('multiWin').style.display = 'none';
                     document.getElementById('win-grade').innerText = results[0].grade;
                     document.getElementById('win-name').innerText = results[0].name;
                     document.getElementById('win-img').src = (results[0].grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
                 } else {
-                    // 多抽顯示
                     document.getElementById('singleWin').style.display = 'none';
                     document.getElementById('multiWin').style.display = 'grid';
                     let html = '';
                     results.forEach(r => {
-                        html += `<div class="multi-item"><b style="color:${r.grade==='A'?'gold':'white'}">${r.grade}賞</b><br>${r.name}</div>`;
+                        const isA = r.grade === 'A';
+                        html += `<div class="multi-item ${isA?'grade-a':''}">
+                                    <span style="font-weight:900; font-size:16px; color:${isA?'#f1c40f':'#ff3e3e'}">${r.grade}賞</span><br>
+                                    <span style="color:#aaa; font-size:11px;">${r.name}</span>
+                                 </div>`;
                     });
                     document.getElementById('multiWin').innerHTML = html;
                 }
                 document.getElementById('winPanel').style.display = 'flex';
-            } else { alert(res.message || "點數不足！"); location.reload(); }
+            } else { alert(res.message || "錯誤！"); location.reload(); }
         }
 
         window.onload = init;
