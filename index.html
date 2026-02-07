@@ -7,24 +7,23 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid red; z-index: 1000; }
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 1000; }
         .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: red; border-color: gold; }
         
-        /* 預覽視窗 */
         .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; }
+        /* 核心修復：三張圖物理重疊，改用 display 顯示 */
         .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
         .prize-img.active { display: block !important; }
 
         .info-bar { color: gold; font-size: 15px; margin: 10px 0; font-weight: bold; min-height: 20px; }
         .draw-btn { width: 260px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 22px; cursor: pointer; }
-        
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div class="user-bar">餘額：<span id="display-pts">載入中</span> P</div>
+    <div class="user-bar">點數：<span id="display-pts">載入中</span> P</div>
     
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
@@ -33,9 +32,9 @@
     </div>
 
     <div class="display-window">
-        <img id="img0" class="prize-img active" src="https://lh3.googleusercontent.com/d/1X_U9KshKIDtqS5G2BqO8j7VwUuIlRyPh">
-        <img id="img1" class="prize-img" src="https://lh3.googleusercontent.com/d/19F4Y8B8gS_9740517_Replacement_Link"> 
-        <img id="img2" class="prize-img" src="https://lh3.googleusercontent.com/d/16pM0fDkCS_9740516_Replacement_Link">
+        <img id="img0" class="prize-img active" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
+        <img id="img1" class="prize-img" src="https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg">
+        <img id="img2" class="prize-img" src="https://i.postimg.cc/6pM0fDkC/S-9740516.jpg">
     </div>
 
     <div id="stock-display" class="info-bar">連線中...</div>
@@ -50,26 +49,23 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        const NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
-        let currentIdx = 0;
-        let myUid = "";
-        let stockData = {};
+        let curIdx = 0;
+        let uData = { uid: "" };
+        let stocks = {};
 
+        // 核心切換：純物理控制 display
         function switchTo(idx) {
-            currentIdx = idx;
-            // 物理切換：強制控制顯示
+            curIdx = idx;
             for(let i=0; i<3; i++) {
                 document.getElementById('btn'+i).className = (i === idx) ? 'tab-btn active' : 'tab-btn';
                 document.getElementById('img'+i).style.display = (i === idx) ? 'block' : 'none';
             }
-            refreshText();
-        }
-
-        function refreshText() {
-            const pName = NAMES[currentIdx];
-            if (stockData[pName]) {
-                document.getElementById('stock-display').innerText = `A：${stockData[pName].a} | B：${stockData[pName].b} | 總：${stockData[pName].total}`;
+            if (stocks[POOLS[idx]]) {
+                const s = stocks[POOLS[idx]];
+                document.getElementById('stock-display').innerText = `A：${s.a} | B：${s.b} | 總：${s.total}`;
             }
         }
 
@@ -78,24 +74,24 @@
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
-                myUid = profile.userId;
+                uData.uid = profile.userId;
                 
+                // 獲取資料
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
-                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
-                document.body.appendChild(s1);
-                document.body.appendChild(s2);
+                s2.src = `${API_URL}?action=checkUser&uid=${uData.uid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
+                document.body.appendChild(s1); document.body.appendChild(s2);
             } catch (e) {}
         }
 
-        window.cb_st = (res) => { stockData = res; refreshText(); };
+        window.cb_st = (res) => { stocks = res; switchTo(curIdx); };
         window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw() {
-            if(!myUid) return;
+            if(!uData.uid) return;
             const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(NAMES[currentIdx])}&callback=cb_res`;
+            s.src = `${API_URL}?action=draw&uid=${uData.uid}&poolId=${encodeURIComponent(POOLS[curIdx])}&callback=cb_res`;
             document.body.appendChild(s);
         }
 
@@ -103,12 +99,9 @@
             if (res.status === "success") {
                 document.getElementById('win-grade').innerText = res.grade;
                 document.getElementById('win-name').innerText = res.name;
-                document.getElementById('win-img').src = document.getElementById('img'+currentIdx).src;
+                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+curIdx).src : B_IMG);
                 document.getElementById('winPanel').style.display = 'flex';
-            } else {
-                alert("餘額不足");
-                location.reload();
-            }
+            } else { alert("餘額不足"); location.reload(); }
         }
         window.onload = init;
     </script>
