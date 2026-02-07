@@ -6,137 +6,111 @@
     <title>盲玩樂-抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main-red: #ff3e3e; --neon-gold: #f1c40f; --bg-dark: #0a0a0a; }
-        body { font-family: sans-serif; background: var(--bg-dark); color: #fff; text-align: center; margin: 0; padding-top: 70px; }
-        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; z-index: 100; border-bottom: 2px solid var(--main-red); }
-        .pool-selector { display: flex; justify-content: center; gap: 8px; margin: 15px 0; padding: 0 10px; }
-        .pool-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 14px; }
-        .pool-btn.active { border-color: var(--neon-gold); background: var(--main-red); color: white; }
-        .preview-window { width: 92%; max-width: 400px; margin: 0 auto 15px; background: #151515; border-radius: 15px; border: 1px solid #333; overflow: hidden; min-height: 220px; }
-        .preview-img { width: 100%; height: 220px; object-fit: cover; display: block; }
-        .status-bar { display: flex; justify-content: space-around; width: 92%; margin: 0 auto 15px; background: #1a1a1a; padding: 12px; border-radius: 10px; font-size: 13px; }
-        .draw-trigger { width: 280px; height: 80px; background: var(--main-red); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; border-radius: 40px; }
-        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; align-items: center; justify-content: center; }
-        .ticket-part { position: absolute; width: 280px; height: 400px; background: var(--main-red); border: 5px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; transition: 0.7s; }
-        .tear-left { clip-path: inset(0 50% 0 0); }
-        .tear-right { clip-path: inset(0 0 0 50%); }
-        .is-tearing .tear-left { transform: translateX(-120%) rotate(-15deg); opacity: 0; }
-        .is-tearing .tear-right { transform: translateX(120%) rotate(15deg); opacity: 0; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 600; }
+        body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
+        .user-info { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 100; }
+        .pool-selector { display: flex; justify-content: center; gap: 5px; padding: 10px; }
+        .pool-btn { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        .pool-btn.active { background: red; border-color: gold; }
+        .preview-window { width: 90%; max-width: 350px; margin: 10px auto; border: 1px solid #333; height: 200px; overflow: hidden; background: #111; }
+        .preview-img { width: 100%; height: 100%; object-fit: contain; }
+        .draw-btn { width: 250px; height: 60px; background: red; color: #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; border-radius: 30px; font-weight: bold; font-size: 20px; }
+        #tearLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; align-items: center; justify-content: center; }
+        .ticket { position: relative; width: 250px; height: 350px; background: red; border: 4px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 30px; transition: 0.6s; }
+        .is-tearing { transform: scale(0); opacity: 0; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div class="user-info">點數餘額：<span id="user-points">--</span> P</div>
-
+    <div class="user-info">點數：<span id="user-points">--</span></div>
+    
     <div class="pool-selector">
-        <button class="pool-btn active" onclick="changePool(0)">單挑套</button>
-        <button class="pool-btn" onclick="changePool(1)">Ａ區任選</button>
-        <button class="pool-btn" onclick="changePool(2)">Ｂ區任選</button>
+        <button class="pool-btn active" onclick="sel(0)">單挑套</button>
+        <button class="pool-btn" onclick="sel(1)">Ａ區任選</button>
+        <button class="pool-btn" onclick="sel(2)">Ｂ區任選</button>
     </div>
 
     <div class="preview-window">
-        <img id="poolPreview" class="preview-img" src="">
+        <img id="p-view" class="preview-img" src="https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg">
     </div>
 
-    <div class="status-bar">
-        <div>A：<b id="stock-a">--</b></div>
-        <div>B：<b id="stock-b">--</b></div>
-        <div>剩：<b id="stock-total">--</b></div>
-    </div>
+    <div id="stock-text">載入中...</div>
+    <div class="draw-btn" onclick="draw()">點擊開獎</div>
 
-    <div class="draw-trigger" onclick="doDraw()">點擊開獎</div>
-
-    <div id="tearLayer">
-        <div id="ticketBox" style="position:relative; width:280px; height:400px;">
-            <div class="ticket-part tear-left">盲玩樂</div>
-            <div class="ticket-part tear-right">盲玩樂</div>
-        </div>
-    </div>
+    <div id="tearLayer"><div id="t-box" class="ticket">盲玩樂</div></div>
 
     <div id="result" class="overlay">
-        <p id="p-grade" style="font-size: 100px; color: var(--neon-gold); font-weight: 900; margin:0;"></p>
-        <img id="p-img" style="width:300px; height:300px; object-fit:cover; border-radius:15px;" src="">
-        <p id="p-name" style="margin:20px;"></p>
-        <button onclick="location.reload()" style="padding:10px 50px;">確認</button>
+        <h1 id="r-grade" style="font-size: 80px; color: gold; margin: 0;"></h1>
+        <img id="r-img" style="width: 280px; height: 280px; border-radius: 10px;" src="">
+        <p id="r-name"></p>
+        <button onclick="location.reload()" style="padding: 10px 40px;">確認</button>
     </div>
 
     <script>
         const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        const LIFF_ID = "2009072982-6smlV2gu";
-        
-        // 索引 0:單挑, 1:A區, 2:B區
-        const POOL_NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const PREVIEW_IMGS = [
+        const IMGS = [
             "https://i.postimg.cc/c49RLv8B/20260120-163208-488780-5-800x800.jpg",
             "https://i.postimg.cc/9F4Y8B8g/S-9740517.jpg",
             "https://i.postimg.cc/6pM0fDkC/S-9740516.jpg"
         ];
-        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
-
-        let currentIndex = 0;
-        let user = { uid: "", name: "" };
-        let stocks = {};
+        const B_PRIZE = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        const NAMES = ["單挑套", "Ａ區任選", "Ｂ區任選"];
+        
+        let curIdx = 0;
+        let u = { uid: "", name: "" };
+        let st = {};
 
         async function init() {
-            await liff.init({ liffId: LIFF_ID });
+            await liff.init({ liffId: "2009072982-6smlV2gu" });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const p = await liff.getProfile();
-            user.uid = p.userId;
-            user.name = p.displayName;
-            changePool(0);
-            refresh();
+            u.uid = p.userId; u.name = p.displayName;
+            sel(0); refresh();
         }
 
         function refresh() {
             const s1 = document.createElement('script');
-            s1.src = `${API}?action=getPoolStatus&callback=setStocks`;
+            s1.src = `${API}?action=getPoolStatus&callback=cb_st`;
             const s2 = document.createElement('script');
-            s2.src = `${API}?action=checkUser&uid=${user.uid}&name=${encodeURIComponent(user.name)}&callback=setPoints`;
-            document.body.appendChild(s1);
-            document.body.appendChild(s2);
+            s2.src = `${API}?action=checkUser&uid=${u.uid}&name=${encodeURIComponent(u.name)}&callback=cb_pt`;
+            document.body.appendChild(s1); document.body.appendChild(s2);
         }
 
-        window.setStocks = (d) => { stocks = d; updateDisplay(); };
-        window.setPoints = (d) => { document.getElementById('user-points').innerText = d.points; };
+        window.cb_st = (d) => { st = d; update(); };
+        window.cb_pt = (d) => { document.getElementById('user-points').innerText = d.points; };
 
-        function changePool(idx) {
-            currentIndex = idx;
-            document.querySelectorAll('.pool-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-            document.getElementById('poolPreview').src = PREVIEW_IMGS[idx];
-            updateDisplay();
+        function sel(i) {
+            curIdx = i;
+            document.querySelectorAll('.pool-btn').forEach((b, idx) => b.classList.toggle('active', i === idx));
+            document.getElementById('p-view').src = IMGS[i];
+            update();
         }
 
-        function updateDisplay() {
-            const name = POOL_NAMES[currentIndex];
-            if (stocks[name]) {
-                document.getElementById('stock-a').innerText = stocks[name].a;
-                document.getElementById('stock-b').innerText = stocks[name].b;
-                document.getElementById('stock-total').innerText = stocks[name].total;
-            }
+        function update() {
+            const n = NAMES[curIdx];
+            if (st[n]) document.getElementById('stock-text').innerText = `A：${st[n].a} | B：${st[n].b} | 總：${st[n].total}`;
         }
 
-        function doDraw() {
+        function draw() {
             document.getElementById('tearLayer').style.display = 'flex';
             const s = document.createElement('script');
-            s.src = `${API}?action=draw&uid=${user.uid}&poolId=${encodeURIComponent(POOL_NAMES[currentIndex])}&callback=showResult`;
+            s.src = `${API}?action=draw&uid=${u.uid}&poolId=${encodeURIComponent(NAMES[curIdx])}&callback=cb_res`;
             document.body.appendChild(s);
         }
 
-        window.showResult = (d) => {
+        window.cb_res = (d) => {
             if (d.status === "success") {
-                setTimeout(() => document.getElementById('ticketBox').classList.add('is-tearing'), 500);
+                document.getElementById('t-box').classList.add('is-tearing');
                 setTimeout(() => {
-                    document.getElementById('p-grade').innerText = d.grade;
-                    document.getElementById('p-name').innerText = d.name;
-                    document.getElementById('p-img').src = (d.grade === "A") ? PREVIEW_IMGS[currentIndex] : B_IMG;
+                    document.getElementById('r-grade').innerText = d.grade;
+                    document.getElementById('r-name').innerText = d.name;
+                    document.getElementById('r-img').src = (d.grade === "A") ? IMGS[curIdx] : B_PRIZE;
                     document.getElementById('result').style.display = 'flex';
-                }, 2500);
+                }, 800);
             } else {
                 alert("點數不足或系統錯誤");
                 location.reload();
             }
-        };
-
+        }
         window.onload = init;
     </script>
 </body>
