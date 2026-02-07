@@ -6,7 +6,7 @@
     <title>盲玩樂-40席旗艦抽獎</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --off: #1a1a1a; }
+        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --off: #151515; }
         body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; }
         .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
         
@@ -27,9 +27,7 @@
             background: #222; border-radius: 3px; font-size: 9px; font-weight: bold;
             display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333;
         }
-        .lamp-a { color: #640; border-color: #430; } /* A賞未中 */
-        .lamp-b { color: #444; } /* B賞未中 */
-        
+        .lamp-a { color: #650; border-color: #540; } /* A賞未中 */
         .lamp.off { background: var(--off) !important; color: #000 !important; border: none !important; box-shadow: none !important; }
         
         /* 跑馬燈點亮樣式 */
@@ -52,7 +50,7 @@
         <div class="center-display">
             <img id="main-preview" style="width:70%;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status-text" style="color:var(--gold); font-weight:bold; margin-top:5px;"></div>
-            <button class="btn-skip" id="btn-skip" onclick="skipAnim()">跳過動畫</button>
+            <button class="btn-skip" id="btn-skip" onclick="skipAnimation()">跳過動畫</button>
         </div>
     </div>
 
@@ -62,31 +60,37 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold);">中獎清單</h2>
-        <div id="res-list" style="width:85%;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding: 12px 60px; border-radius: 30px; border:none; font-weight:bold;">確認收下</button>
+        <h2 style="color:var(--gold); margin-bottom: 20px;">🎉 中獎清單 🎉</h2>
+        <div id="res-list" style="width:85%; max-height: 50vh; overflow-y: auto;"></div>
+        <button onclick="location.reload()" style="margin-top:30px; padding: 12px 60px; border-radius: 30px; border:none; font-weight:bold; background: #fff; color: #000;">確認收下</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const LAMP_COORDS = [];
+        // 生成 40 格坐標 (11x11 外圈)
         for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i});
         for(let i=2; i<=11; i++) LAMP_COORDS.push({r: i, c: 11});
         for(let i=10; i>=1; i--) LAMP_COORDS.push({r: 11, c: i});
         for(let i=10; i>=2; i--) LAMP_COORDS.push({r: i, c: 1});
 
-        let currentIdx = 0, myUid = "", stockData = {}, isAnimPlaying = false;
-        let activeTimers = [], finalResults = null;
+        let myUid = "", stockData = {}, isAnimPlaying = false;
+        let pointers = [], finalResults = null, timerRefs = [];
 
         function initBoard() {
             const board = document.getElementById('game-board');
             LAMP_COORDS.forEach((pos, i) => {
                 const div = document.createElement('div');
-                div.className = 'lamp lamp-b';
+                div.className = 'lamp';
                 div.id = 'lamp-' + i;
                 div.style.gridRow = pos.r; div.style.gridColumn = pos.c;
-                div.innerText = 'B';
-                if(i === 0 || i === 20) { div.innerText = 'A'; div.className = 'lamp lamp-a'; }
+                // 設定 A 賞位置 (1號、21號)
+                if(i === 0 || i === 20) {
+                    div.innerText = 'A';
+                    div.classList.add('lamp-a');
+                } else {
+                    div.innerText = 'B';
+                }
                 board.appendChild(div);
             });
         }
@@ -108,16 +112,13 @@
 
         window.cb_st = (res) => { 
             stockData = res["單挑套"]; 
-            updateLamps();
-        };
-
-        function updateLamps() {
-            // 熄燈邏輯：假設 40 扣掉剩下的是已抽中 (老闆可根據實際號碼回傳微調)
+            // 熄燈邏輯：由右往左熄滅已抽中的張數
             const sold = 40 - stockData.total;
-            for(let i=0; i<40; i++) {
-                if(i < sold) document.getElementById('lamp-'+i).classList.add('off');
+            for(let i=39; i > 39 - sold; i--) {
+                const el = document.getElementById('lamp-' + i);
+                if(el) el.classList.add('off');
             }
-        }
+        };
 
         window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
@@ -125,29 +126,33 @@
             if(!myUid || isAnimPlaying) return;
             isAnimPlaying = true;
             document.getElementById('btn-skip').style.display = 'block';
-            document.getElementById('status-text').innerText = "連線中...";
+            document.getElementById('status-text').innerText = "運勢抽取中...";
             
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=%E5%96%AE%E6%8C%91%E5%A5%97&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            startMary(count);
+            startAnimation(count);
         }
 
-        let pointers = [];
-        function startMary(count) {
-            pointers = Array.from({length: count}, (_, i) => ({ pos: i * 2, speed: 60, active: true }));
+        function startAnimation(count) {
+            pointers = Array.from({length: count}, (_, i) => ({ 
+                pos: i * 3, 
+                finished: false 
+            }));
+
             const run = () => {
                 if(!isAnimPlaying) return;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
                 
                 pointers.forEach(p => {
-                    p.pos = (p.pos + 1) % 40;
+                    if(!p.finished) p.pos = (p.pos + 1) % 40;
                     const el = document.getElementById('lamp-' + p.pos);
-                    const type = el.innerText === 'A' ? 'active-a' : 'active-b';
-                    if(!el.classList.contains('off')) el.classList.add(type);
+                    if(el && !el.classList.contains('off')) {
+                        el.classList.add(el.innerText === 'A' ? 'active-a' : 'active-b');
+                    }
                 });
-                activeTimers.push(setTimeout(run, 70));
+                timerRefs.push(setTimeout(run, 60));
             };
             run();
         }
@@ -156,53 +161,48 @@
             if(res.status === 'success') {
                 finalResults = res.results;
                 document.getElementById('status-text').innerText = "即將開獎...";
-                // 兩秒後開始一個一個停下來
-                setTimeout(() => stopPointersOneBy One(0), 1000);
+                setTimeout(() => stopSequentially(0), 1200);
             } else {
                 alert(res.message); location.reload();
             }
         };
 
-        function stopPointersOneByOne(idx) {
-            if(idx >= pointers.length) {
-                setTimeout(() => { if(isAnimPlaying) showWin(); }, 1000);
+        function stopSequentially(idx) {
+            if(!isAnimPlaying || idx >= pointers.length) {
+                setTimeout(showWin, 800);
                 return;
             }
 
-            // 模擬該指標減速並停下
-            let stopStep = 0;
+            let steps = 0;
             const slowDown = () => {
                 if(!isAnimPlaying) return;
-                stopStep++;
-                if(stopStep > 15) { // 停止該指標
-                    pointers[idx].active = false;
-                    stopPointersOneByOne(idx + 1);
+                steps++;
+                if(steps > 12) {
+                    pointers[idx].finished = true;
+                    stopSequentially(idx + 1); // 停下一個
                 } else {
-                    setTimeout(slowDown, 100 + (stopStep * 20));
+                    setTimeout(slowDown, 60 + (steps * 25));
                 }
-            }
+            };
             slowDown();
         }
 
-        function skipAnim() {
-            skipAnimationLogic();
-        }
-
-        function skipAnimationLogic() {
+        function skipAnimation() {
             isAnimPlaying = false;
-            activeTimers.forEach(clearTimeout);
+            timerRefs.forEach(clearTimeout);
             showWin();
         }
 
         function showWin() {
             isAnimPlaying = false;
+            document.getElementById('btn-skip').style.display = 'none';
             const list = document.getElementById('res-list');
             list.innerHTML = "";
             finalResults.forEach(r => {
                 const div = document.createElement('div');
-                div.style.background = "#222"; div.style.margin = "10px 0"; div.style.padding = "10px"; div.style.borderRadius = "8px";
+                div.style.cssText = "background:#222; margin:8px 0; padding:12px; border-radius:10px; text-align:left;";
                 div.style.borderLeft = (r.grade === 'A') ? "5px solid var(--gold)" : "5px solid var(--red)";
-                div.innerHTML = `<b style="color:${r.grade==='A'?'var(--gold)':'white'}">${r.grade}賞</b> - ${r.name}`;
+                div.innerHTML = `<b style="color:${r.grade==='A'? 'var(--gold)':'white'}">${r.grade}賞</b> | ${r.name}`;
                 list.appendChild(div);
             });
             document.getElementById('winPanel').style.display = 'flex';
