@@ -10,14 +10,14 @@
         body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; padding-top: 70px; }
         .user-info { position: fixed; top: 0; width: 100%; background: #1e1e1e; padding: 12px 0; z-index: 50; border-bottom: 1px solid #333; }
         .pool-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; padding: 0 10px; }
-        .pool-btn { padding: 12px 20px; background: #222; border: 2px solid #444; color: #fff; border-radius: 12px; cursor: pointer; }
+        .pool-btn { padding: 10px 15px; background: #222; border: 2px solid #444; color: #fff; border-radius: 12px; cursor: pointer; }
         .pool-btn.active { border-color: var(--gold); background: var(--main-red); }
         .price-tag { color: var(--gold); font-size: 1.3rem; margin: 10px 0; font-weight: bold; }
-        .kuji-box { width: 280px; height: 180px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 25px; cursor: pointer; box-shadow: 0 10px 0 #b33939; }
+        .kuji-box { width: 280px; height: 160px; background: linear-gradient(135deg, var(--main-red), #ff6b81); color: white; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 8px 0 #b33939; }
         .shake { animation: shake 0.5s infinite; }
-        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(4deg); } 75% { transform: rotate(-4deg); } 100% { transform: rotate(0deg); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .prize-img { width: 280px; height: 280px; object-fit: cover; border: 3px solid var(--gold); border-radius: 20px; margin: 20px 0; }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .prize-img { width: 280px; height: 280px; object-fit: cover; border: 3px solid var(--gold); border-radius: 15px; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -37,11 +37,11 @@
     <div class="kuji-box" id="drawBtn" onclick="draw()">點擊抽獎</div>
 
     <div id="result" class="overlay">
-        <h2 style="color: var(--main-red);">恭喜獲得</h2>
+        <h2 style="color: var(--main-red); margin: 0;">恭喜獲得</h2>
         <p id="p-grade" style="font-size: 80px; color: var(--gold); margin: 0; font-weight: 900;"></p>
         <img id="p-img" class="prize-img" src="">
-        <p id="p-name" style="font-size: 24px; font-weight: bold; margin-bottom: 25px;"></p>
-        <button style="padding: 15px 60px; background: #2ed573; color: white; border: none; border-radius: 50px; font-size: 20px;" onclick="location.reload()">確認收下</button>
+        <p id="p-name" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;"></p>
+        <button style="padding: 12px 50px; background: #2ed573; color: white; border: none; border-radius: 50px; font-size: 18px;" onclick="location.reload()">確認收下</button>
     </div>
 
     <script>
@@ -60,15 +60,18 @@
         async function initLIFF() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); }
-                else {
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
                     const profile = await liff.getProfile();
                     currentUser.uid = profile.userId;
                     currentUser.name = profile.displayName;
                     document.getElementById('user-name').innerText = currentUser.name;
                     checkPoints();
                 }
-            } catch (err) { console.error("LIFF Init Error:", err); }
+            } catch (err) {
+                document.getElementById('user-name').innerText = "連線失敗";
+            }
         }
 
         function switchPool(id, btn, price) {
@@ -82,28 +85,27 @@
 
         function checkPoints() {
             const script = document.createElement('script');
-            script.src = `${API_URL}?action=checkUser&uid=${currentUser.uid}&name=${encodeURIComponent(currentUser.name)}&callback=updatePointsDisplay`;
+            script.src = API_URL + "?action=checkUser&uid=" + currentUser.uid + "&name=" + encodeURIComponent(currentUser.name) + "&callback=updatePointsDisplay";
             document.body.appendChild(script);
         }
 
-        window.updatePointsDisplay = (data) => {
+        window.updatePointsDisplay = function(data) {
             document.getElementById('user-points').innerText = data.points;
         };
 
         function draw() {
             const btn = document.getElementById('drawBtn');
-            if(btn.classList.contains('shake')) return; // 防止重複點擊
+            if(btn.classList.contains('shake')) return;
 
             btn.classList.add('shake');
-            btn.innerText = "抽獎中...";
+            btn.innerText = "開獎中...";
 
             const script = document.createElement('script');
-            // 關鍵修正：確保中文 PoolId 有正確編碼
-            script.src = `${API_URL}?action=draw&uid=${currentUser.uid}&poolId=${encodeURIComponent(currentPoolId)}&callback=handleResult`;
+            script.src = API_URL + "?action=draw&uid=" + currentUser.uid + "&poolId=" + encodeURIComponent(currentPoolId) + "&callback=handleResult";
             document.body.appendChild(script);
         }
 
-        window.handleResult = (data) => {
+        window.handleResult = function(data) {
             const btn = document.getElementById('drawBtn');
             btn.classList.remove('shake');
             btn.innerText = "點擊抽獎";
@@ -111,8 +113,16 @@
             if (data.status === "success") {
                 document.getElementById('p-grade').innerText = data.grade;
                 document.getElementById('p-name').innerText = data.name;
-                
-                // 圖片容錯處理：如果抓不到 A 區，就抓 B 區圖，再抓不到就放空白
-                let
+                document.getElementById('p-img').src = POOL_IMAGES[currentPoolId][data.grade] || POOL_IMAGES[currentPoolId]["B"];
+                document.getElementById('result').style.display = 'flex';
+                document.getElementById('user-points').innerText = data.newPoints;
+            } else {
+                alert(data.status === "no_points" ? "點數不足！" : "此池已售罄！");
+                location.reload();
+            }
+        };
+
+        window.onload = initLIFF;
+    </script>
 </body>
 </html>
