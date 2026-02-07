@@ -3,53 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-線上抽獎中心</title>
+    <title>盲玩樂-40席旗艦抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 70px; overflow-x: hidden; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.9); padding: 15px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
+        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --off: #222; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; }
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
         
-        .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); box-shadow: 0 0 10px rgba(255,62,62,0.5); }
+        /* 獎池切換 */
+        .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
+        .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); }
 
-        /* 櫥窗與小瑪莉容器 */
-        .display-window { width: 92%; max-width: 380px; margin: 10px auto; border: 2px solid #333; height: 260px; background: #000; position: relative; overflow: hidden; border-radius: 20px; }
-        .prize-img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
-        .prize-img.active { display: block !important; }
-
-        /* 小瑪莉跑馬燈結構 */
-        #mary-grid { 
-            display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); 
-            gap: 5px; padding: 10px; height: 100%; box-sizing: border-box; background: #111;
+        /* 核心：40燈大轉盤佈置 (11x11 Grid) */
+        .game-container { 
+            width: 95vw; height: 95vw; max-width: 400px; max-height: 400px; 
+            margin: 10px auto; position: relative; background: #111; border: 4px solid #333; border-radius: 15px;
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; padding: 4px;
         }
-        .cell { 
-            background: #222; border: 2px solid #444; border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #444; font-size: 20px;
+        
+        /* 中間顯示區 */
+        .center-display { 
+            grid-area: 3 / 3 / 10 / 10; background: #000; border-radius: 10px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
         }
-        .cell.active { 
-            background: var(--red); color: white; border-color: var(--gold); 
-            box-shadow: 0 0 15px var(--red); transform: scale(1.05); z-index: 2;
+        .center-img { width: 80%; height: 80%; object-fit: contain; }
+
+        /* 燈號基礎樣式 */
+        .lamp { 
+            background: #333; border-radius: 2px; font-size: 8px; 
+            display: flex; align-items: center; justify-content: center; color: #555;
         }
-        .cell-a { color: #555; } /* A賞預留位 */
-        .cell-a.active { color: var(--gold); text-shadow: 0 0 5px #fff; }
+        .lamp.is-a { color: var(--gold); border: 1px solid #444; }
+        .lamp.off { background: #111 !important; color: #000 !important; border: none !important; } /* 熄燈狀態 */
+        .lamp.active { 
+            background: var(--red) !important; color: white !important; 
+            box-shadow: 0 0 10px var(--red); z-index: 10;
+        }
+        .lamp.active-gold { 
+            background: var(--gold) !important; color: #000 !important; 
+            box-shadow: 0 0 15px var(--gold); z-index: 10;
+        }
 
-        /* 進度條 */
-        .stock-container { width: 88%; margin: 15px auto; text-align: left; }
-        .stock-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--gold); margin-bottom: 6px; font-weight: bold; }
-        .progress-bg { width: 100%; height: 10px; background: #222; border-radius: 10px; border: 1px solid #333; overflow: hidden; }
-        .progress-bar { width: 100%; height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width 1.2s; }
+        /* 底部資訊 */
+        .info-panel { margin: 10px 0; color: var(--gold); font-weight: bold; font-size: 14px; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .draw-btn { width: 120px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; }
 
-        .btn-group { display: flex; justify-content: center; gap: 15px; margin: 25px auto; }
-        .draw-btn { width: 135px; height: 55px; border-radius: 16px; border: none; font-weight: bold; font-size: 17px; cursor: pointer; color: #fff; }
-        .single-btn { background: #333; }
-        .multi-btn { background: var(--red); box-shadow: 0 5px 15px rgba(255,62,62,0.4); }
-
-        /* 結果視窗 */
-        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; }
-        .multi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin-top: 15px; }
-        .result-item { background: #181818; padding: 12px; border-radius: 12px; border-left: 5px solid var(--red); text-align: left; }
+        /* 中獎彈窗 */
+        .win-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -61,166 +66,165 @@
         <button id="btn2" class="tab-btn" onclick="switchTo(2)">Ｂ區任選</button>
     </div>
 
-    <div class="display-window">
-        <div id="preview-box" style="width:100%; height:100%;">
-            <img id="img0" class="prize-img active" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
-            <img id="img1" class="prize-img" src="https://i.meee.com.tw/d2cFJiy.jpg">
-            <img id="img2" class="prize-img" src="https://i.meee.com.tw/B8xVcyj.jpg">
+    <div class="game-container" id="game-board">
+        <div class="center-display">
+            <img id="main-preview" class="center-img" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <div id="anim-status" style="margin-top:10px; color:var(--red); font-size:12px;"></div>
         </div>
-        <div id="mary-grid">
-            <div class="cell" id="c0">B</div><div class="cell" id="c1">B</div><div class="cell" id="c2">B</div>
-            <div class="cell" id="c7">B</div><div class="cell cell-a" id="c8">A</div><div class="cell" id="c3">B</div>
-            <div class="cell" id="c6">B</div><div class="cell" id="c5">B</div><div class="cell" id="c4">B</div>
         </div>
-    </div>
 
-    <div class="stock-container">
-        <div class="stock-info"><span>剩餘量</span><span id="stock-percent">--%</span></div>
-        <div class="progress-bg"><div id="stock-bar" class="progress-bar"></div></div>
-        <p id="stock-detail" style="font-size: 12px; color: #888; margin-top: 5px;">同步中...</p>
-    </div>
+    <div class="info-panel" id="stock-info">同步中...</div>
 
     <div class="btn-group">
-        <button class="draw-btn single-btn" id="s-btn" onclick="goDraw(1)">單抽</button>
-        <button class="draw-btn multi-btn" id="m-btn" onclick="goDraw(5)">五連抽</button>
+        <button class="draw-btn" style="background:#444;" id="btn-s" onclick="goDraw(1)">單抽</button>
+        <button class="draw-btn" style="background:var(--red);" id="btn-m" onclick="goDraw(5)">五連抽</button>
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <div id="singleResult" style="width: 85%; max-width: 320px;">
-            <h1 id="res-grade" style="font-size: 80px; color: var(--gold); margin: 0;"></h1>
-            <img id="res-img" style="width: 100%; border-radius: 20px; background: #111;" src="">
-            <p id="res-name" style="margin-top: 15px; font-weight: bold;"></p>
-        </div>
-        <div id="multiResult" class="multi-grid"></div>
-        <button onclick="location.reload()" style="margin-top:30px; padding: 15px 70px; border-radius: 50px; background: #fff; font-weight: bold; border: none;">收下獎項</button>
+        <h2 style="color:var(--gold); font-size:30px;">恭喜獲得</h2>
+        <div id="res-list" style="width:90%; max-height:60vh; overflow-y:auto;"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding: 12px 60px; border-radius: 30px; border:none; font-weight:bold;">確認</button>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
-        const MARY_ORDER = [0, 1, 2, 3, 4, 5, 6, 7]; // 繞圈順序，不含中心A
+        const PREVIEWS = [
+            "https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480",
+            "https://i.meee.com.tw/d2cFJiy.jpg",
+            "https://i.meee.com.tw/B8xVcyj.jpg"
+        ];
         
+        // 定義環繞 40 個格子的 Grid 座標 (11x11 外圈)
+        const LAMP_COORDS = [];
+        for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i}); // 上
+        for(let i=2; i<=11; i++) LAMP_COORDS.push({r: i, c: 11}); // 右
+        for(let i=10; i>=1; i--) LAMP_COORDS.push({r: 11, c: i}); // 下
+        for(let i=10; i>=2; i--) LAMP_COORDS.push({r: i, c: 1}); // 左
+
         let currentIdx = 0, myUid = "", stockData = {};
+
+        // 初始化 40 個燈
+        function initBoard() {
+            const board = document.getElementById('game-board');
+            // 清除舊燈
+            document.querySelectorAll('.lamp').forEach(l => l.remove());
+            
+            LAMP_COORDS.forEach((pos, i) => {
+                const div = document.createElement('div');
+                div.className = 'lamp';
+                div.id = 'lamp-' + i;
+                div.style.gridRow = pos.r;
+                div.style.gridColumn = pos.c;
+                div.innerText = i + 1;
+                board.appendChild(div);
+            });
+        }
 
         function switchTo(idx) {
             currentIdx = idx;
-            document.querySelectorAll('.prize-img').forEach((img, i) => { img.style.display = (i===idx)?'block':'none'; });
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => { btn.className = (i===idx)?'tab-btn active':'tab-btn'; });
+            document.getElementById('main-preview').src = PREVIEWS[idx];
+            document.querySelectorAll('.tab-btn').forEach((b, i) => b.className = (i===idx)?'tab-btn active':'tab-btn');
             updateUI();
         }
 
         function updateUI() {
             const data = stockData[POOLS[currentIdx]];
-            if (data) {
-                const total = parseInt(data.total) || 0;
-                const max = 40; 
-                const percent = Math.floor((total / max) * 100);
-                document.getElementById('stock-percent').innerText = percent + "%";
-                document.getElementById('stock-bar').style.width = percent + "%";
-                document.getElementById('stock-detail').innerText = `A賞：${data.a} | B賞：${data.b} | 剩：${total}張`;
+            if(!data) return;
+            document.getElementById('stock-info').innerText = `A：${data.a} | B：${data.b} | 剩餘：${data.total}`;
+            
+            // 熄燈邏輯：假設從後端拿到的 data.total 是剩餘張數
+            // 這裡為了演示，我們簡單模擬，實務上需從後端回傳「哪些號碼已抽」
+            const soldCount = 40 - data.total;
+            for(let i=0; i<40; i++) {
+                const el = document.getElementById('lamp-' + i);
+                if(i < soldCount) el.classList.add('off'); // 簡單熄掉前面的燈
+                else el.classList.remove('off');
             }
         }
 
-        async function init() {
+        async function initLIFF() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
-                fetchData(profile.displayName);
+                
+                const s1 = document.createElement('script');
+                s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
+                document.body.appendChild(s1);
+                const s2 = document.createElement('script');
+                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
+                document.body.appendChild(s2);
             } catch (e) {}
         }
 
-        function fetchData(name) {
-            const s1 = document.createElement('script');
-            s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
-            document.body.appendChild(s1);
-            const s2 = document.createElement('script');
-            s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`;
-            document.body.appendChild(s2);
-        }
-
         window.cb_st = (res) => { stockData = res; updateUI(); };
-        window.cb_pt = (res) => { if(res && res.points !== undefined) document.getElementById('display-pts').innerText = res.points; };
+        window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw(count) {
             if(!myUid) return;
-            document.getElementById('s-btn').disabled = true;
-            document.getElementById('m-btn').disabled = true;
+            document.getElementById('btn-s').disabled = true;
+            document.getElementById('btn-m').disabled = true;
             
-            // 先發送請求，同時開始空轉動畫
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            startMaryAnimation();
+            runMarquee(count);
         }
 
-        let maryInterval;
-        function startMaryAnimation() {
-            document.getElementById('preview-box').style.display = 'none';
-            document.getElementById('mary-grid').style.display = 'grid';
-            let curr = 0;
-            maryInterval = setInterval(() => {
-                document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-                document.getElementById('c' + MARY_ORDER[curr]).classList.add('active');
-                curr = (curr + 1) % MARY_ORDER.length;
-            }, 100);
+        let isRunning = false;
+        function runMarquee(count) {
+            isRunning = true;
+            let steps = 0;
+            const pointers = Array.from({length: count}, (_, i) => i * 2); // 初始分散
+            
+            const interval = setInterval(() => {
+                if(!isRunning) { clearInterval(interval); return; }
+                
+                document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active', 'active-gold'));
+                
+                pointers.forEach((p, i) => {
+                    pointers[i] = (p + 1) % 40;
+                    const el = document.getElementById('lamp-' + pointers[i]);
+                    if(!el.classList.contains('off')) el.classList.add('active');
+                });
+                
+                steps++;
+            }, 80);
+
+            window.stopAnim = (results) => {
+                isRunning = false;
+                clearInterval(interval);
+                showWin(results);
+            };
         }
 
         window.cb_res = (res) => {
-            if (res && res.status === "success") {
-                const results = res.results || [res];
-                const hasA = results.some(r => r.grade === 'A');
-                
-                // 動態調整最後停下的位置
-                clearInterval(maryInterval);
-                let speed = 100;
-                let finalStep = 0;
-                
-                function slowDown() {
-                    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-                    if (hasA && finalStep > 15) {
-                        document.getElementById('c8').classList.add('active'); // 停在 A
-                        setTimeout(() => showFinalResult(results), 1000);
-                    } else {
-                        document.getElementById('c' + MARY_ORDER[finalStep % 8]).classList.add('active');
-                        finalStep++;
-                        speed += 20;
-                        if (speed < 500) {
-                            setTimeout(slowDown, speed);
-                        } else {
-                            setTimeout(() => showFinalResult(results), 800);
-                        }
-                    }
-                }
-                slowDown();
+            if(res.status === 'success') {
+                setTimeout(() => window.stopAnim(res.results), 2000);
             } else {
-                clearInterval(maryInterval);
-                alert(res.message || "錯誤");
+                alert(res.message);
                 location.reload();
             }
         };
 
-        function showFinalResult(results) {
-            if (results.length === 1) {
-                document.getElementById('singleResult').style.display = 'block';
-                document.getElementById('multiResult').style.display = 'none';
-                document.getElementById('res-grade').innerText = results[0].grade;
-                document.getElementById('res-name').innerText = results[0].name;
-                document.getElementById('res-img').src = (results[0].grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG);
-            } else {
-                document.getElementById('singleResult').style.display = 'none';
-                document.getElementById('multiResult').style.display = 'grid';
-                let html = '';
-                results.forEach(r => { html += `<div class="result-item"><b>${r.grade}賞</b><br>${r.name}</div>`; });
-                document.getElementById('multiResult').innerHTML = html;
-            }
+        function showWin(results) {
+            const list = document.getElementById('res-list');
+            list.innerHTML = "";
+            results.forEach(r => {
+                const div = document.createElement('div');
+                div.style.background = "#222"; div.style.margin = "10px"; div.style.padding = "15px"; div.style.borderRadius = "10px";
+                div.style.borderLeft = (r.grade === 'A') ? "5px solid var(--gold)" : "5px solid var(--red)";
+                div.innerHTML = `<b style="color:${r.grade==='A'?'var(--gold)':'white'}">${r.grade}賞</b><br>${r.name}`;
+                list.appendChild(div);
+            });
             document.getElementById('winPanel').style.display = 'flex';
         }
 
-        window.onload = init;
+        initBoard();
+        initLIFF();
     </script>
 </body>
 </html>
