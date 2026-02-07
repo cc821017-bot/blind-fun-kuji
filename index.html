@@ -6,47 +6,33 @@
     <title>盲玩樂-線上抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #0a0a0a; }
+        :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; }
         body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 70px; }
-        
-        /* 頂部餘額欄 */
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 15px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
-        
-        /* 獎池切換按鈕 */
+        .user-bar { position: fixed; top: 0; width: 100%; background: rgba(20,20,20,0.9); padding: 15px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
         .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); box-shadow: 0 0 10px rgba(255,62,62,0.5); }
-        
-        /* 櫥窗展示 */
-        .display-window { width: 92%; max-width: 380px; margin: 10px auto; border: 2px solid #333; height: 260px; background: #000; position: relative; overflow: hidden; border-radius: 20px; }
+        .display-window { width: 92%; max-width: 380px; margin: 10px auto; border: 1px solid #333; height: 260px; background: #000; position: relative; overflow: hidden; border-radius: 20px; }
         .prize-img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
         .prize-img.active { display: block !important; }
         
-        /* 進度條：100% 遞減邏輯 */
+        /* 進度條優化 */
         .stock-container { width: 88%; margin: 15px auto; text-align: left; }
         .stock-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--gold); margin-bottom: 6px; font-weight: bold; }
         .progress-bg { width: 100%; height: 10px; background: #222; border-radius: 10px; border: 1px solid #333; overflow: hidden; }
-        .progress-bar { width: 100%; height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width 1s ease; }
-        .stock-detail { font-size: 12px; color: #888; margin-top: 5px; }
+        .progress-bar { width: 100%; height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width 1.2s ease-in-out; }
 
-        /* 抽獎按鈕區 */
         .btn-group { display: flex; justify-content: center; gap: 15px; margin: 25px auto; }
-        .draw-btn { width: 135px; height: 55px; border-radius: 16px; border: none; font-weight: bold; font-size: 17px; cursor: pointer; color: #fff; transition: 0.2s; }
-        .single-btn { background: #333; border: 1px solid #555; }
-        .multi-btn { background: linear-gradient(180deg, #ff5e5e, var(--red)); box-shadow: 0 5px 15px rgba(255,62,62,0.4); }
-        .draw-btn:active { transform: scale(0.95); }
-
-        /* 中獎彈窗 */
-        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0; }
-        
-        /* 連抽結果排版 */
+        .draw-btn { width: 135px; height: 55px; border-radius: 16px; border: none; font-weight: bold; font-size: 17px; cursor: pointer; color: #fff; }
+        .single-btn { background: #333; }
+        .multi-btn { background: var(--red); }
+        .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; }
         .multi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin-top: 15px; }
         .result-item { background: #181818; padding: 12px; border-radius: 12px; border-left: 5px solid var(--red); text-align: left; }
-        .res-a { border-left-color: var(--gold); background: #222; box-shadow: 0 0 10px rgba(241,196,15,0.3); }
     </style>
 </head>
 <body>
-    <div class="user-bar">點數餘額：<span id="display-pts">載入中</span> P</div>
+    <div class="user-bar">餘額：<span id="display-pts">----</span> P</div>
     
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
@@ -61,32 +47,34 @@
     </div>
 
     <div class="stock-container">
-        <div class="stock-info"><span>獎池剩餘張數</span><span id="stock-percent">100%</span></div>
+        <div class="stock-info"><span>剩餘量</span><span id="stock-percent">--%</span></div>
         <div class="progress-bg"><div id="stock-bar" class="progress-bar"></div></div>
-        <p id="stock-detail" class="stock-detail">同步庫存中...</p>
+        <p id="stock-detail" style="font-size: 12px; color: #888; margin-top: 5px;">同步中...</p>
     </div>
 
     <div class="btn-group">
-        <button class="draw-btn single-btn" onclick="goDraw(1)">單抽一次</button>
-        <button class="draw-btn multi-btn" onclick="goDraw(5)">五連抽！</button>
+        <button class="draw-btn single-btn" onclick="goDraw(1)">單抽</button>
+        <button class="draw-btn multi-btn" onclick="goDraw(5)">五連抽</button>
     </div>
 
     <div id="winPanel" class="win-overlay">
         <div id="singleResult" style="width: 85%; max-width: 320px;">
             <h1 id="res-grade" style="font-size: 80px; color: var(--gold); margin: 0;"></h1>
-            <img id="res-img" style="width: 100%; border-radius: 20px; border: 2px solid var(--gold); background: #111;" src="">
+            <img id="res-img" style="width: 100%; border-radius: 20px; background: #111;" src="">
             <p id="res-name" style="margin-top: 15px; font-weight: bold;"></p>
         </div>
         <div id="multiResult" class="multi-grid"></div>
-        <button onclick="location.reload()" style="margin-top:30px; padding: 15px 70px; border-radius: 50px; background: #fff; font-weight: bold; border: none; font-size: 18px;">確認收下</button>
+        <button onclick="location.reload()" style="margin-top:30px; padding: 15px 70px; border-radius: 50px; background: #fff; font-weight: bold; border: none;">確認</button>
     </div>
 
     <script>
-        // 已填入您提供的最新 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec"; 
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
+        // 設定各池初始總張數 (單挑40, 其它40)
+        const MAX_STOCKS = [40, 40, 40]; 
+
         let currentIdx = 0, myUid = "", stockData = {};
 
         function switchTo(idx) {
@@ -99,13 +87,12 @@
         function updateUI() {
             const data = stockData[POOLS[currentIdx]];
             if (data) {
-                const total = parseInt(data.total);
-                // 基數設定：單挑套 80 張滿，任選池 50 張滿
-                const max = currentIdx === 0 ? 80 : 50; 
+                const total = parseInt(data.total) || 0;
+                const max = MAX_STOCKS[currentIdx];
                 const percent = Math.floor((total / max) * 100);
                 document.getElementById('stock-percent').innerText = percent + "%";
                 document.getElementById('stock-bar').style.width = percent + "%";
-                document.getElementById('stock-detail').innerText = `A賞：${data.a} | B賞：${data.b} | 剩餘：${total}張`;
+                document.getElementById('stock-detail').innerText = `A賞：${data.a} | B賞：${data.b} | 剩：${total}張 / 總：${max}張`;
             }
         }
 
@@ -116,28 +103,20 @@
                 const profile = await liff.getProfile();
                 myUid = profile.userId;
                 fetchData(profile.displayName);
-            } catch (e) {
-                document.getElementById('display-pts').innerText = "連線失敗";
-            }
+            } catch (e) { document.getElementById('display-pts').innerText = "LIFF ERROR"; }
         }
 
         function fetchData(name) {
             const s1 = document.createElement('script');
             s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
+            document.body.appendChild(s1);
             const s2 = document.createElement('script');
             s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`;
-            document.body.appendChild(s1); document.body.appendChild(s2);
+            document.body.appendChild(s2);
         }
 
-        // 庫存回調
         window.cb_st = (res) => { stockData = res; updateUI(); };
-        
-        // 用戶點數回調 (修正讀取格式)
-        window.cb_pt = (res) => { 
-            if(res && res.points !== undefined) {
-                document.getElementById('display-pts').innerText = res.points; 
-            }
-        };
+        window.cb_pt = (res) => { if(res && res.points !== undefined) document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw(count) {
             if(!myUid) return;
@@ -147,33 +126,23 @@
         }
 
         window.cb_res = (res) => {
-            if (res.status === "success") {
+            if (res && res.status === "success") {
                 const results = res.results || [res];
                 if (results.length === 1) {
-                    // 單抽結果
                     document.getElementById('singleResult').style.display = 'block';
                     document.getElementById('multiResult').style.display = 'none';
                     document.getElementById('res-grade').innerText = results[0].grade;
                     document.getElementById('res-name').innerText = results[0].name;
                     document.getElementById('res-img').src = (results[0].grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG);
                 } else {
-                    // 多抽結果
                     document.getElementById('singleResult').style.display = 'none';
                     document.getElementById('multiResult').style.display = 'grid';
                     let html = '';
-                    results.forEach(r => {
-                        const isA = (r.grade === 'A');
-                        html += `<div class="result-item ${isA?'res-a':''}">
-                                    <b style="color:${isA?'var(--gold)':'var(--red)'}">${r.grade}賞</b><br>
-                                    <span style="font-size:11px; color:#888;">${r.name}</span>
-                                 </div>`;
-                    });
+                    results.forEach(r => { html += `<div class="result-item"><b>${r.grade}賞</b><br>${r.name}</div>`; });
                     document.getElementById('multiResult').innerHTML = html;
                 }
                 document.getElementById('winPanel').style.display = 'flex';
-            } else { 
-                alert(res.message || "抽獎失敗，請確認餘額"); 
-            }
+            } else { alert(res.message || "錯誤"); }
         }
         window.onload = init;
     </script>
