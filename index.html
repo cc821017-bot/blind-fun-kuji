@@ -37,18 +37,18 @@
     <div class="shop-name">高雄一番賞專賣店 - 盲玩樂</div>
     <h1>線上即時開獎</h1>
     <div class="kuji-box" id="drawBtn" onclick="drawPrize()">點擊抽獎</div>
-    <div id="status" style="margin-top: 20px; color: #888;">準備就緒</div>
+    <div id="status" style="margin-top: 20px; color: #888;">系統就緒</div>
 
     <div id="resultOverlay" class="result-overlay">
         <h2 style="color: #ff4757;">中獎確認！</h2>
-        <p style="font-size: 24px;">指令已送達試算表</p>
-        <p style="color: #aaa;">請確認 D 欄「剩餘數量」是否減少</p>
-        <button onclick="location.reload()">返回</button>
+        <p style="font-size: 24px;">抽獎指令已發送至試算表</p>
+        <p style="color: #aaa;">請檢查試算表 D 欄數字是否減少</p>
+        <button onclick="location.reload()">確認</button>
     </div>
 
     <script>
-        // 這是你剛剛給我的最新網址
-        const API_URL = "https://script.google.com/macros/s/AKfycbwLma26kH-c4PtgQOlSp5_1jNswe_WBVoainijJgFgB0EcMpWEGMbxkW-EkVgdIFvoB/exec";
+        // 使用你剛才給我的這串正確網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
 
         async function drawPrize() {
             const btn = document.getElementById('drawBtn');
@@ -57,28 +57,26 @@
             btn.innerText = "開獎中...";
             btn.style.pointerEvents = "none";
             btn.style.background = "#57606f";
-            status.innerText = "正在傳送抽獎指令至 Google Sheets...";
+            status.innerText = "正在傳送指令...";
 
             try {
-                // 使用 POST 請求觸發 doPost
-                // no-cors 模式雖然抓不到回傳值，但能成功讓 Google 執行動作
+                // 發送 POST 請求
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     cache: 'no-cache'
                 });
 
-                // 延遲一下顯示結果，讓使用者有開獎的感覺
+                // 2 秒後顯示結果
                 setTimeout(() => {
                     document.getElementById('resultOverlay').style.display = 'flex';
                     status.innerText = "完成！";
                 }, 2000);
 
             } catch (e) {
-                alert("連線失敗，請檢查網路或 API 網址！");
+                alert("連線失敗！");
                 location.reload();
             }
         }
     </script>
 </body>
-</html>
