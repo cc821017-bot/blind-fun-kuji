@@ -48,7 +48,7 @@
             <button class="btn-skip" onclick="skipAnimation()">跳過動畫</button>
         </div>
     </div>
-    <div id="stock-info" style="font-size:12px; color:#666;">載入中...</div>
+    <div id="stock-info" style="font-size:12px; color:#666;">庫存連線中...</div>
 
     <div class="btn-group">
         <button class="draw-btn" style="background:#333;" onclick="goDraw(1)">單抽</button>
@@ -125,16 +125,47 @@
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            pointers = Array.from({length: count}, (_, i) => ({ pos: (i * 2) % 40, stop: false, target: null, speed: 60 }));
+            // 初始化指標位置
+            pointers = Array.from({length: count}, (_, i) => ({ 
+                pos: (i * 3) % 40, 
+                stop: false, 
+                target: null, 
+                decelSteps: 0,
+                isClosing: false 
+            }));
+
             const run = () => {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
-                pointers.forEach(p => {
-                    if(!p.stop) p.pos = (p.pos + 1) % 40;
+                
+                let allStopped = true;
+                pointers.forEach((p, i) => {
+                    if(!p.stop) {
+                        allStopped = false;
+                        // 如果進入結算狀態，根據指標索引給予不同的減速感
+                        if (p.isClosing) {
+                            p.decelSteps++;
+                            // 延遲更新位置：前面快停，後面慢停
+                            if (p.decelSteps % (i + 1) === 0) {
+                                p.pos = (p.pos + 1) % 40;
+                            }
+                            // 強制吸附：如果對準目標，直接停
+                            if (p.pos === p.target && p.decelSteps > (i * 10)) {
+                                p.stop = true;
+                            }
+                        } else {
+                            p.pos = (p.pos + 1) % 40;
+                        }
+                    }
                     const el = document.getElementById('lamp-' + p.pos);
                     if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
-                timerRefs.push(setTimeout(run, 60));
+
+                if (allStopped) {
+                    showWin();
+                } else {
+                    timerRefs.push(setTimeout(run, 60));
+                }
             };
             run();
         }
@@ -149,39 +180,14 @@
                 }
                 finalRes.forEach((r, i) => {
                     const list = (r.grade==='A' && availA.length > 0) ? availA : availB;
-                    const targetIdx = Math.floor(Math.random()*list.length);
-                    pointers[i].target = list[targetIdx];
-                    list.splice(targetIdx, 1);
+                    const tIdx = Math.floor(Math.random()*list.length);
+                    pointers[i].target = list[tIdx];
+                    list.splice(tIdx, 1);
+                    // 標記該指標可以開始找目標停下了
+                    setTimeout(() => { pointers[i].isClosing = true; }, i * 200);
                 });
-                // 收到結果後立刻開始依次減速停止，不再多跑圈
-                stopOneByOne(0);
             } else { alert(res.message); location.reload(); }
         };
-
-        function stopOneByOne(idx) {
-            if(!isAnim || idx >= pointers.length) { setTimeout(showWin, 500); return; }
-            
-            const p = pointers[idx];
-            let steps = 0;
-            const isLast = (idx === pointers.length - 1);
-
-            const decel = () => {
-                if(!isAnim) return;
-                
-                // 關鍵優化：減小等待步數 (steps > 2 即可停)，讓它一旦對準 target 且略有減速感就停下
-                if (p.pos === p.target && steps > 2) {
-                    p.stop = true;
-                    // 縮短間隔時間 (150ms)，讓五個燈停下來的節奏更快
-                    setTimeout(() => stopOneByOne(idx + 1), 150);
-                } else {
-                    steps++;
-                    // 加速進入減速判斷，最後一個燈才大幅度變慢
-                    let currentSpeed = 60 + (steps * (isLast ? 15 : 8));
-                    setTimeout(decel, currentSpeed);
-                }
-            };
-            decel();
-        }
 
         function skipAnimation() {
             isAnim = false;
