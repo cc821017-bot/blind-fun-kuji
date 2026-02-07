@@ -7,13 +7,13 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; background: #000; color: #fff; text-align: center; margin: 0; padding-top: 60px; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px 0; border-bottom: 2px solid red; z-index: 1000; }
+        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid red; z-index: 1000; }
         .pool-tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: red; border-color: gold; }
         
+        /* 核心修復：三張圖物理重疊，確保切換不失效 */
         .display-window { width: 90%; max-width: 350px; margin: 15px auto; border: 2px solid #444; height: 220px; background: #111; position: relative; overflow: hidden; border-radius: 10px; }
-        /* 核心修復：三張圖物理重疊，改用 display 顯示 */
         .prize-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; }
         .prize-img.active { display: block !important; }
 
@@ -26,9 +26,9 @@
     <div class="user-bar">點數：<span id="display-pts">載入中</span> P</div>
     
     <div class="pool-tabs">
-        <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
-        <button id="btn1" class="tab-btn" onclick="switchTo(1)">Ａ區任選</button>
-        <button id="btn2" class="tab-btn" onclick="switchTo(2)">Ｂ區任選</button>
+        <button id="btn0" class="tab-btn active" onclick="physicalSwitch(0)">單挑套</button>
+        <button id="btn1" class="tab-btn" onclick="physicalSwitch(1)">Ａ區任選</button>
+        <button id="btn2" class="tab-btn" onclick="physicalSwitch(2)">Ｂ區任選</button>
     </div>
 
     <div class="display-window">
@@ -50,48 +50,56 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
-        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        const B_IMG_URL = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
         
-        let curIdx = 0;
-        let uData = { uid: "" };
-        let stocks = {};
+        let currentIdx = 0;
+        let myUid = "";
+        let stockData = {};
 
-        // 核心切換：純物理控制 display
-        function switchTo(idx) {
-            curIdx = idx;
-            for(let i=0; i<3; i++) {
-                document.getElementById('btn'+i).className = (i === idx) ? 'tab-btn active' : 'tab-btn';
-                document.getElementById('img'+i).style.display = (i === idx) ? 'block' : 'none';
+        // 【最關鍵修復】物理切換：不判斷數據，點了就換
+        function physicalSwitch(idx) {
+            currentIdx = idx;
+            // 1. 強制切換按鈕顏色
+            for(let i=0; i<3; i++){
+                const btn = document.getElementById('btn' + i);
+                const img = document.getElementById('img' + i);
+                if(btn) btn.className = (i === idx) ? 'tab-btn active' : 'tab-btn';
+                if(img) img.style.display = (i === idx) ? 'block' : 'none';
             }
-            if (stocks[POOLS[idx]]) {
-                const s = stocks[POOLS[idx]];
-                document.getElementById('stock-display').innerText = `A：${s.a} | B：${s.b} | 總：${s.total}`;
-            }
+            // 2. 嘗試更新文字 (失敗也沒關係，不影響換圖)
+            try {
+                const name = POOLS[idx];
+                if (stockData[name]) {
+                    document.getElementById('stock-display').innerText = `A：${stockData[name].a} | B：${stockData[name].b} | 總：${stockData[name].total}`;
+                }
+            } catch(e) {}
         }
 
-        async function init() {
+        async function initLIFF() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
-                uData.uid = profile.userId;
+                myUid = profile.userId;
                 
-                // 獲取資料
                 const s1 = document.createElement('script');
                 s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`;
                 const s2 = document.createElement('script');
-                s2.src = `${API_URL}?action=checkUser&uid=${uData.uid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
-                document.body.appendChild(s1); document.body.appendChild(s2);
-            } catch (e) {}
+                s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(profile.displayName)}&callback=cb_pt`;
+                document.body.appendChild(s1);
+                document.body.appendChild(s2);
+            } catch (e) {
+                console.log("LIFF Init Error");
+            }
         }
 
-        window.cb_st = (res) => { stocks = res; switchTo(curIdx); };
+        window.cb_st = (res) => { stockData = res; physicalSwitch(currentIdx); };
         window.cb_pt = (res) => { document.getElementById('display-pts').innerText = res.points; };
 
         function goDraw() {
-            if(!uData.uid) return;
+            if(!myUid) return;
             const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${uData.uid}&poolId=${encodeURIComponent(POOLS[curIdx])}&callback=cb_res`;
+            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&callback=cb_res`;
             document.body.appendChild(s);
         }
 
@@ -99,11 +107,14 @@
             if (res.status === "success") {
                 document.getElementById('win-grade').innerText = res.grade;
                 document.getElementById('win-name').innerText = res.name;
-                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+curIdx).src : B_IMG);
+                document.getElementById('win-img').src = (res.grade === "A" ? document.getElementById('img'+currentIdx).src : B_IMG_URL);
                 document.getElementById('winPanel').style.display = 'flex';
-            } else { alert("餘額不足"); location.reload(); }
+            } else {
+                alert("餘額不足或系統忙碌");
+                location.reload();
+            }
         }
-        window.onload = init;
+        window.onload = initLIFF;
     </script>
 </body>
 </html>
