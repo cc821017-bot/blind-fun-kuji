@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-旗艦抽獎</title>
+    <title>盲玩樂-旗艦抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold-bg: #1a1a1a; }
@@ -56,9 +56,9 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold);">中獎結果</h2>
+        <h2 style="color:var(--gold); font-size: 28px; margin-bottom: 20px;">🎉 開獎結果 🎉</h2>
         <div id="res-list" style="width:80%; max-height:60vh; overflow-y:auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:10px 50px; border-radius:20px; background:white; font-weight:bold;">確認</button>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認領取</button>
     </div>
 
     <script>
@@ -104,12 +104,18 @@
         }
 
         async function initLIFF() {
-            await liff.init({ liffId: "2009072982-6smlV2gu" });
-            if (!liff.isLoggedIn()) liff.login();
-            const p = await liff.getProfile();
-            myUid = p.userId;
+            try {
+                await liff.init({ liffId: "2009072982-6smlV2gu" });
+                if (!liff.isLoggedIn()) liff.login();
+                const p = await liff.getProfile();
+                myUid = p.userId;
+                fetchData(p.displayName);
+            } catch(e) {}
+        }
+
+        function fetchData(name) {
             const s1 = document.createElement('script'); s1.src = `${API_URL}?action=getPoolStatus&callback=cb_st`; document.body.appendChild(s1);
-            const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(p.displayName)}&callback=cb_pt`; document.body.appendChild(s2);
+            const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`; document.body.appendChild(s2);
         }
 
         window.cb_st = (res) => { allData = res; updateUI(); };
@@ -119,92 +125,4 @@
             if(!myUid || isAnim) return;
             isAnim = true;
             document.querySelector('.btn-skip').style.display = 'block';
-            document.getElementById('status-text').innerText = "連線中...";
-            
-            const s = document.createElement('script');
-            s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
-            document.body.appendChild(s);
-            
-            // 初始化指標位置
-            pointers = Array.from({length: count}, (_, i) => ({ 
-                pos: (i * 3) % 40, 
-                stop: false, 
-                target: null, 
-                decelSteps: 0,
-                isClosing: false 
-            }));
-
-            const run = () => {
-                if(!isAnim) return;
-                document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
-                
-                let allStopped = true;
-                pointers.forEach((p, i) => {
-                    if(!p.stop) {
-                        allStopped = false;
-                        // 如果進入結算狀態，根據指標索引給予不同的減速感
-                        if (p.isClosing) {
-                            p.decelSteps++;
-                            // 延遲更新位置：前面快停，後面慢停
-                            if (p.decelSteps % (i + 1) === 0) {
-                                p.pos = (p.pos + 1) % 40;
-                            }
-                            // 強制吸附：如果對準目標，直接停
-                            if (p.pos === p.target && p.decelSteps > (i * 10)) {
-                                p.stop = true;
-                            }
-                        } else {
-                            p.pos = (p.pos + 1) % 40;
-                        }
-                    }
-                    const el = document.getElementById('lamp-' + p.pos);
-                    if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
-                });
-
-                if (allStopped) {
-                    showWin();
-                } else {
-                    timerRefs.push(setTimeout(run, 60));
-                }
-            };
-            run();
-        }
-
-        window.cb_res = (res) => {
-            if(res.status === 'success') {
-                finalRes = res.results;
-                const availA = [], availB = [];
-                for(let i=0; i<40; i++) {
-                    const el = document.getElementById('lamp-'+i);
-                    if(!el.classList.contains('sold-out')) (el.innerText==='A' ? availA : availB).push(i);
-                }
-                finalRes.forEach((r, i) => {
-                    const list = (r.grade==='A' && availA.length > 0) ? availA : availB;
-                    const tIdx = Math.floor(Math.random()*list.length);
-                    pointers[i].target = list[tIdx];
-                    list.splice(tIdx, 1);
-                    // 標記該指標可以開始找目標停下了
-                    setTimeout(() => { pointers[i].isClosing = true; }, i * 200);
-                });
-            } else { alert(res.message); location.reload(); }
-        };
-
-        function skipAnimation() {
-            isAnim = false;
-            timerRefs.forEach(clearTimeout);
-            showWin();
-        }
-
-        function showWin() {
-            isAnim = false;
-            document.querySelector('.btn-skip').style.display = 'none';
-            document.getElementById('winPanel').style.display = 'flex';
-            const div = document.getElementById('res-list');
-            div.innerHTML = finalRes.map(r => `<div style="padding:12px; margin-bottom:5px; background:#222; border-radius:10px; border-left:5px solid ${r.grade==='A'?'var(--gold)':'var(--red)'}"><b>${r.grade}賞</b> - ${r.name}</div>`).join('');
-        }
-
-        initBoard();
-        initLIFF();
-    </script>
-</body>
-</html>
+            document.getElementById('status
