@@ -7,48 +7,55 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 100px; height: 100vh; overflow: hidden; box-sizing: border-box; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 120px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         
-        /* 頂部導覽列 */
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
         .user-pts { padding: 8px; font-weight: bold; font-size: 16px; }
-        .marquee { background: #000; height: 24px; font-size: 12px; color: var(--gold); overflow: hidden; position: relative; }
+        .marquee { background: #000; height: 24px; font-size: 11px; color: var(--gold); overflow: hidden; position: relative; }
         .track { position: absolute; white-space: nowrap; animation: move 18s linear infinite; }
         @keyframes move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-        /* 右上角跳過鍵 - 完全不擋位 */
-        .skip-btn { position: fixed; top: 90px; right: 15px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #888; padding: 4px 10px; border-radius: 12px; font-size: 11px; z-index: 2000; display: none; }
 
         .tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .tab.active { background: var(--red); color: #fff; border-color: var(--gold); }
 
-        /* 轉盤主體 */
-        .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 5px auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
-        .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
+        .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .lamp { background: #222; border-radius: 2px; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
         .lamp.sold-out { background: var(--sold) !important; color: #333 !important; opacity: 0.3; }
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
 
-        /* 底部按鈕區 - 強制對齊底部 */
-        .footer-btns { position: fixed; bottom: 0; width: 100%; background: #111; padding: 15px 0; display: flex; justify-content: center; border-top: 1px solid #222; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .btn-draw { width: 140px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; margin: 0 10px; cursor: pointer; font-size: 16px; }
+        /* 【關鍵修正】跳過鍵：極致縮小且角落化 */
+        .skip-btn { 
+            position: absolute; 
+            top: 5px; right: 5px; 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255,255,255,0.2); 
+            color: rgba(255,255,255,0.7); 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 10px; 
+            z-index: 500; 
+            display: none; 
+            cursor: pointer;
+        }
+
+        .footer-btns { position: fixed; bottom: 25px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
+        .btn-draw { width: 135px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .btn-draw:disabled { background: #222 !important; color: #555 !important; }
 
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .res-box { width: 85%; background: #222; margin: 8px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
+        .res-box { width: 85%; background: #222; margin: 6px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
         .res-box.is-a { border-color: var(--gold); background: #2a2410; }
-        .share-btn { background: #06C755; color: #fff; padding: 14px 60px; border-radius: 30px; border: none; margin: 20px 0; font-weight: bold; font-size: 18px; }
+        .share-btn { background: #06C755; color: #fff; padding: 14px 60px; border-radius: 30px; border: none; margin: 15px 0; font-weight: bold; font-size: 18px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="user-pts">點數：<span id="pts">--</span> P</div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！祝您中 A賞！ 🔥</div></div>
+        <div class="user-pts">我的點數：<span id="pts">--</span> P</div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：祝您抽中 A賞！官方一番賞、自製一番賞持續更新中 🔥</div></div>
     </div>
-
-    <button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button>
 
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
@@ -58,23 +65,24 @@
 
     <div class="board" id="board">
         <div class="screen">
-            <img id="prev" style="width:75%; max-height:80%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <button class="skip-btn" id="skip" onclick="skip()">跳過 ❯❯</button>
+            <img id="prev" style="width:85%; max-height:85%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
         </div>
     </div>
 
-    <div id="info" style="font-size:12px; color:#888; margin-top:10px;">資料載入中...</div>
+    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold;">資料載入中...</div>
 
     <div class="footer-btns">
-        <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽</button>
+        <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽一次</button>
         <button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button>
     </div>
 
     <div id="win" class="overlay">
-        <h2 style="color:var(--gold); font-size:28px; margin-bottom:10px;">🎉 恭喜中獎</h2>
+        <h2 style="color:var(--gold); font-size:26px; margin-bottom:5px;">🎉 恭喜中獎</h2>
         <div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
-        <button class="share-btn" id="shareBtn" onclick="share()">分享中獎給好友</button>
-        <button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline;">確認收下</button>
+        <button class="share-btn" onclick="share()">分享中獎給好友</button>
+        <button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; font-size: 14px;">確認收下</button>
     </div>
 
     <script>
@@ -131,11 +139,10 @@
             document.getElementById('info').innerText = `剩餘：${d.total} (A:${d.a} B:${d.b})`;
             const b1=document.getElementById('b1'), b5=document.getElementById('b5');
             if(d.a<=0){ b1.disabled=b5.disabled=true; b1.innerText="已完售"; }
-            else { b1.disabled=b5.disabled=false; b1.innerText="單抽"; }
+            else { b1.disabled=b5.disabled=false; b1.innerText="單抽一次"; }
             document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('sold-out'));
-            for(let i=39; i>39-(40-d.total); i--) {
-                const el = document.getElementById('l-'+i); if(el) el.classList.add('sold-out');
-            }
+            const sold = 40 - d.total;
+            for(let i=39; i>39-sold; i--) { const el=document.getElementById('l-'+i); if(el) el.classList.add('sold-out'); }
         }
 
         function draw(c) {
@@ -176,8 +183,7 @@
                     if(!el.classList.contains('sold-out')){ (el.innerText==='A'?avA:avB).push(i); }
                 }
                 finalRes.forEach((x,i)=>{
-                    const l=x.grade==='A'?avA:avB;
-                    const ti=Math.floor(Math.random()*l.length);
+                    const l=x.grade==='A'?avA:avB; const ti=Math.floor(Math.random()*l.length);
                     pointers[i].target=l[ti]; l.splice(ti,1);
                     setTimeout(() => { pointers[i].t=true; }, i * 250);
                 });
@@ -195,36 +201,29 @@
                 </div>`).join('');
         }
 
-        // --- 強化版分享功能 ---
         function share() {
-            const msgText = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
+            const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const hasA = finalRes.some(x=>x.grade==='A');
             
-            // 嘗試進階分享 (Flex Message)
             if (liff.isApiAvailable('shareTargetPicker')) {
                 liff.shareTargetPicker([{
                     "type": "flex", "altText": "盲玩樂抽獎分享",
                     "contents": {
                         "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                         "body": { "type": "box", "layout": "vertical", "contents": [
-                            { "type": "text", "text": "盲玩樂 - 抽獎大成功！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
+                            { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
                             { "type": "text", "text": hasA ? "🔥 天啊！我中 A 賞了！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
-                            { "type": "text", "text": msgText, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
+                            { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
                         ]},
                         "footer": { "type": "box", "layout": "vertical", "contents": [
                             { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": "https://liff.line.me/2009072982-6smlV2gu" }, "style": "primary", "color": "#ff3e3e" }
                         ]}
                     }
-                }]).then(res => { if (res) alert("分享成功！"); })
-                .catch(() => { fallbackShare(msgText); });
+                }]).then(res => { if (res) alert("已成功分享！"); })
+                .catch(() => { window.location.href = `https://line.me/R/msg/text/?盲玩樂抽獎：\n${encodeURIComponent(txt)}`; });
             } else {
-                fallbackShare(msgText);
+                window.location.href = `https://line.me/R/msg/text/?盲玩樂抽獎：\n${encodeURIComponent(txt)}`;
             }
-        }
-
-        function fallbackShare(txt) {
-            // 降級方案：直接彈出 LINE 選單發送文字
-            window.location.href = `https://line.me/R/msg/text/?我在盲玩樂抽獎啦！結果如下：\n${encodeURIComponent(txt)}\n我也要玩：https://liff.line.me/2009072982-6smlV2gu`;
         }
 
         init(); liffInit();
