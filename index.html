@@ -3,72 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-旗艦抽獎中心</title>
+    <title>盲玩樂-旗艦中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 90px; overflow: hidden; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 100px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         
+        /* 頂部導覽列 */
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
-        .user-pts { padding: 10px; font-weight: bold; font-size: 18px; }
+        .user-pts { padding: 8px; font-weight: bold; font-size: 16px; }
         .marquee { background: #000; height: 24px; font-size: 12px; color: var(--gold); overflow: hidden; position: relative; }
         .track { position: absolute; white-space: nowrap; animation: move 18s linear infinite; }
         @keyframes move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+        /* 右上角跳過鍵 - 完全不擋位 */
+        .skip-btn { position: fixed; top: 90px; right: 15px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #888; padding: 4px 10px; border-radius: 12px; font-size: 11px; z-index: 2000; display: none; }
 
         .tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .tab.active { background: var(--red); color: #fff; border-color: var(--gold); }
 
-        .board { width: 95vw; height: 95vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
-        .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        /* 轉盤主體 */
+        .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 5px auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
+        .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .lamp { background: #222; border-radius: 2px; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
-        .lamp.sold-out { background: var(--sold) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.3; }
+        .lamp.sold-out { background: var(--sold) !important; color: #333 !important; opacity: 0.3; }
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
 
-        /* 跳過按鈕改到右上角 */
-        .skip { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); border: 1px solid #555; color: #aaa; padding: 4px 12px; border-radius: 10px; font-size: 11px; display: none; z-index: 100; cursor: pointer; }
-        
-        .btn-draw { width: 130px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; margin: 15px 10px; cursor: pointer; }
-        .btn-draw:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
+        /* 底部按鈕區 - 強制對齊底部 */
+        .footer-btns { position: fixed; bottom: 0; width: 100%; background: #111; padding: 15px 0; display: flex; justify-content: center; border-top: 1px solid #222; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .btn-draw { width: 140px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; margin: 0 10px; cursor: pointer; font-size: 16px; }
+        .btn-draw:disabled { background: #222 !important; color: #555 !important; }
 
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { width: 85%; background: #222; margin: 8px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
         .res-box.is-a { border-color: var(--gold); background: #2a2410; }
+        .share-btn { background: #06C755; color: #fff; padding: 14px 60px; border-radius: 30px; border: none; margin: 20px 0; font-weight: bold; font-size: 18px; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="user-pts">點數：<span id="pts">--</span> P</div>
-        <div class="marquee"><div class="track" id="news">🔥 盲玩樂：祝您抽中 A賞！官方一番賞、自製一番賞持續更新中 🔥</div></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！祝您中 A賞！ 🔥</div></div>
     </div>
+
+    <button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button>
+
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
         <button class="tab" onclick="sw(1)">Ａ區任選</button>
         <button class="tab" onclick="sw(2)">Ｂ區任選</button>
     </div>
+
     <div class="board" id="board">
         <div class="screen">
-            <img id="prev" style="width:70%; max-height: 75%; object-fit: contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <img id="prev" style="width:75%; max-height:80%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
-            <button class="skip" id="skip" onclick="skip()">跳過 ❯</button>
         </div>
     </div>
-    <div id="info" style="font-size:12px; color:#666; margin-top:10px;">資料同步中...</div>
-    <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽一次</button>
-    <button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button>
+
+    <div id="info" style="font-size:12px; color:#888; margin-top:10px;">資料載入中...</div>
+
+    <div class="footer-btns">
+        <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽</button>
+        <button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button>
+    </div>
 
     <div id="win" class="overlay">
-        <h2 style="color:var(--gold); font-size: 26px;">🎉 恭喜中獎 🎉</h2>
+        <h2 style="color:var(--gold); font-size:28px; margin-bottom:10px;">🎉 恭喜中獎</h2>
         <div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
-        <button onclick="share()" style="background:#06C755; color:#fff; padding:12px 60px; border-radius:25px; border:none; margin:15px; font-weight:bold;">分享給好友</button>
-        <button onclick="location.reload()" style="color:#888; background:none; border:none; text-decoration:underline;">確認收下</button>
+        <button class="share-btn" id="shareBtn" onclick="share()">分享中獎給好友</button>
+        <button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline;">確認收下</button>
     </div>
 
     <script>
-        // 已填入您的最新 GAS 網址
         const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
-        
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         const IMGS = ["https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480", "https://i.meee.com.tw/d2cFJiy.jpg", "https://i.meee.com.tw/B8xVcyj.jpg"];
         const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
@@ -96,39 +106,35 @@
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if(!liff.isLoggedIn()){ liff.login(); return; }
                 const p = await liff.getProfile(); uid = p.userId;
-                fetchData(p.displayName);
+                load(p.displayName);
             } catch(e) {}
         }
 
-        function fetchData(n) {
-            const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb_pool`; document.body.appendChild(s1);
-            const s2 = document.createElement('script'); s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(n)}&callback=cb_pts`; document.body.appendChild(s2);
+        function load(n) {
+            const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb1`; document.body.appendChild(s1);
+            const s2 = document.createElement('script'); s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(n)}&callback=cb2`; document.body.appendChild(s2);
         }
 
-        window.cb_pool = (r) => { all=r.stocks; updUI(); };
-        window.cb_pts = (r) => { document.getElementById('pts').innerText = r.points; };
+        window.cb1 = (r) => { all=r.stocks; upd(); };
+        window.cb2 = (r) => { document.getElementById('pts').innerText = r.points; };
 
         function sw(i) {
             if(isAnim) return; cur=i;
             document.getElementById('prev').src = IMGS[i];
             document.querySelectorAll('.tab').forEach((b,j)=>b.className=i===j?'tab active':'tab');
-            updUI();
+            upd();
         }
 
-        function updUI() {
+        function upd() {
             const d = all[POOLS[cur]];
             if(!d) return;
             document.getElementById('info').innerText = `剩餘：${d.total} (A:${d.a} B:${d.b})`;
             const b1=document.getElementById('b1'), b5=document.getElementById('b5');
-            if(d.a <= 0){
-                b1.disabled=b5.disabled=true; b1.innerText="已完售";
-            } else {
-                b1.disabled=b5.disabled=false; b1.innerText="單抽一次";
-            }
+            if(d.a<=0){ b1.disabled=b5.disabled=true; b1.innerText="已完售"; }
+            else { b1.disabled=b5.disabled=false; b1.innerText="單抽"; }
             document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('sold-out'));
             for(let i=39; i>39-(40-d.total); i--) {
-                const el = document.getElementById('l-'+i);
-                if(el) el.classList.add('sold-out');
+                const el = document.getElementById('l-'+i); if(el) el.classList.add('sold-out');
             }
         }
 
@@ -137,7 +143,7 @@
             document.getElementById('skip').style.display='block';
             document.getElementById('status').innerText = "運勢凝聚中...";
             const s = document.createElement('script');
-            s.src=`${API}?action=draw&uid=${uid}&poolId=${encodeURIComponent(POOLS[cur])}&count=${c}&callback=cb_draw`;
+            s.src=`${API}?action=draw&uid=${uid}&poolId=${encodeURIComponent(POOLS[cur])}&count=${c}&callback=cb3`;
             document.body.appendChild(s);
             
             pointers = Array.from({length:c},(_,i)=>({p:(i*3)%40,s:false,t:null,d:0}));
@@ -149,20 +155,19 @@
                     if(!p.s){
                         stopAll=false;
                         if(p.t!==null){
-                            p.d++;
-                            if(p.d % (i+1) === 0) p.p=(p.p+1)%40;
-                            if(p.p===p.target && p.d > (i * 10 + 5)) p.s=true;
+                            p.d++; if(p.d % (i+1) === 0) p.p=(p.p+1)%40;
+                            if(p.p===p.target && p.d > (i * 12 + 5)) p.s=true;
                         } else { p.p=(p.p+1)%40; }
                     }
                     const el=document.getElementById('l-'+p.p);
                     if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
                 });
-                if(stopAll) setTimeout(showRes, 1500); else setTimeout(anim, 60);
+                if(stopAll) setTimeout(show, 1500); else setTimeout(anim, 60);
             };
             anim();
         }
 
-        window.cb_draw = (r) => {
+        window.cb3 = (r) => {
             if(r.status==='success'){
                 finalRes = r.results.sort((a,b)=>a.grade==='A'?1:-1);
                 const avA=[], avB=[];
@@ -179,33 +184,47 @@
             } else { alert(r.message); location.reload(); }
         }
 
-        function skip() { isAnim=false; showRes(); }
-        function showRes() {
+        function skip() { isAnim=false; show(); }
+        function show() {
             isAnim=false; document.getElementById('skip').style.display='none';
             document.getElementById('win').style.display='flex';
             document.getElementById('list').innerHTML = finalRes.map(x=>`
                 <div class="res-box ${x.grade==='A'?'is-a':''}">
                     <img src="${x.grade==='A'?IMGS[cur]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;">
-                    <div><b style="color:${x.grade==='A'?'var(--gold)':'#fff'}">${x.grade}賞</b><br><small>${x.name}</small></div>
+                    <div><b>${x.grade}賞</b><br><small>${x.name}</small></div>
                 </div>`).join('');
         }
 
+        // --- 強化版分享功能 ---
         function share() {
+            const msgText = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const hasA = finalRes.some(x=>x.grade==='A');
-            liff.shareTargetPicker([{
-                "type": "flex", "altText": "盲玩樂抽獎結果",
-                "contents": {
-                    "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-                    "body": { "type": "box", "layout": "vertical", "contents": [
-                        { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
-                        { "type": "text", "text": hasA ? "🔥 天啊！我竟然中 A賞了！" : "快來一起抽，下個 A賞就是你！", "margin": "md", "wrap": true },
-                        { "type": "text", "text": finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n'), "wrap": true, "size": "sm", "margin": "md", "color": "#666666" }
-                    ]},
-                    "footer": { "type": "box", "layout": "vertical", "contents": [
-                        { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": "https://liff.line.me/2009072982-6smlV2gu" }, "style": "primary", "color": "#ff3e3e" }
-                    ]}
-                }
-            }]).then(()=>alert("已分享")).catch(()=>console.log("取消"));
+            
+            // 嘗試進階分享 (Flex Message)
+            if (liff.isApiAvailable('shareTargetPicker')) {
+                liff.shareTargetPicker([{
+                    "type": "flex", "altText": "盲玩樂抽獎分享",
+                    "contents": {
+                        "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                        "body": { "type": "box", "layout": "vertical", "contents": [
+                            { "type": "text", "text": "盲玩樂 - 抽獎大成功！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
+                            { "type": "text", "text": hasA ? "🔥 天啊！我中 A 賞了！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
+                            { "type": "text", "text": msgText, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
+                        ]},
+                        "footer": { "type": "box", "layout": "vertical", "contents": [
+                            { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": "https://liff.line.me/2009072982-6smlV2gu" }, "style": "primary", "color": "#ff3e3e" }
+                        ]}
+                    }
+                }]).then(res => { if (res) alert("分享成功！"); })
+                .catch(() => { fallbackShare(msgText); });
+            } else {
+                fallbackShare(msgText);
+            }
+        }
+
+        function fallbackShare(txt) {
+            // 降級方案：直接彈出 LINE 選單發送文字
+            window.location.href = `https://line.me/R/msg/text/?我在盲玩樂抽獎啦！結果如下：\n${encodeURIComponent(txt)}\n我也要玩：https://liff.line.me/2009072982-6smlV2gu`;
         }
 
         init(); liffInit();
