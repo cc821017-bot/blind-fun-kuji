@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-旗艦圓環</title>
+    <title>盲玩樂-旗艦抽獎中心</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; }
@@ -140,12 +140,11 @@
         }
         function shareFinal() {
             const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
-            const url = "https://liff.line.me/2009072982-6smlV2gu";
+            const url = "https://liff.me/2009072982-6smlV2gu";
             if (liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 中大獎了！太爽啦！" : "試試手氣吧！", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?我在盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
+                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 中大獎了！太爽啦！" : "試試手氣吧！", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
             }
         }
-        initBoard = () => {};
         liffInit();
     </script>
 </body>
