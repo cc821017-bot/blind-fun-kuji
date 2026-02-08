@@ -72,7 +72,7 @@
         for(let i=10;i>=1;i--) coords.push({r:11,c:i});
         for(let i=10;i>=2;i--) coords.push({r:i,c:1});
 
-        function initBoard() {
+        function init() {
             const b = document.getElementById('board');
             coords.forEach((p,i)=>{
                 const d = document.createElement('div');
@@ -87,7 +87,7 @@
                 if(!liff.isLoggedIn()){ liff.login(); return; }
                 const p = await liff.getProfile(); uid = p.userId;
                 fetchData(p.displayName);
-            } catch(e) { document.getElementById('info').innerText = "連線失敗"; }
+            } catch(e) {}
         }
         function fetchData(n) {
             const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb1`; document.body.appendChild(s1);
@@ -149,10 +149,10 @@
             const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const url = "https://liff.line.me/2009072982-6smlV2gu";
             if (liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎分享", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": "中獎結果如下：", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
+                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": "中獎結果如下：", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?我在盲玩樂中獎啦！\n${encodeURIComponent(txt)}`; });
             }
         }
-        initBoard(); liffInit();
+        init(); liffInit();
     </script>
 </body>
 </html>
