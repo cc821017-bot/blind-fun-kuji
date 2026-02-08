@@ -7,7 +7,7 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 160px; height: 100vh; overflow: hidden; box-sizing: border-box; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 180px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
         .user-pts { padding: 8px; font-weight: bold; font-size: 16px; }
@@ -26,10 +26,11 @@
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
 
-        .skip-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 4px 15px; border-radius: 15px; font-size: 11px; z-index: 500; display: none; }
+        /* 【跳過鍵】精確定位在狀態文字下方，完全避開大圖 */
+        .skip-btn { margin-top: 8px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 3px 12px; border-radius: 12px; font-size: 11px; z-index: 500; display: none; cursor: pointer; }
 
-        /* 【核心調整】抽獎按鈕上移至 bottom: 75px */
-        .footer-btns { position: fixed; bottom: 75px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
+        /* 【抽獎按鈕】位置大幅上抬至 bottom: 100px */
+        .footer-btns { position: fixed; bottom: 100px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
         .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         .btn-draw:disabled { background: #222 !important; color: #555 !important; }
 
@@ -42,7 +43,7 @@
 <body>
     <div class="header">
         <div class="user-pts">我的點數：<span id="pts">--</span> P</div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：祝您抽中 A賞！官方一番賞、自製一番賞持續更新中 🔥</div></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！祝您中 A賞！ 🔥</div></div>
     </div>
 
     <div class="tabs">
@@ -53,7 +54,7 @@
 
     <div class="board" id="board">
         <div class="screen">
-            <img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <img id="prev" style="width:85%; max-height:70%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div>
             <button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button>
         </div>
@@ -69,7 +70,7 @@
     <div id="win" class="overlay">
         <h2 style="color:var(--gold); font-size:26px;">🎉 恭喜中獎</h2>
         <div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
-        <button class="share-btn" onclick="forceShare()">分享中獎結果 ❯</button>
+        <button class="share-btn" onclick="shareFinal()">分享給好友（必成功版）</button>
         <button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline;">確認收下</button>
     </div>
 
@@ -102,11 +103,11 @@
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if(!liff.isLoggedIn()){ liff.login(); return; }
                 const p = await liff.getProfile(); uid = p.userId;
-                fetchData(p.displayName);
+                load(p.displayName);
             } catch(e) {}
         }
 
-        function fetchData(n) {
+        function load(n) {
             const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb1`; document.body.appendChild(s1);
             const s2 = document.createElement('script'); s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(n)}&callback=cb2`; document.body.appendChild(s2);
         }
@@ -128,7 +129,7 @@
             if(d.a<=0){ b1.disabled=b5.disabled=true; b1.innerText="已完售"; }
             else { b1.disabled=b5.disabled=false; b1.innerText="單抽一次"; }
             document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('sold-out'));
-            for(let i=39; i>39-(40-d.total); i--) { const el=document.getElementById('l-'+i); if(el) el.classList.add('sold-out'); }
+            for(let i=39; i>39-(40-d.total); i--) { const el = document.getElementById('l-'+i); if(el) el.classList.add('sold-out'); }
         }
 
         function draw(c) {
@@ -142,11 +143,7 @@
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
                 let stopAll=true;
                 pointers.forEach((p,i)=>{
-                    if(!p.s){
-                        stopAll=false;
-                        if(p.t!==null){ p.d++; if(p.d % (i+1) === 0) p.p=(p.p+1)%40; if(p.p===p.target && p.d > (i * 12 + 5)) p.s=true; }
-                        else { p.p=(p.p+1)%40; }
-                    }
+                    if(!p.s){ stopAll=false; if(p.t!==null){ p.d++; if(p.d%(i+1)===0) p.p=(p.p+1)%40; if(p.p===p.target && p.d > (i*12+5)) p.s=true; } else { p.p=(p.p+1)%40; } }
                     const el=document.getElementById('l-'+p.p); if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
                 });
                 if(stopAll) setTimeout(show, 1500); else setTimeout(anim, 60);
@@ -170,19 +167,10 @@
             document.getElementById('list').innerHTML = finalRes.map(x=>`<div class="res-box ${x.grade==='A'?'is-a':''}"><img src="${x.grade==='A'?IMGS[cur]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;"><div><b>${x.grade}賞</b><br><small>${x.name}</small></div></div>`).join('');
         }
 
-        // --- 強制分享邏輯：保證不卡死 ---
-        function forceShare() {
+        // --- 修復分享功能：保證點了就有反應 ---
+        function shareFinal() {
             const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const hasA = finalRes.some(x=>x.grade==='A');
             const liffUrl = "https://liff.line.me/2009072982-6smlV2gu";
 
-            // 嘗試 Flex 分享
-            if (liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([{
-                    "type": "flex", "altText": "盲玩樂抽獎結果",
-                    "contents": {
-                        "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-                        "body": { "type": "box", "layout": "vertical", "contents": [
-                            { "type": "text", "text": "盲玩樂 - 抽獎大成功！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
-                            { "type": "text", "text": hasA ? "🔥 天啊！我中 A 賞了！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
-                            { "type": "text", "text": txt, "
+            // 1. 先
