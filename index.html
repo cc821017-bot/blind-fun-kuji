@@ -7,8 +7,15 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold-bg: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; transition: background 0.2s; }
-        .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 85px; overflow: hidden; transition: background 0.2s; }
+        
+        /* 頂部導覽列與跑馬燈 */
+        .header-fixed { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
+        .user-bar { padding: 10px 0; font-weight: bold; font-size: 16px; }
+        .news-bar { background: #000; height: 24px; line-height: 24px; font-size: 12px; color: var(--gold); overflow: hidden; position: relative; border-top: 1px solid #222; }
+        .news-track { position: absolute; white-space: nowrap; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
         .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px; }
         .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; cursor: pointer; font-size: 13px; }
         .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); }
@@ -19,8 +26,7 @@
             display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; padding: 5px;
         }
         .center-display { grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; position: relative; }
-        .lamp-a { color: #860; border-color: #540; }
+        .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
         .lamp.sold-out { background: var(--sold-bg) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.4; }
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
         .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--gold); z-index: 10; }
@@ -30,9 +36,6 @@
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 75% { transform: translate(5px, -5px); } }
         .shake-active { animation: shake 0.1s ease-in-out infinite; }
 
-        .btn-skip { position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.9); border: none; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 200; }
-        
-        /* 抽獎按鈕樣式與禁用狀態 */
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; transition: 0.3s; }
         .draw-btn:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; opacity: 0.7; }
 
@@ -43,7 +46,13 @@
     </style>
 </head>
 <body>
-    <div class="user-bar">點數：<span id="display-pts">----</span> P</div>
+    <div class="header-fixed">
+        <div class="user-bar">點數：<span id="display-pts">----</span> P</div>
+        <div class="news-bar">
+            <div class="news-track" id="news-track">🔥 盲玩樂：祝您抽中大獎！ 歡迎光臨高雄最夯一番賞店 🔥</div>
+        </div>
+    </div>
+
     <div class="pool-tabs">
         <button id="btn0" class="tab-btn active" onclick="switchTo(0)">單挑套</button>
         <button id="btn1" class="tab-btn" onclick="switchTo(1)">Ａ區任選</button>
@@ -54,10 +63,10 @@
         <div class="center-display">
             <img id="main-preview" style="width:70%; max-height:70%; object-fit: contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status-text" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
-            <button class="btn-skip" onclick="skipAnimation()">跳過動畫</button>
+            <button class="btn-skip" onclick="skipAnimation()" style="display:none; position:absolute; bottom:10px; background:rgba(255,62,62,0.8); border:none; color:white; padding:5px 15px; border-radius:15px; font-size:12px; z-index:100;">跳過動畫</button>
         </div>
     </div>
-    <div id="stock-info" style="font-size:12px; color:#666;">庫存連線中...</div>
+    <div id="stock-info" style="font-size:12px; color:#666;">同步中...</div>
 
     <div class="btn-group">
         <button class="draw-btn" style="background:#333;" id="btn-single" onclick="goDraw(1)">單抽一次</button>
@@ -65,7 +74,7 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold); font-size: 26px; margin-bottom: 15px;">🎉 恭喜中獎 🎉</h2>
+        <h2 style="color:var(--gold); font-size: 26px;">🎉 恭喜中獎 🎉</h2>
         <div id="res-list" style="width:100%; max-height:60vh; overflow-y:auto; display: flex; flex-direction: column; align-items: center;"></div>
         <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none; color:#000;">確認領取</button>
     </div>
@@ -110,22 +119,15 @@
             if(data) {
                 const isSoldOut = (data.a <= 0);
                 document.getElementById('stock-info').innerText = `剩餘：${data.total} (A:${data.a} B:${data.b})`;
-                
-                // --- 【核心修正】A 賞抽完自動鎖定按鈕 ---
                 const sBtn = document.getElementById('btn-single');
                 const mBtn = document.getElementById('btn-multi');
                 if(isSoldOut) {
-                    sBtn.disabled = true;
-                    mBtn.disabled = true;
-                    sBtn.innerText = "大獎已抽完";
-                    mBtn.innerText = "請換池";
+                    sBtn.disabled = true; mBtn.disabled = true;
+                    sBtn.innerText = "大獎已抽完"; mBtn.innerText = "請換池";
                 } else {
-                    sBtn.disabled = false;
-                    mBtn.disabled = false;
-                    sBtn.innerText = "單抽一次";
-                    mBtn.innerText = "五連抽！";
+                    sBtn.disabled = false; mBtn.disabled = false;
+                    sBtn.innerText = "單抽一次"; mBtn.innerText = "五連抽！";
                 }
-
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('sold-out'));
                 const sold = 40 - data.total;
                 for(let i=39; i > 39 - sold; i--) document.getElementById('lamp-'+i)?.classList.add('sold-out');
@@ -147,15 +149,26 @@
             const s2 = document.createElement('script'); s2.src = `${API_URL}?action=checkUser&uid=${myUid}&name=${encodeURIComponent(name)}&callback=cb_pt`; document.body.appendChild(s2);
         }
 
-        window.cb_st = (res) => { allData = res; updateUI(); };
+        window.cb_st = (res) => { allData = res; updateUI(); updateMarquee(); };
         window.cb_pt = (res) => { if(res && res.points !== undefined) document.getElementById('display-pts').innerText = res.points; };
+
+        function updateMarquee() {
+            // 模擬從庫存資訊中產生隨機中獎跑馬燈
+            const track = document.getElementById('news-track');
+            const messages = [
+                "恭喜 某會員 剛剛在 A區任選 抽中大獎 A賞！",
+                "盲玩樂提醒：單挑套目前已完抽，趕快試試 A、B區任選！",
+                "幸運星降臨！剛剛有人五連抽帶走兩個 A賞！",
+                "盲玩樂：官方一番賞、自製一番賞持續更新中！"
+            ];
+            track.innerText = messages.join(" 　★　 ");
+        }
 
         function goDraw(count) {
             if(!myUid || isAnim) return;
             isAnim = true;
             document.querySelector('.btn-skip').style.display = 'block';
-            document.getElementById('status-text').innerText = "連線中...";
-            
+            document.getElementById('status-text').innerText = "運勢凝聚中...";
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
@@ -177,10 +190,8 @@
                     const el = document.getElementById('lamp-' + p.pos);
                     if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
-                
                 if(allStopped) {
-                    const hasA = finalRes.some(r => r.grade === 'A');
-                    if(hasA) triggerGoldenCelebration();
+                    if(finalRes.some(r => r.grade === 'A')) triggerGoldenCelebration();
                     setTimeout(showWin, 1500); 
                 } else { timerRefs.push(setTimeout(run, 60)); }
             };
@@ -228,14 +239,7 @@
             listDiv.innerHTML = finalRes.map(r => {
                 const imgUrl = (r.grade === 'A') ? PREVIEWS[currentIdx] : B_THUMB;
                 const isA = (r.grade === 'A');
-                return `
-                <div class="res-item ${isA ? 'is-a' : ''}">
-                    <img src="${imgUrl}" class="res-thumb">
-                    <div class="res-info">
-                        <b style="color:${isA ? 'var(--gold)' : '#fff'}">${r.grade}賞</b>
-                        <span style="font-size:12px;color:#aaa;">${r.name}</span>
-                    </div>
-                </div>`;
+                return `<div class="res-item ${isA ? 'is-a' : ''}"><img src="${imgUrl}" class="res-thumb"><div class="res-info"><b style="color:${isA ? 'var(--gold)' : '#fff'}">${r.grade}賞</b><span>${r.name}</span></div></div>`;
             }).join('');
         }
 
