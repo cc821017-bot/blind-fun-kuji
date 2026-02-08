@@ -9,16 +9,19 @@
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
         body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 180px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         
+        /* 頂部導航 */
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
         .user-pts { padding: 8px; font-weight: bold; font-size: 16px; }
         .marquee { background: #000; height: 24px; font-size: 11px; color: var(--gold); overflow: hidden; position: relative; }
         .track { position: absolute; white-space: nowrap; animation: move 18s linear infinite; }
         @keyframes move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
+        /* 標籤切換 */
         .tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
         .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .tab.active { background: var(--red); color: #fff; border-color: var(--gold); }
 
+        /* 轉盤主體 */
         .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
         .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .lamp { background: #222; border-radius: 2px; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
@@ -26,8 +29,10 @@
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
 
+        /* 跳過鍵：位於狀態文字下方，完全不擋圖 */
         .skip-btn { margin-top: 8px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 3px 12px; border-radius: 12px; font-size: 11px; z-index: 500; display: none; cursor: pointer; }
 
+        /* 抽獎按鈕：黃金上移高度 */
         .footer-btns { position: fixed; bottom: 100px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
         .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         .btn-draw:disabled { background: #222 !important; color: #555 !important; }
@@ -41,7 +46,7 @@
 <body>
     <div class="header">
         <div class="user-pts">我的點數：<span id="pts">--</span> P</div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！祝您中 A賞！ 🔥</div></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：祝您抽中 A賞！官方一番賞、自製一番賞持續更新中 🔥</div></div>
     </div>
 
     <div class="tabs">
@@ -101,17 +106,18 @@
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if(!liff.isLoggedIn()){ liff.login(); return; }
                 const p = await liff.getProfile(); uid = p.userId;
-                load(p.displayName);
+                fetchData(p.displayName);
             } catch(e) {}
         }
 
-        function load(n) {
+        function fetchData(n) {
             const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb1`; document.body.appendChild(s1);
             const s2 = document.createElement('script'); s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(n)}&callback=cb2`; document.body.appendChild(s2);
         }
 
-        window.cb1 = (r) => { if(r.stocks) { all=r.stocks; upd(); } };
-        window.cb2 = (r) => { if(r.points !== undefined) document.getElementById('pts').innerText = r.points; };
+        // 對齊您的 GAS 回傳結構
+        window.cb1 = (r) => { if(r.stocks) { all=r.stocks; upd(); } else { all=r; upd(); } };
+        window.cb2 = (r) => { document.getElementById('pts').innerText = r.points !== undefined ? r.points : 0; };
 
         function sw(i) {
             if(isAnim) return; cur=i;
@@ -174,4 +180,19 @@
                     "contents": {
                         "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                         "body": { "type": "box", "layout": "vertical", "contents": [
-                            { "type": "text", "text
+                            { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
+                            { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 我中 A 賞了！歐氣爆棚！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
+                            { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
+                        ]},
+                        "footer": { "type": "box", "layout": "vertical", "contents": [
+                            { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" }
+                        ]}
+                    }
+                }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}\n這裡抽：${url}`; });
+            } else { window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}\n這裡抽：${url}`; }
+        }
+
+        init(); liffInit();
+    </script>
+</body>
+</html>
