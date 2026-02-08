@@ -7,26 +7,46 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold-bg: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 60px; overflow: hidden; transition: background 0.2s; }
         .user-bar { position: fixed; top: 0; width: 100%; background: #111; padding: 12px 0; border-bottom: 2px solid var(--red); z-index: 1000; font-weight: bold; }
         .pool-tabs { display: flex; justify-content: center; gap: 8px; padding: 10px; }
         .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; cursor: pointer; font-size: 13px; }
         .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); }
 
+        /* 大轉盤容器 */
         .game-container { 
             width: 95vw; height: 95vw; max-width: 400px; max-height: 400px; 
             margin: 5px auto; position: relative; background: #000; border: 4px solid #333; border-radius: 15px;
             display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; padding: 5px;
+            transition: transform 0.1s;
         }
         .center-display { grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         
+        /* 燈號格子 */
         .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; position: relative; }
         .lamp-a { color: #860; border-color: #540; }
         .lamp.sold-out { background: var(--sold-bg) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.4; }
-        .lamp.sold-out::after { content: '×'; font-size: 12px; position: absolute; }
-
+        
+        /* 點亮特效 */
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
-        .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 18px var(--gold); z-index: 10; }
+        .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--gold); z-index: 10; }
+
+        /* 金光閃爍動畫 */
+        @keyframes gold-flash {
+            0% { background-color: var(--dark); }
+            50% { background-color: #443300; }
+            100% { background-color: var(--dark); }
+        }
+        .flash-active { animation: gold-flash 0.3s ease-in-out 3; }
+
+        /* 震動動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translate(0,0); }
+            25% { transform: translate(5px, 5px); }
+            50% { transform: translate(-5px, -5px); }
+            75% { transform: translate(5px, -5px); }
+        }
+        .shake-active { animation: shake 0.1s ease-in-out infinite; }
 
         .btn-skip { position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.9); border: none; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 200; }
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; }
@@ -51,14 +71,14 @@
     <div id="stock-info" style="font-size:12px; color:#666;">庫存連線中...</div>
 
     <div class="btn-group">
-        <button class="draw-btn" style="background:#333;" onclick="goDraw(1)">單抽</button>
-        <button class="draw-btn" style="background:var(--red);" onclick="goDraw(5)">五連抽</button>
+        <button class="draw-btn" style="background:#333;" onclick="goDraw(1)">單抽一次</button>
+        <button class="draw-btn" style="background:var(--red);" onclick="goDraw(5)">五連抽！</button>
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold); font-size: 28px; margin-bottom: 20px;">🎉 開獎結果 🎉</h2>
+        <h2 id="win-title" style="color:var(--gold); font-size: 28px;">🎉 開獎結果 🎉</h2>
         <div id="res-list" style="width:80%; max-height:60vh; overflow-y:auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認收下</button>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認領取</button>
     </div>
 
     <script>
@@ -144,7 +164,6 @@
                         if(p.isClosing) {
                             p.delay++;
                             if(p.delay % (i + 1) === 0) p.pos = (p.pos + 1) % 40;
-                            // 縮短最後一抽判斷
                             if(p.pos === p.target && p.delay > (i * 10 + 5)) p.stop = true;
                         } else { p.pos = (p.pos + 1) % 40; }
                     }
@@ -153,11 +172,23 @@
                 });
                 
                 if(allStopped) {
-                    // 暫停 1.5 秒再開獎
+                    const hasA = finalRes.some(r => r.grade === 'A');
+                    if(hasA) triggerGoldenCelebration();
                     setTimeout(showWin, 1500); 
                 } else { timerRefs.push(setTimeout(run, 60)); }
             };
             run();
+        }
+
+        function triggerGoldenCelebration() {
+            document.body.classList.add('flash-active');
+            document.getElementById('game-board').classList.add('shake-active');
+            document.getElementById('status-text').innerText = "🔥 恭喜獲得 A 賞 🔥";
+            // 閃一下就停
+            setTimeout(() => {
+                document.body.classList.remove('flash-active');
+                document.getElementById('game-board').classList.remove('shake-active');
+            }, 1000);
         }
 
         window.cb_res = (res) => {
@@ -173,7 +204,6 @@
                     const tIdx = Math.floor(Math.random()*list.length);
                     pointers[i].target = list[tIdx];
                     list.splice(tIdx, 1);
-                    // 縮短階梯間隔至 250ms
                     setTimeout(() => { pointers[i].isClosing = true; }, i * 250);
                 });
             } else { alert(res.message); location.reload(); }
