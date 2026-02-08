@@ -13,44 +13,32 @@
         .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; cursor: pointer; font-size: 13px; }
         .tab-btn.active { background: var(--red); color: white; border-color: var(--gold); }
 
-        /* 大轉盤容器 */
         .game-container { 
             width: 95vw; height: 95vw; max-width: 400px; max-height: 400px; 
             margin: 5px auto; position: relative; background: #000; border: 4px solid #333; border-radius: 15px;
             display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; padding: 5px;
-            transition: transform 0.1s;
         }
         .center-display { grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         
-        /* 燈號格子 */
         .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; position: relative; }
         .lamp-a { color: #860; border-color: #540; }
         .lamp.sold-out { background: var(--sold-bg) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.4; }
         
-        /* 點亮特效 */
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
         .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--gold); z-index: 10; }
 
-        /* 金光閃爍動畫 */
-        @keyframes gold-flash {
-            0% { background-color: var(--dark); }
-            50% { background-color: #443300; }
-            100% { background-color: var(--dark); }
-        }
+        @keyframes gold-flash { 0% { background-color: var(--dark); } 50% { background-color: #443300; } 100% { background-color: var(--dark); } }
         .flash-active { animation: gold-flash 0.3s ease-in-out 3; }
-
-        /* 震動動畫 */
-        @keyframes shake {
-            0%, 100% { transform: translate(0,0); }
-            25% { transform: translate(5px, 5px); }
-            50% { transform: translate(-5px, -5px); }
-            75% { transform: translate(5px, -5px); }
-        }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 75% { transform: translate(5px, -5px); } }
         .shake-active { animation: shake 0.1s ease-in-out infinite; }
 
         .btn-skip { position: absolute; bottom: 15px; background: rgba(255, 62, 62, 0.9); border: none; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; z-index: 200; }
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; }
+        
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
+        .res-item { display: flex; align-items: center; background: #222; margin-bottom: 10px; padding: 10px; border-radius: 12px; border-left: 6px solid var(--red); text-align: left; width: 85%; }
+        .res-item.is-a { border-left-color: var(--gold); background: #2a2410; }
+        .res-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 15px; border: 1px solid #444; }
     </style>
 </head>
 <body>
@@ -76,16 +64,17 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 id="win-title" style="color:var(--gold); font-size: 28px;">🎉 開獎結果 🎉</h2>
-        <div id="res-list" style="width:80%; max-height:60vh; overflow-y:auto;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none;">確認領取</button>
+        <h2 style="color:var(--gold); font-size: 26px; margin-bottom: 15px;">🎉 恭喜中獎 🎉</h2>
+        <div id="res-list" style="width:100%; max-height:60vh; overflow-y:auto; display: flex; flex-direction: column; align-items: center;"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 60px; border-radius:30px; background:white; font-weight:bold; border:none; color:#000;">確認領取</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         const PREVIEWS = ["https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480", "https://i.meee.com.tw/d2cFJiy.jpg", "https://i.meee.com.tw/B8xVcyj.jpg"];
-        
+        const B_THUMB = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+
         const LAMP_COORDS = [];
         for(let i=1; i<=11; i++) LAMP_COORDS.push({r: 1, c: i});
         for(let i=2; i<=11; i++) LAMP_COORDS.push({r: i, c: 11});
@@ -153,7 +142,15 @@
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
             
-            pointers = Array.from({length: count}, (_, i) => ({ pos: (i * 3) % 40, stop: false, target: null, isClosing: false, delay: 0 }));
+            // 初始化 5 個指標，位置稍微分散
+            pointers = Array.from({length: count}, (_, i) => ({ 
+                pos: (i * 3) % 40, 
+                stop: false, 
+                target: null, 
+                isClosing: false, 
+                delay: 0 
+            }));
+
             const run = () => {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l => l.classList.remove('active-b', 'active-a'));
@@ -164,6 +161,7 @@
                         if(p.isClosing) {
                             p.delay++;
                             if(p.delay % (i + 1) === 0) p.pos = (p.pos + 1) % 40;
+                            // 鎖定目標：指標 i 必須停在 finalRes[i] 對應的格子上
                             if(p.pos === p.target && p.delay > (i * 10 + 5)) p.stop = true;
                         } else { p.pos = (p.pos + 1) % 40; }
                     }
@@ -183,8 +181,6 @@
         function triggerGoldenCelebration() {
             document.body.classList.add('flash-active');
             document.getElementById('game-board').classList.add('shake-active');
-            document.getElementById('status-text').innerText = "🔥 恭喜獲得 A 賞 🔥";
-            // 閃一下就停
             setTimeout(() => {
                 document.body.classList.remove('flash-active');
                 document.getElementById('game-board').classList.remove('shake-active');
@@ -193,17 +189,26 @@
 
         window.cb_res = (res) => {
             if(res.status === 'success') {
+                // --- 絕對重排：B 在前，A 在後 ---
                 finalRes = res.results.sort((a, b) => (a.grade === 'A' ? 1 : -1));
+
                 const availA = [], availB = [];
                 for(let i=0; i<40; i++) {
                     const el = document.getElementById('lamp-'+i);
-                    if(!el.classList.contains('sold-out')) (el.innerText==='A' ? availA : availB).push(i);
+                    if(!el.classList.contains('sold-out')) {
+                        if(el.innerText==='A') availA.push(i); else availB.push(i);
+                    }
                 }
+
+                // --- 核心修復：精確指派 Target ---
                 finalRes.forEach((r, i) => {
+                    // 指標 i 對應 結果 i
                     const list = (r.grade==='A' && availA.length > 0) ? availA : availB;
                     const tIdx = Math.floor(Math.random()*list.length);
                     pointers[i].target = list[tIdx];
-                    list.splice(tIdx, 1);
+                    list.splice(tIdx, 1); // 確保不重複
+                    
+                    // 階梯式啟動停止
                     setTimeout(() => { pointers[i].isClosing = true; }, i * 250);
                 });
             } else { alert(res.message); location.reload(); }
@@ -219,8 +224,20 @@
             isAnim = false;
             document.querySelector('.btn-skip').style.display = 'none';
             document.getElementById('winPanel').style.display = 'flex';
-            const div = document.getElementById('res-list');
-            div.innerHTML = finalRes.map(r => `<div style="padding:15px; margin-bottom:10px; background:#222; border-radius:10px; border-left:6px solid ${r.grade==='A'?'var(--gold)':'var(--red)'}; text-align:left;"><b style="color:${r.grade==='A'?'var(--gold)':'white'}">${r.grade}賞</b><br>${r.name}</div>`).join('');
+            const listDiv = document.getElementById('res-list');
+            
+            listDiv.innerHTML = finalRes.map(r => {
+                const imgUrl = (r.grade === 'A') ? PREVIEWS[currentIdx] : B_THUMB;
+                const isA = (r.grade === 'A');
+                return `
+                <div class="res-item ${isA ? 'is-a' : ''}">
+                    <img src="${imgUrl}" class="res-thumb">
+                    <div class="res-info">
+                        <b style="color:${isA ? 'var(--gold)' : '#fff'}">${r.grade}賞</b>
+                        <span style="font-size:12px;color:#aaa;">${r.name}</span>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         initBoard();
