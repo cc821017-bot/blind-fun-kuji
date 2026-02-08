@@ -14,17 +14,17 @@
         .track { position: absolute; white-space: nowrap; animation: move 18s linear infinite; }
         @keyframes move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
         .tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; }
+        .tab { flex: 1; padding: 10px; background: #222; border: none; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .tab.active { background: var(--red); color: #fff; }
         .board-container { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: flex; align-items: center; justify-content: center; }
         .screen { width: 55%; height: 55%; background: #111; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10; box-shadow: 0 0 30px #000; border: 2px solid #222; }
-        .lamp { position: absolute; width: 26px; height: 26px; background: #222; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #444; border: 2px solid #333; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .lamp { position: absolute; width: 26px; height: 26px; background: #222; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; color: #444; border: 2px solid #333; transition: all 0.5s ease; }
         .lamp-a { color: #860; border-color: #540; }
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 15px var(--red); border-color: #fff !important; z-index: 20; transform: scale(1.2); }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--gold); border-color: #fff !important; z-index: 20; transform: scale(1.3); }
-        .skip-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 4px 15px; border-radius: 15px; font-size: 11px; z-index: 500; display: none; cursor: pointer; }
+        .skip-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 4px 15px; border-radius: 15px; font-size: 11px; z-index: 500; display: none; }
         .footer-btns { position: fixed; bottom: 85px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
-        .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; }
         .btn-draw:disabled { background: #222 !important; color: #555 !important; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { width: 85%; background: #222; margin: 6px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
@@ -35,7 +35,7 @@
 <body>
     <div class="header">
         <div class="user-pts">點數：<span id="pts">--</span> P</div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！祝您中 A賞！ 🔥</div></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：一抽入魂！剩餘數量越少中獎機率越高！ 🔥</div></div>
     </div>
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
@@ -49,7 +49,7 @@
             <button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button>
         </div>
     </div>
-    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">連線同步中...</div>
+    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">載入同步中...</div>
     <div class="footer-btns">
         <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽一次</button>
         <button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button>
@@ -142,7 +142,7 @@
             const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const url = "https://liff.line.me/2009072982-6smlV2gu";
             if (liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎分享", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 中大獎了！歐氣爆棚！" : "試試手氣吧！抽獎結果如下：", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
+                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 中大獎了！太爽啦！" : "試試手氣吧！", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
             }
         }
         liffInit();
