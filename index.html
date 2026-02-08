@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂-旗艦抽獎</title>
+    <title>盲玩樂-旗艦圓環</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; }
@@ -34,7 +34,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="user-pts">我的點數：<span id="pts">--</span> P</div>
+        <div class="user-pts">點數：<span id="pts">--</span> P</div>
         <div class="marquee"><div class="track">🔥 盲玩樂：一抽入魂！剩餘數量越少中獎機率越高！ 🔥</div></div>
     </div>
     <div class="tabs">
@@ -65,7 +65,7 @@
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         const IMGS = ["https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480", "https://i.meee.com.tw/d2cFJiy.jpg", "https://i.meee.com.tw/B8xVcyj.jpg"];
         const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
-        let uid="", allData={}, isAnim=false, curIdx=0, finalResults=null, pointers=[];
+        let uid="", allData={}, isAnim=false, curIdx=0, finalRes=null, ptrs=[];
 
         async function liffInit() {
             try {
@@ -111,13 +111,13 @@
             document.getElementById('status').innerText = "連線中...";
             const s = document.createElement('script'); s.src=`${API}?action=draw&uid=${uid}&poolId=${encodeURIComponent(POOLS[curIdx])}&count=${c}&callback=cb3`; document.body.appendChild(s);
             const total = allData[POOLS[curIdx]].total;
-            pointers = Array.from({length:c},(_,i)=>({p:(i*2)%total, s:false, t:null, d:0}));
+            ptrs = Array.from({length:c},(_,i)=>({p:(i*2)%total, s:false, t:null, d:0}));
             const anim = () => {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
                 let stopAll=true;
-                pointers.forEach((p,i)=>{
-                    if(!p.s){ stopAll=false; if(p.t!==null){ p.d++; if(p.d%(i+1)===0) p.p=(p.p+1)%total; if(p.p===p.t && p.d > (i*15+10)) p.s=true; } else { p.p=(p.p+1)%total; } }
+                ptrs.forEach((p,i)=>{
+                    if(!p.s){ stopAll=false; if(p.t!==null){ p.d++; if(p.d%(i+1)===0) p.p=(p.p+1)%total; if(p.p===p.target && p.d > (i*15+10)) p.s=true; } else { p.p=(p.p+1)%total; } }
                     const el=document.getElementById('l-'+p.p); if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
                 });
                 if(stopAll) setTimeout(showWin, 1500); else setTimeout(anim, 60);
@@ -126,25 +126,26 @@
         }
         window.cb3 = (r) => {
             if(r.status==='success'){
-                finalResults = r.results.sort((a,b)=>a.grade==='A'?1:-1);
+                finalRes = r.results.sort((a,b)=>a.grade==='A'?1:-1);
                 const total = allData[POOLS[curIdx]].total; const avA=[], avB=[];
                 for(let i=0; i<total; i++) { const el=document.getElementById('l-'+i); if(el.innerText==='A') avA.push(i); else avB.push(i); }
-                finalResults.forEach((x,i)=>{ const l=x.grade==='A'?avA:avB; const ti=Math.floor(Math.random()*l.length); pointers[i].t=l[ti]; l.splice(ti,1); });
+                finalRes.forEach((x,i)=>{ const l=x.grade==='A'?avA:avB; const ti=Math.floor(Math.random()*l.length); ptrs[i].target=l[ti]; l.splice(ti,1); });
             } else { alert(r.message); location.reload(); }
         }
         function skip() { isAnim=false; showWin(); }
         function showWin() {
             isAnim=false; document.getElementById('skip').style.display='none';
             document.getElementById('win').style.display='flex';
-            document.getElementById('list').innerHTML = finalResults.map(x=>`<div class="res-box ${x.grade==='A'?'is-a':''}"><img src="${x.grade==='A'?IMGS[curIdx]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;"><div><b>${x.grade}賞</b><br><small>${x.name}</small></div></div>`).join('');
+            document.getElementById('list').innerHTML = finalRes.map(x=>`<div class="res-box ${x.grade==='A'?'is-a':''}"><img src="${x.grade==='A'?IMGS[curIdx]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;"><div><b>${x.grade}賞</b><br><small>${x.name}</small></div></div>`).join('');
         }
         function shareFinal() {
-            const txt = finalResults.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
+            const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
             const url = "https://liff.line.me/2009072982-6smlV2gu";
             if (liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalResults.some(x=>x.grade==='A') ? "🔥 中大獎了！太爽啦！" : "試試手氣吧！抽獎結果如下：", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}\n點我抽：${url}`; });
+                liff.shareTargetPicker([{ "type": "flex", "altText": "盲玩樂抽獎結果", "contents": { "type": "bubble", "hero": { "type": "image", "url": IMGS[curIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" }, "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" }, { "type": "text", "text": finalRes.some(x=>x.grade==='A') ? "🔥 中大獎了！太爽啦！" : "試試手氣吧！", "margin": "md" }, { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" } ] }, "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": url }, "style": "primary", "color": "#ff3e3e" } ] } } }]).then(res => { if (!res) window.location.href=`https://line.me/R/msg/text/?我在盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
             }
         }
+        initBoard = () => {};
         liffInit();
     </script>
 </body>
