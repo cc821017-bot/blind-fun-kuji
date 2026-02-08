@@ -7,8 +7,9 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 120px; height: 100vh; overflow: hidden; box-sizing: border-box; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 85px; padding-bottom: 140px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         
+        /* 頂部與跑馬燈 */
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
         .user-pts { padding: 8px; font-weight: bold; font-size: 16px; }
         .marquee { background: #000; height: 24px; font-size: 11px; color: var(--gold); overflow: hidden; position: relative; }
@@ -19,6 +20,7 @@
         .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .tab.active { background: var(--red); color: #fff; border-color: var(--gold); }
 
+        /* 轉盤主體 */
         .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
         .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .lamp { background: #222; border-radius: 2px; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
@@ -26,24 +28,24 @@
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
 
-        /* 【關鍵修正】跳過鍵：極致縮小且角落化 */
+        /* 【跳過鍵】移至狀態文字下方 */
         .skip-btn { 
-            position: absolute; 
-            top: 5px; right: 5px; 
-            background: rgba(0,0,0,0.5); 
-            border: 1px solid rgba(255,255,255,0.2); 
-            color: rgba(255,255,255,0.7); 
-            padding: 2px 8px; 
-            border-radius: 4px; 
-            font-size: 10px; 
+            margin-top: 10px;
+            background: rgba(255,255,255,0.1); 
+            border: 1px solid #444; 
+            color: #aaa; 
+            padding: 4px 15px; 
+            border-radius: 15px; 
+            font-size: 11px; 
             z-index: 500; 
             display: none; 
             cursor: pointer;
         }
 
-        .footer-btns { position: fixed; bottom: 25px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
-        .btn-draw { width: 135px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .btn-draw:disabled { background: #222 !important; color: #555 !important; }
+        /* 【抽獎按鈕】再次上移 */
+        .footer-btns { position: fixed; bottom: 55px; width: 100%; display: flex; justify-content: center; z-index: 1000; }
+        .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        .btn-draw:disabled { background: #222 !important; color: #555 !important; box-shadow: none; }
 
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { width: 85%; background: #222; margin: 6px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
@@ -65,9 +67,9 @@
 
     <div class="board" id="board">
         <div class="screen">
-            <button class="skip-btn" id="skip" onclick="skip()">跳過 ❯❯</button>
-            <img id="prev" style="width:85%; max-height:85%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
-            <div id="status" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
+            <img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
+            <div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div>
+            <button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button>
         </div>
     </div>
 
@@ -203,26 +205,21 @@
 
         function share() {
             const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
-            const hasA = finalRes.some(x=>x.grade==='A');
-            
             if (liff.isApiAvailable('shareTargetPicker')) {
                 liff.shareTargetPicker([{
                     "type": "flex", "altText": "盲玩樂抽獎分享",
                     "contents": {
                         "type": "bubble", "hero": { "type": "image", "url": IMGS[cur], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                         "body": { "type": "box", "layout": "vertical", "contents": [
-                            { "type": "text", "text": "盲玩樂 - 幸運中獎！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
-                            { "type": "text", "text": hasA ? "🔥 天啊！我中 A 賞了！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
+                            { "type": "text", "text": "盲玩樂 - 抽獎大成功！", "weight": "bold", "color": "#ff3e3e", "size": "xl" },
+                            { "type": "text", "text": "中獎結果如下：", "margin": "md" },
                             { "type": "text", "text": txt, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
                         ]},
                         "footer": { "type": "box", "layout": "vertical", "contents": [
                             { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": "https://liff.line.me/2009072982-6smlV2gu" }, "style": "primary", "color": "#ff3e3e" }
                         ]}
                     }
-                }]).then(res => { if (res) alert("已成功分享！"); })
-                .catch(() => { window.location.href = `https://line.me/R/msg/text/?盲玩樂抽獎：\n${encodeURIComponent(txt)}`; });
-            } else {
-                window.location.href = `https://line.me/R/msg/text/?盲玩樂抽獎：\n${encodeURIComponent(txt)}`;
+                }]).then(res => { if (res) alert("已分享成功！"); });
             }
         }
 
