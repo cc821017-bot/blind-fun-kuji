@@ -7,9 +7,8 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold-bg: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 85px; overflow: hidden; transition: background 0.2s; }
+        body { font-family: sans-serif; background: var(--dark); color: #fff; text-align: center; margin: 0; padding-top: 85px; overflow-x: hidden; }
         
-        /* 頂部導覽列與跑馬燈 */
         .header-fixed { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
         .user-bar { padding: 10px 0; font-weight: bold; font-size: 16px; }
         .news-bar { background: #000; height: 24px; line-height: 24px; font-size: 12px; color: var(--gold); overflow: hidden; position: relative; border-top: 1px solid #222; }
@@ -27,47 +26,42 @@
         }
         .center-display { grid-area: 3 / 3 / 10 / 10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         
+        /* 燈號格子 */
         .lamp { background: #222; border-radius: 2px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
         .lamp.sold-out { background: var(--sold-bg) !important; color: #333 !important; border: 1px dashed #222 !important; opacity: 0.4; }
         .lamp.active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 12px var(--red); z-index: 10; }
         .lamp.active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--gold); z-index: 10; }
 
-        /* 呼吸燈動畫 */
-        @keyframes breathe { 0%, 100% { opacity: 0.6; box-shadow: 0 0 5px var(--red); } 50% { opacity: 1; box-shadow: 0 0 15px var(--red); } }
-        
-        /* 更新：跳過按鈕位置調整至底部邊緣 */
+        /* 更新：跳過按鈕改成右上角小掛件 */
         .btn-skip { 
             position: absolute; 
-            bottom: -25px; /* 移出中心區塊，靠近按鈕群 */
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.9); 
-            border: 1px solid var(--red); 
-            color: var(--red); 
-            padding: 6px 25px; 
-            border-radius: 20px; 
-            font-size: 13px; 
-            font-weight: bold; 
-            z-index: 500; 
+            top: 10px; right: 10px; 
+            background: rgba(0,0,0,0.7); 
+            border: 1px solid #555; 
+            color: #ccc; 
+            padding: 4px 12px; 
+            border-radius: 12px; 
+            font-size: 11px; 
+            z-index: 600; 
             display: none;
-            animation: breathe 1.5s infinite;
         }
 
         .draw-btn { width: 125px; height: 50px; border-radius: 25px; border: none; font-weight: bold; color: #fff; cursor: pointer; margin: 10px; transition: 0.3s; }
         .draw-btn:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; opacity: 0.7; }
 
         .win-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .res-item { display: flex; align-items: center; background: #222; margin-bottom: 10px; padding: 10px; border-radius: 12px; border-left: 6px solid var(--red); text-align: left; width: 85%; }
+        .res-item { display: flex; align-items: center; background: #222; margin-bottom: 8px; padding: 8px; border-radius: 10px; border-left: 5px solid var(--red); text-align: left; width: 85%; }
         .res-item.is-a { border-left-color: var(--gold); background: #2a2410; }
-        .res-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 15px; border: 1px solid #444; }
-        .share-btn { background: #06C755; color: white; padding: 12px 30px; border-radius: 25px; border: none; font-weight: bold; margin-bottom: 10px; }
+        .res-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; margin-right: 12px; }
+        
+        .share-btn { background: #06C755; color: white; padding: 12px 30px; border-radius: 25px; border: none; font-weight: bold; margin: 10px 0; width: 80%; }
     </style>
 </head>
 <body>
     <div class="header-fixed">
         <div class="user-bar">點數：<span id="display-pts">----</span> P</div>
         <div class="news-bar">
-            <div class="news-track" id="news-track">🔥 盲玩樂：祝您抽中大獎！ 官方一番賞、自製一番賞持續更新中 🔥</div>
+            <div class="news-track" id="news-track">🔥 盲玩樂：官方一番賞、自製一番賞持續更新中！恭喜 某會員 剛剛中 A賞！ 🔥</div>
         </div>
     </div>
 
@@ -82,10 +76,10 @@
             <img id="main-preview" style="width:70%; max-height:70%; object-fit: contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480">
             <div id="status-text" style="color:var(--gold); font-size:12px; margin-top:5px;"></div>
         </div>
-        <button class="btn-skip" id="skip-trigger" onclick="skipAnimation()">跳過動畫</button>
+        <button class="btn-skip" id="skip-trigger" onclick="skipAnimation()">跳過動畫 ❯</button>
     </div>
     
-    <div id="stock-info" style="font-size:12px; color:#666; margin-top: 15px;">同步中...</div>
+    <div id="stock-info" style="font-size:12px; color:#666; margin-top: 5px;">同步中...</div>
 
     <div class="btn-group">
         <button class="draw-btn" style="background:#333;" id="btn-single" onclick="goDraw(1)">單抽一次</button>
@@ -93,10 +87,10 @@
     </div>
 
     <div id="winPanel" class="win-overlay">
-        <h2 style="color:var(--gold); font-size: 26px;">🎉 恭喜中獎 🎉</h2>
-        <div id="res-list" style="width:100%; max-height:55vh; overflow-y:auto; display: flex; flex-direction: column; align-items: center;"></div>
-        <button class="share-btn" onclick="shareToLINE()">分享喜悅給好友 ➔</button>
-        <button onclick="location.reload()" style="padding:10px 60px; border-radius:30px; background:transparent; border:1px solid #555; color:#888; font-weight:bold;">確認收下</button>
+        <h2 style="color:var(--gold); font-size: 24px;">🎉 恭喜中獎 🎉</h2>
+        <div id="res-list" style="width:100%; max-height:50vh; overflow-y:auto; display: flex; flex-direction: column; align-items: center;"></div>
+        <button class="share-btn" id="share-btn" onclick="shareToLINE()">分享喜悅給好友</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:#888; text-decoration:underline;">確認收下</button>
     </div>
 
     <script>
@@ -176,7 +170,7 @@
             if(!myUid || isAnim) return;
             isAnim = true;
             document.getElementById('skip-trigger').style.display = 'block';
-            document.getElementById('status-text').innerText = "運勢凝聚中...";
+            document.getElementById('status-text').innerText = "連線中...";
             const s = document.createElement('script');
             s.src = `${API_URL}?action=draw&uid=${myUid}&poolId=${encodeURIComponent(POOLS[currentIdx])}&count=${count}&callback=cb_res`;
             document.body.appendChild(s);
@@ -199,20 +193,16 @@
                     if(el) el.classList.add(el.innerText==='A' ? 'active-a' : 'active-b');
                 });
                 if(allStopped) {
-                    if(finalRes.some(r => r.grade === 'A')) triggerGoldenCelebration();
+                    if(finalRes.some(r => r.grade === 'A')) triggerCelebration();
                     setTimeout(showWin, 1500); 
                 } else { setTimeout(run, 60); }
             };
             run();
         }
 
-        function triggerGoldenCelebration() {
-            document.body.classList.add('flash-active');
-            document.getElementById('game-board').style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                document.body.classList.remove('flash-active');
-                document.getElementById('game-board').style.transform = 'scale(1)';
-            }, 1000);
+        function triggerCelebration() {
+            document.body.style.backgroundColor = "#443300";
+            setTimeout(() => { document.body.style.backgroundColor = var(--dark); }, 1000);
         }
 
         window.cb_res = (res) => {
@@ -233,10 +223,7 @@
             } else { alert(res.message); location.reload(); }
         };
 
-        function skipAnimation() {
-            isAnim = false;
-            showWin();
-        }
+        function skipAnimation() { isAnim = false; showWin(); }
 
         function showWin() {
             isAnim = false;
@@ -245,32 +232,38 @@
             const listDiv = document.getElementById('res-list');
             listDiv.innerHTML = finalRes.map(r => {
                 const imgUrl = (r.grade === 'A') ? PREVIEWS[currentIdx] : B_THUMB;
-                const isA = (r.grade === 'A');
-                return `<div class="res-item ${isA ? 'is-a' : ''}"><img src="${imgUrl}" class="res-thumb"><div class="res-info"><b style="color:${isA ? 'var(--gold)' : '#fff'}">${r.grade}賞</b><span>${r.name}</span></div></div>`;
+                return `<div class="res-item ${r.grade==='A'?'is-a':''}"><img src="${imgUrl}" class="res-thumb"><div class="res-info"><b>${r.grade}賞</b><br><span style="font-size:12px;">${r.name}</span></div></div>`;
             }).join('');
         }
 
+        // --- 修復分享功能 ---
         function shareToLINE() {
+            const resultMsg = finalRes.map(r => `【${r.grade}賞】${r.name}`).join('\n');
             const hasA = finalRes.some(r => r.grade === 'A');
-            const resultText = finalRes.map(r => `【${r.grade}賞】${r.name}`).join('\n');
-            const mainMsg = hasA ? `🎉 太爽啦！我在「盲玩樂」中大獎 A賞了！ 🎉` : `我在「盲玩樂」抽獎啦！大家快來跟我一起試手氣！`;
+
+            // 1. 優先使用 ShareTargetPicker
             if (liff.isApiAvailable('shareTargetPicker')) {
                 liff.shareTargetPicker([{
-                    "type": "flex", "altText": "盲玩樂抽獎結果分享",
+                    "type": "flex", "altText": "盲玩樂抽獎分享",
                     "contents": {
                         "type": "bubble",
                         "hero": { "type": "image", "url": PREVIEWS[currentIdx], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                         "body": { "type": "box", "layout": "vertical", "contents": [
-                            { "type": "text", "text": "盲玩樂 - 幸運開獎", "weight": "bold", "size": "xl", "color": "#ff3e3e" },
-                            { "type": "text", "text": mainMsg, "wrap": true, "margin": "md" },
-                            { "type": "separator", "margin": "lg" },
-                            { "type": "text", "text": resultText, "wrap": true, "size": "sm", "margin": "md", "color": "#666666" }
+                            { "type": "text", "text": "盲玩樂 - 幸運結果", "weight": "bold", "size": "xl", "color": "#ff3e3e" },
+                            { "type": "text", "text": hasA ? "🔥 天啊！我中 A 賞了！" : "試試手氣吧！抽獎結果如下：", "margin": "md" },
+                            { "type": "text", "text": resultMsg, "wrap": true, "size": "xs", "margin": "lg", "color": "#888888" }
                         ]},
                         "footer": { "type": "box", "layout": "vertical", "contents": [
                             { "type": "button", "action": { "type": "uri", "label": "我也要抽！", "uri": "https://liff.line.me/2009072982-6smlV2gu" }, "style": "primary", "color": "#ff3e3e" }
                         ]}
                     }
-                }]).then(() => { alert("分享成功！"); });
+                }]).then(res => { if (res) alert("分享成功！"); }).catch(err => { console.log(err); });
+            } 
+            // 2. 備案：如果 Picker 沒開，直接用 sendMessages (發給自己目前的聊天室)
+            else {
+                liff.sendMessages([{ "type": "text", "text": "我在盲玩樂中獎啦！\n" + resultMsg }])
+                    .then(() => { alert("訊息已傳送至聊天室！"); })
+                    .catch(() => { alert("分享失敗，請確認 LIFF 權限。"); });
             }
         }
 
