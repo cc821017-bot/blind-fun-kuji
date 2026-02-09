@@ -26,15 +26,14 @@
         .footer-btns { position: fixed; bottom: 85px; width: 100%; display: flex; justify-content: center; z-index: 1000; flex-direction: column; align-items: center; }
         .price-tag { color: var(--gold); font-size: 16px; font-weight: bold; margin-bottom: 8px; border: 1px solid var(--gold); padding: 2px 12px; border-radius: 12px; background: rgba(0,0,0,0.5); }
         .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-        .btn-draw:disabled { background: #222 !important; color: #555 !important; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { width: 85%; background: #222; margin: 6px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">讀取中...</span></div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：點數連線與動畫終止邏輯已修復鎖死！ 🔥</div></div>
+        <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">未登入</span></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：舊版跑馬燈與連線邏輯已還原，系統正常運作中！ 🔥</div></div>
     </div>
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
@@ -42,12 +41,12 @@
         <button class="tab" onclick="sw(2)">Ｂ區任選</button>
     </div>
     <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div><button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button></div></div>
-    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">連線同步中...</div>
+    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">資料同步中...</div>
     <div class="footer-btns">
         <div class="price-tag" id="price-tag">金額：讀取中...</div>
         <div style="display:flex;"><button class="btn-draw" id="b1" onclick="draw(1)">單抽一次</button><button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button></div>
     </div>
-    <div id="win" class="overlay"><h2 style="color:var(--gold); font-size:26px;">🎉 恭喜中獎</h2><div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:10px;"></div><button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 15px;">收下獎項並返回</button></div>
+    <div id="win" class="overlay"><h2 style="color:var(--gold); font-size:26px; margin:0;">🎉 恭喜中獎</h2><div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:10px;"></div><button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 15px;">收下獎項並返回</button></div>
 
     <script>
         const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
@@ -75,7 +74,7 @@
         }
 
         window.cb1 = (r) => { allData = r; upd(); };
-        window.cb2 = (r) => { document.getElementById('pts').innerText = (r.points !== undefined) ? r.points : 0; }; // 修正連線顯示邏輯
+        window.cb2 = (r) => { document.getElementById('pts').innerText = (r.points !== undefined) ? r.points : 0; };
 
         function sw(i) { if(isAnim) return; curIdx=i; document.getElementById('prev').src = IMGS[i]; document.querySelectorAll('.tab').forEach((b,j)=>b.className=i===j?'tab active':'tab'); upd(); }
         function upd() {
@@ -90,49 +89,58 @@
 
         function draw(c) {
             if(isAnim || !uid) return;
-            isAnim=true; finalRes=null; // 清空舊結果防止無限循環
+            isAnim=true; finalRes=null; 
             document.getElementById('b1').disabled = document.getElementById('b5').disabled = true;
             document.getElementById('skip').style.display='block';
-            document.getElementById('status').innerText = "連線後端中...";
+            document.getElementById('status').innerText = "抽獎連線中...";
             
             const s = document.createElement('script');
             s.src=`${API}?action=draw&uid=${uid}&name=${encodeURIComponent(userName)}&poolId=${encodeURIComponent(POOLS[curIdx])}&count=${c}&callback=cb3&t=${Date.now()}`;
             document.body.appendChild(s);
             
             ptrs = Array.from({length:c},(_,i)=>({p:(i*3)%40, s:false, t:null, d:0, target:null}));
-            const anim = () => {
+            
+            // --- 還原舊版動畫循環邏輯 ---
+            function anim() {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
                 let stopAll = true;
+                
                 ptrs.forEach((p,i)=>{
                     if(!p.s){
                         stopAll = false;
-                        if(p.t !== null){ // 拿到結果了，進入停點邏輯
+                        if(p.t !== null){ // 拿到結果了
                             p.d++;
                             if(p.d % (i+1) === 0) p.p = (p.p+1)%40;
-                            if(p.p === p.target && p.d > (i*15+10)) p.s = true;
-                        } else { // 還沒拿到結果，持續旋轉
+                            if(p.p === p.target && p.d > (i*20+15)) p.s = true; // 增加判斷長度確保一定會停
+                        } else {
                             p.p = (p.p+1)%40;
                         }
                     }
                     const el=document.getElementById('l-'+p.p);
                     if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
                 });
-                if(stopAll && finalRes) { setTimeout(show, 800); } else { animTimer = setTimeout(anim, 60); }
-            }; anim();
+                
+                if(stopAll && finalRes) { 
+                    isAnim = false;
+                    setTimeout(show, 800); 
+                } else { 
+                    animTimer = setTimeout(anim, 60); 
+                }
+            }
+            anim();
         }
 
         window.cb3 = (r) => {
             if(r.status==='success'){
                 finalRes = r.results; 
                 document.getElementById('pts').innerText = r.remainingPoints;
-                document.getElementById('status').innerText = "開獎中...";
                 const avA=[], avB=[]; for(let i=0;i<40;i++){ const el=document.getElementById('l-'+i); if(!el.classList.contains('sold-out')){ (el.innerText==='A'?avA:avB).push(i); } }
                 finalRes.forEach((x,i)=>{
                     const l = (x.grade==='A') ? avA : avB;
                     const ti = Math.floor(Math.random()*l.length);
                     ptrs[i].target = l[ti]; l.splice(ti,1);
-                    setTimeout(()=>{ ptrs[i].t = true; }, i*300); // 依序減速停止
+                    setTimeout(()=>{ ptrs[i].t = true; }, i*300);
                 });
             } else { alert(r.message); location.reload(); }
         }
