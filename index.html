@@ -22,7 +22,6 @@
         .lamp.sold-out { background: var(--sold) !important; color: #333 !important; opacity: 0.3; }
         .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
         .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
-        .skip-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 4px 15px; border-radius: 15px; font-size: 11px; z-index: 500; display: none; cursor: pointer; }
         .footer-btns { position: fixed; bottom: 85px; width: 100%; display: flex; justify-content: center; z-index: 1000; flex-direction: column; align-items: center; }
         .price-tag { color: var(--gold); font-size: 16px; font-weight: bold; margin-bottom: 8px; border: 1px solid var(--gold); padding: 2px 12px; border-radius: 12px; background: rgba(0,0,0,0.5); }
         .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
@@ -32,21 +31,21 @@
 </head>
 <body>
     <div class="header">
-        <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">未登入</span></div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：核心連線順序已校正，點數與動畫預備就緒！ 🔥</div></div>
+        <div class="user-pts"><span>點數：<span id="pts">載入中</span> P</span><span style="font-size:10px; color:#666;" id="u-name">未連結</span></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：系統已強制對齊連線順序，若點數未出請重新整理！ 🔥</div></div>
     </div>
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
         <button class="tab" onclick="sw(1)">Ａ區任選</button>
         <button class="tab" onclick="sw(2)">Ｂ區任選</button>
     </div>
-    <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div><button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button></div></div>
-    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">連線同步中...</div>
+    <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div></div></div>
+    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">庫存同步中...</div>
     <div class="footer-btns">
-        <div class="price-tag" id="price-tag">金額：讀取中...</div>
+        <div class="price-tag" id="price-tag">讀取中...</div>
         <div style="display:flex;"><button class="btn-draw" id="b1" onclick="draw(1)">單抽一次</button><button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button></div>
     </div>
-    <div id="win" class="overlay"><h2 style="color:var(--gold); font-size:26px; margin:0;">🎉 恭喜中獎</h2><div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:10px;"></div><button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 15px;">收下獎項並返回</button></div>
+    <div id="win" class="overlay"><h2 style="color:var(--gold); font-size:26px; margin:0;">🎉 恭喜中獎</h2><div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:10px;"></div><button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 15px;">確認並返回</button></div>
 
     <script>
         const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
@@ -57,45 +56,68 @@
         let uid="", userName="", allData={}, curIdx=0, isAnim=false, finalRes=null, ptrs=[], animTimer;
         const coords = []; for(let i=1;i<=11;i++) coords.push({r:1,c:i}); for(let i=2;i<=11;i++) coords.push({r:i,c:11}); for(let i=10;i>=1;i--) coords.push({r:11,c:i}); for(let i=10;i>=2;i--) coords.push({r:i,c:1});
 
-        function init() { const b = document.getElementById('board'); coords.forEach((p,i)=>{ const d = document.createElement('div'); d.className='lamp'; d.id='l-'+i; d.style.gridRow=p.r; d.style.gridColumn=p.c; d.innerText=(i===0||i===20)?'A':'B'; b.appendChild(d); }); }
+        // 核心修正：將 Callback 函數直接掛在 window 最頂層
+        window.cb1 = function(r) { allData = r; upd(); };
+        window.cb2 = function(r) { 
+            if(r && r.points !== undefined) {
+                document.getElementById('pts').innerText = r.points;
+            }
+        };
+        window.cb3 = function(r) {
+            if(r.status === 'success') {
+                finalRes = r.results;
+                document.getElementById('pts').innerText = r.remainingPoints;
+                const avA=[], avB=[]; 
+                for(let i=0;i<40;i++){ 
+                    const el=document.getElementById('l-'+i); 
+                    if(!el.classList.contains('sold-out')){ (el.innerText==='A'?avA:avB).push(i); } 
+                }
+                finalRes.forEach((x,i)=>{
+                    const l = (x.grade==='A') ? avA : avB;
+                    const ti = Math.floor(Math.random()*l.length);
+                    ptrs[i].target = l[ti]; l.splice(ti,1);
+                    setTimeout(()=>{ ptrs[i].t = true; }, i*300);
+                });
+            } else {
+                alert("錯誤：" + r.message);
+                location.reload();
+            }
+        };
+
+        function init() { 
+            const b = document.getElementById('board'); 
+            coords.forEach((p,i)=>{ 
+                const d = document.createElement('div'); 
+                d.className='lamp'; d.id='l-'+i; d.style.gridRow=p.r; d.style.gridColumn=p.c; d.innerText=(i===0||i===20)?'A':'B'; b.appendChild(d); 
+            }); 
+            // 頁面開啟立即拿庫存，不等 LIFF
+            const s = document.createElement('script');
+            s.src = `${API}?action=getPoolStatus&callback=cb1&t=${Date.now()}`;
+            document.body.appendChild(s);
+        }
         
         async function liffInit() {
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if(!liff.isLoggedIn()){ liff.login(); return; }
                 const p = await liff.getProfile(); 
-                uid = p.userId; 
-                userName = p.displayName;
+                uid = p.userId; userName = p.displayName;
                 document.getElementById('u-name').innerText = userName;
-                // --- 順序調整：確定有 ID 後再發送請求 ---
-                fetchData();
-            } catch(e) { document.getElementById('u-name').innerText = "測試模式"; fetchData(); }
-        }
-
-        function fetchData() {
-            // 先拿獎池狀態
-            const s1 = document.createElement('script'); 
-            s1.src=`${API}?action=getPoolStatus&callback=cb1&t=${Date.now()}`; 
-            document.body.appendChild(s1);
-            // 確定有 uid 再拿點數
-            if(uid) {
-                const s2 = document.createElement('script'); 
-                s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(userName)}&callback=cb2&t=${Date.now()}`; 
-                document.body.appendChild(s2);
+                // 拿到 ID 後，再抓點數
+                const s = document.createElement('script');
+                s.src = `${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(userName)}&callback=cb2&t=${Date.now()}`;
+                document.body.appendChild(s);
+            } catch(e) { 
+                document.getElementById('u-name').innerText = "連線失敗"; 
             }
         }
 
-        window.cb1 = (r) => { allData = r; upd(); };
-        window.cb2 = (r) => { 
-            console.log("Point Response:", r);
-            document.getElementById('pts').innerText = (r.points !== undefined) ? r.points : 0; 
-        };
-
         function sw(i) { if(isAnim) return; curIdx=i; document.getElementById('prev').src = IMGS[i]; document.querySelectorAll('.tab').forEach((b,j)=>b.className=i===j?'tab active':'tab'); upd(); }
+        
         function upd() {
             const d = allData[POOLS[curIdx]]; if(!d) return;
             document.getElementById('info').innerText = `剩餘籤數：${d.total} (A:${d.a} B:${d.b})`;
-            document.getElementById('price-tag').innerText = `單抽金額：${d.price} P`;
+            document.getElementById('price-tag').innerText = `單抽：${d.price} P`;
             const b1=document.getElementById('b1'), b5=document.getElementById('b5');
             b1.disabled = b5.disabled = (d.total <= 0);
             document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('sold-out'));
@@ -103,11 +125,10 @@
         }
 
         function draw(c) {
-            if(isAnim || !uid) return;
-            isAnim=true; finalRes=null; 
+            if(isAnim || !uid) { if(!uid) alert("請在 LINE 內點開"); return; }
+            isAnim=true; finalRes=null;
             document.getElementById('b1').disabled = document.getElementById('b5').disabled = true;
-            document.getElementById('skip').style.display='block';
-            document.getElementById('status').innerText = "抽獎連線中...";
+            document.getElementById('status').innerText = "通訊中...";
             
             const s = document.createElement('script');
             s.src=`${API}?action=draw&uid=${uid}&name=${encodeURIComponent(userName)}&poolId=${encodeURIComponent(POOLS[curIdx])}&count=${c}&callback=cb3&t=${Date.now()}`;
@@ -118,15 +139,15 @@
             function anim() {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
-                let stopAll = true;
+                let allStopped = true;
                 
                 ptrs.forEach((p,i)=>{
                     if(!p.s){
-                        stopAll = false;
+                        allStopped = false;
                         if(p.t !== null){ 
                             p.d++;
                             if(p.d % (i+1) === 0) p.p = (p.p+1)%40;
-                            if(p.p === p.target && p.d > (i*20+15)) p.s = true; 
+                            if(p.p === p.target && p.d > (i*25+20)) p.s = true; 
                         } else {
                             p.p = (p.p+1)%40;
                         }
@@ -135,33 +156,18 @@
                     if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
                 });
                 
-                if(stopAll && finalRes) { 
-                    isAnim = false;
+                if(allStopped && finalRes) { 
+                    isAnim = false; // 強制終止動畫旗標
                     setTimeout(show, 800); 
                 } else { 
-                    animTimer = setTimeout(anim, 60); 
+                    animTimer = setTimeout(anim, 50); 
                 }
             }
             anim();
         }
 
-        window.cb3 = (r) => {
-            if(r.status==='success'){
-                finalRes = r.results; 
-                document.getElementById('pts').innerText = r.remainingPoints;
-                const avA=[], avB=[]; for(let i=0;i<40;i++){ const el=document.getElementById('l-'+i); if(!el.classList.contains('sold-out')){ (el.innerText==='A'?avA:avB).push(i); } }
-                finalRes.forEach((x,i)=>{
-                    const l = (x.grade==='A') ? avA : avB;
-                    const ti = Math.floor(Math.random()*l.length);
-                    ptrs[i].target = l[ti]; l.splice(ti,1);
-                    setTimeout(()=>{ ptrs[i].t = true; }, i*300);
-                });
-            } else { alert(r.message); location.reload(); }
-        }
-
-        function skip() { if(!finalRes) return; clearTimeout(animTimer); isAnim=false; show(); }
         function show() {
-            isAnim=false; document.getElementById('skip').style.display='none'; document.getElementById('win').style.display='flex';
+            document.getElementById('win').style.display='flex';
             document.getElementById('list').innerHTML = finalRes.map(x=>`<div class="res-box ${x.grade==='A'?'is-a':''}"><img src="${x.grade==='A'?IMGS[curIdx]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;"><div><b>${x.grade}賞</b><br><small>${x.name}</small></div></div>`).join('');
         }
         init(); liffInit();
