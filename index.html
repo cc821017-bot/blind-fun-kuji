@@ -33,7 +33,7 @@
 <body>
     <div class="header">
         <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">未登入</span></div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：舊版跑馬燈與連線邏輯已還原，系統正常運作中！ 🔥</div></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：核心連線順序已校正，點數與動畫預備就緒！ 🔥</div></div>
     </div>
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
@@ -41,7 +41,7 @@
         <button class="tab" onclick="sw(2)">Ｂ區任選</button>
     </div>
     <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div><button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button></div></div>
-    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">資料同步中...</div>
+    <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">連線同步中...</div>
     <div class="footer-btns">
         <div class="price-tag" id="price-tag">金額：讀取中...</div>
         <div style="display:flex;"><button class="btn-draw" id="b1" onclick="draw(1)">單抽一次</button><button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button></div>
@@ -63,18 +63,33 @@
             try {
                 await liff.init({ liffId: "2009072982-6smlV2gu" });
                 if(!liff.isLoggedIn()){ liff.login(); return; }
-                const p = await liff.getProfile(); uid = p.userId; userName = p.displayName;
-                document.getElementById('u-name').innerText = userName; fetchData();
-            } catch(e) { document.getElementById('u-name').innerText = "測試員"; fetchData(); }
+                const p = await liff.getProfile(); 
+                uid = p.userId; 
+                userName = p.displayName;
+                document.getElementById('u-name').innerText = userName;
+                // --- 順序調整：確定有 ID 後再發送請求 ---
+                fetchData();
+            } catch(e) { document.getElementById('u-name').innerText = "測試模式"; fetchData(); }
         }
 
         function fetchData() {
-            const s1 = document.createElement('script'); s1.src=`${API}?action=getPoolStatus&callback=cb1&t=${Date.now()}`; document.body.appendChild(s1);
-            if(uid) { const s2 = document.createElement('script'); s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(userName)}&callback=cb2&t=${Date.now()}`; document.body.appendChild(s2); }
+            // 先拿獎池狀態
+            const s1 = document.createElement('script'); 
+            s1.src=`${API}?action=getPoolStatus&callback=cb1&t=${Date.now()}`; 
+            document.body.appendChild(s1);
+            // 確定有 uid 再拿點數
+            if(uid) {
+                const s2 = document.createElement('script'); 
+                s2.src=`${API}?action=checkUser&uid=${uid}&name=${encodeURIComponent(userName)}&callback=cb2&t=${Date.now()}`; 
+                document.body.appendChild(s2);
+            }
         }
 
         window.cb1 = (r) => { allData = r; upd(); };
-        window.cb2 = (r) => { document.getElementById('pts').innerText = (r.points !== undefined) ? r.points : 0; };
+        window.cb2 = (r) => { 
+            console.log("Point Response:", r);
+            document.getElementById('pts').innerText = (r.points !== undefined) ? r.points : 0; 
+        };
 
         function sw(i) { if(isAnim) return; curIdx=i; document.getElementById('prev').src = IMGS[i]; document.querySelectorAll('.tab').forEach((b,j)=>b.className=i===j?'tab active':'tab'); upd(); }
         function upd() {
@@ -100,7 +115,6 @@
             
             ptrs = Array.from({length:c},(_,i)=>({p:(i*3)%40, s:false, t:null, d:0, target:null}));
             
-            // --- 還原舊版動畫循環邏輯 ---
             function anim() {
                 if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
@@ -109,10 +123,10 @@
                 ptrs.forEach((p,i)=>{
                     if(!p.s){
                         stopAll = false;
-                        if(p.t !== null){ // 拿到結果了
+                        if(p.t !== null){ 
                             p.d++;
                             if(p.d % (i+1) === 0) p.p = (p.p+1)%40;
-                            if(p.p === p.target && p.d > (i*20+15)) p.s = true; // 增加判斷長度確保一定會停
+                            if(p.p === p.target && p.d > (i*20+15)) p.s = true; 
                         } else {
                             p.p = (p.p+1)%40;
                         }
