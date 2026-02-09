@@ -9,51 +9,75 @@
         :root { --red: #ff3e3e; --gold: #f1c40f; --dark: #050505; --sold: #1a1a1a; }
         body { font-family: sans-serif; background: var(--dark); color: #fff; margin: 0; padding-top: 115px; padding-bottom: 160px; height: 100vh; overflow: hidden; box-sizing: border-box; }
         .header { position: fixed; top: 0; width: 100%; z-index: 1000; background: #111; border-bottom: 2px solid var(--red); }
+        .win-announcement { background: var(--red); color: #fff; height: 26px; font-size: 11px; font-weight: bold; overflow: hidden; position: relative; display: flex; align-items: center; }
         .user-pts { padding: 8px 15px; font-weight: bold; font-size: 15px; display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; }
         .marquee { background: #000; height: 26px; font-size: 11px; color: var(--gold); overflow: hidden; position: relative; display: flex; align-items: center; border-top: 1px solid #333; }
         .track { position: absolute; white-space: nowrap; animation: move 18s linear infinite; }
         @keyframes move { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
         .tabs { display: flex; justify-content: center; gap: 5px; padding: 10px; }
-        .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; }
-        .tab.active { background: var(--red); color: #fff; border-color: var(--gold); }
+        .tab { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; }
+        .tab.active { background: var(--red); color: #fff; border: 1px solid var(--gold); }
         .board { width: 92vw; height: 92vw; max-width: 380px; max-height: 380px; margin: 0 auto; position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #000; border: 4px solid #333; border-radius: 15px; padding: 5px; }
         .screen { grid-area: 3/3/10/10; background: #111; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .lamp { background: #222; border-radius: 2px; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #444; border: 1px solid #333; }
         .lamp.sold-out { background: var(--sold) !important; color: #333 !important; opacity: 0.3; }
-        .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); }
-        .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); }
+        .active-b { background: var(--red) !important; color: #fff !important; box-shadow: 0 0 10px var(--red); z-index: 5; }
+        .active-a { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 15px var(--gold); z-index: 5; }
+        .skip-btn { margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 4px 15px; border-radius: 15px; font-size: 11px; z-index: 500; display: none; cursor: pointer; }
         .footer-btns { position: fixed; bottom: 85px; width: 100%; display: flex; justify-content: center; z-index: 1000; flex-direction: column; align-items: center; }
         .price-tag { color: var(--gold); font-size: 16px; font-weight: bold; margin-bottom: 8px; border: 1px solid var(--gold); padding: 2px 12px; border-radius: 12px; background: rgba(0,0,0,0.5); }
         .btn-draw { width: 135px; height: 52px; border-radius: 26px; border: none; font-weight: bold; color: #fff; margin: 0 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         .btn-draw:disabled { background: #222 !important; color: #555 !important; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { width: 85%; background: #222; margin: 6px; padding: 10px; border-radius: 10px; border-left: 5px solid var(--red); display: flex; align-items: center; text-align: left; }
+        .res-box.is-a { border-color: var(--gold); background: #2a2410; }
+        .share-btn { background: #06C755; color: #fff; padding: 14px 0; border-radius: 30px; border: none; margin: 15px 0 5px; font-weight: bold; font-size: 18px; width: 80%; cursor: pointer; text-align: center; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">讀取中</span></div>
-        <div class="marquee"><div class="track">🔥 盲玩樂：系統已對齊 D 欄剩餘數量邏輯，祝您中大獎！ 🔥</div></div>
+        <div class="win-announcement"><div class="track" id="win-track">🎊 盲玩樂：祝各位老闆 A 賞帶回家！ 🎊</div></div>
+        <div class="user-pts"><span>我的點數：<span id="pts">--</span> P</span><span style="font-size:10px; color:#666;" id="u-name">未登入</span></div>
+        <div class="marquee"><div class="track">🔥 盲玩樂：多重跑馬燈與 360P 金額功能已全面對齊！ 🔥</div></div>
     </div>
+    
     <div class="tabs">
         <button class="tab active" onclick="sw(0)">單挑套</button>
         <button class="tab" onclick="sw(1)">Ａ區任選</button>
         <button class="tab" onclick="sw(2)">Ｂ區任選</button>
     </div>
-    <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div></div></div>
+
+    <div class="board" id="board"><div class="screen"><img id="prev" style="width:85%; max-height:75%; object-fit:contain;" src="https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480"><div id="status" style="color:var(--gold); font-size:12px; margin-top:5px; height: 15px;"></div><button class="skip-btn" id="skip" onclick="skip()">跳過動畫 ❯</button></div></div>
+
     <div id="info" style="font-size:12px; color:#888; margin-top:15px; font-weight: bold; text-align: center;">資料同步中...</div>
+
     <div class="footer-btns">
         <div class="price-tag" id="price-tag">金額：讀取中...</div>
-        <div style="display:flex;"><button class="btn-draw" id="b1" onclick="draw(1)">單抽一次</button><button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button></div>
+        <div style="display:flex;">
+            <button class="btn-draw" style="background:#333;" id="b1" onclick="draw(1)">單抽一次</button>
+            <button class="btn-draw" style="background:var(--red);" id="b5" onclick="draw(5)">五連抽！</button>
+        </div>
     </div>
-    <div id="win" class="overlay"><h2 style="color:var(--gold); font-size:26px;">🎉 恭喜中獎</h2><div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div><button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 20px;">確認並刷新頁面</button></div>
-    
+
+    <div id="win" class="overlay">
+        <h2 style="color:var(--gold); font-size:26px; margin: 0;">🎉 恭喜中獎</h2>
+        <div id="list" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top: 10px;"></div>
+        <div class="share-btn" onclick="shareFinal()">分享喜悅 ❯</div>
+        <button onclick="location.reload()" style="color:#aaa; background:none; border:none; text-decoration:underline; cursor: pointer; margin-top: 10px;">確認並刷新頁面</button>
+    </div>
+
+    <audio id="snd-tick" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
     <script>
         const API = "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec";
         const POOLS = ["單挑套", "Ａ區任選", "Ｂ區任選"];
         const IMGS = ["https://cdn.store-assets.com/s/1337546/i/92974511.png?width=480", "https://i.meee.com.tw/d2cFJiy.jpg", "https://i.meee.com.tw/B8xVcyj.jpg"];
-        let uid="", userName="", allData={}, curIdx=0, isAnim=false;
+        const B_IMG = "https://static2.oneone.com.tw/store/270/p1-1762420831-oEF9ptc0.jpg";
+        
+        let uid="", userName="", allData={}, isAnim=false, curIdx=0, finalRes=null, ptrs=[], animTimer;
         const coords = []; for(let i=1;i<=11;i++) coords.push({r:1,c:i}); for(let i=2;i<=11;i++) coords.push({r:i,c:11}); for(let i=10;i>=1;i--) coords.push({r:11,c:i}); for(let i=10;i>=2;i--) coords.push({r:i,c:1});
+        const tickSnd = document.getElementById('snd-tick'); const winSnd = document.getElementById('snd-win');
 
         function init() { const b = document.getElementById('board'); coords.forEach((p,i)=>{ const d = document.createElement('div'); d.className='lamp'; d.id='l-'+i; d.style.gridRow=p.r; d.style.gridColumn=p.c; d.innerText=(i===0||i===20)?'A':'B'; b.appendChild(d); }); }
         
@@ -93,27 +117,60 @@
             if(isAnim || !uid) return;
             isAnim=true;
             document.getElementById('b1').disabled = document.getElementById('b5').disabled = true;
-            document.getElementById('status').innerText = "通訊中...";
+            document.getElementById('skip').style.display='block';
+            document.getElementById('status').innerText = "連線中...";
+            
             const s = document.createElement('script');
             s.src=`${API}?action=draw&uid=${uid}&name=${encodeURIComponent(userName)}&poolId=${encodeURIComponent(POOLS[curIdx])}&count=${c}&callback=cb3&t=${Date.now()}`;
             document.body.appendChild(s);
-            let step = 0;
-            const timer = setInterval(() => {
-                if(!isAnim) { clearInterval(timer); return; }
+            
+            // 多重跑馬燈初始化
+            ptrs = Array.from({length:c},(_,i)=>({p:(i*3)%40, s:false, t:null, d:0}));
+            const anim = () => {
+                if(!isAnim) return;
                 document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('active-a','active-b'));
-                const el = document.getElementById('l-'+(step%40));
-                el.classList.add(el.innerText==='A'?'active-a':'active-b');
-                step++;
-            }, 60);
+                let stopAll = true;
+                ptrs.forEach((p,i)=>{
+                    if(!p.s){
+                        stopAll = false;
+                        if(p.t!==null){
+                            p.d++;
+                            if(p.d%(i+1)===0) { p.p=(p.p+1)%40; if(i===0) try{tickSnd.play();}catch(e){} }
+                            if(p.p===p.target && p.d > (i*12+5)) p.s=true;
+                        } else {
+                            p.p=(p.p+1)%40; if(i===0) try{tickSnd.play();}catch(e){}
+                        }
+                    }
+                    const el=document.getElementById('l-'+p.p);
+                    if(el) el.classList.add(el.innerText==='A'?'active-a':'active-b');
+                });
+                if(stopAll) { try{winSnd.play();}catch(e){} setTimeout(show, 1200); } else { animTimer = setTimeout(anim, 60); }
+            }; anim();
         }
 
         window.cb3 = (r) => {
-            isAnim=false;
             if(r.status==='success'){
-                document.getElementById('pts').innerText = r.remainingPoints;
-                document.getElementById('win').style.display='flex';
-                document.getElementById('list').innerHTML = r.results.map(x=>`<div class="res-box"><b>${x.grade}賞</b>：${x.name}</div>`).join('');
+                finalRes = r.results; document.getElementById('pts').innerText = r.remainingPoints;
+                document.getElementById('status').innerText = "開獎中...";
+                const avA=[], avB=[]; for(let i=0;i<40;i++){ const el=document.getElementById('l-'+i); if(!el.classList.contains('sold-out')){ (el.innerText==='A'?avA:avB).push(i); } }
+                finalRes.forEach((x,i)=>{
+                    const l=x.grade==='A'?avA:avB;
+                    const ti=Math.floor(Math.random()*l.length);
+                    ptrs[i].target=l[ti]; l.splice(ti,1);
+                    setTimeout(()=>{ptrs[i].t=true;}, i*250);
+                });
             } else { alert(r.message); location.reload(); }
+        }
+
+        function skip() { if(!finalRes) return; clearTimeout(animTimer); isAnim=false; show(); }
+        function show() {
+            isAnim=false; document.getElementById('skip').style.display='none'; document.getElementById('win').style.display='flex';
+            document.getElementById('list').innerHTML = finalRes.map(x=>`<div class="res-box ${x.grade==='A'?'is-a':''}"><img src="${x.grade==='A'?IMGS[curIdx]:B_IMG}" style="width:50px;height:50px;border-radius:5px;margin-right:12px;object-fit:cover;"><div><b>${x.grade}賞</b><br><small>${x.name}</small></div></div>`).join('');
+        }
+        function shareFinal() {
+            const txt = finalRes.map(x=>`【${x.grade}賞】${x.name}`).join('\n');
+            const url = "https://liff.line.me/2009072982-6smlV2gu";
+            liff.shareTargetPicker([{"type":"flex","altText":"盲玩樂中獎分享","contents":{"type":"bubble","hero":{"type":"image","url":IMGS[curIdx],"size":"full","aspectRatio":"20:13","aspectMode":"cover"},"body":{"type":"box","layout":"vertical","contents":[{"type":"text","text":"盲玩樂 - 幸運中獎！","weight":"bold","color":"#ff3e3e","size":"xl"},{"type":"text","text":txt,"wrap":true,"size":"xs","margin":"lg"}]},"footer":{"type":"box","layout":"vertical","contents":[{"type":"button","action":{"type":"uri","label":"我也要抽！","uri":url},"style":"primary","color":"#ff3e3e"}]}}}]).then(res=>{ if(!res) window.location.href=`https://line.me/R/msg/text/?盲玩樂中獎：\n${encodeURIComponent(txt)}`; });
         }
         init(); liffInit();
     </script>
