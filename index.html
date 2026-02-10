@@ -3,166 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂抽獎幫手 - 旗艦版</title>
+    <title>盲玩樂抽獎幫手 - 視覺強化版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         :root {
-            --bg-dark: #121212;
-            --card-bg: #1e1e2e;
+            --bg-dark: #0f0f1a;
+            --card-bg: #1a1a2e;
             --primary: #ff4757;
-            --secondary: #ffa502;
+            --gold: #fffa65;
             --text-main: #ffffff;
-            --text-dim: #a4b0be;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'PingFang TC', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
-            margin: 0;
-            padding: 15px;
+            margin: 0; padding: 15px;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
-        /* 用戶資訊區 */
+        /* 用戶資訊卡片 */
         .header-card {
-            background: linear-gradient(135deg, #2f3542, #1e1e2e);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: linear-gradient(135deg, #16213e, #0f0f1a);
+            border-radius: 12px;
+            padding: 15px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid #24344d;
         }
 
-        .user-name { font-size: 1.1rem; font-weight: bold; color: var(--secondary); }
-        .user-points { font-size: 1.2rem; font-weight: 800; color: #2ed573; }
+        .user-points { color: #2ed573; font-weight: bold; font-size: 1.2rem; }
 
         /* 模式切換 */
-        .tab-container {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
+        .tab-container { display: flex; gap: 8px; margin-bottom: 15px; }
         .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background: #2f3542;
-            color: var(--text-dim);
-            font-weight: bold;
-            transition: 0.3s;
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            background: #24344d; color: #a4b0be; font-weight: bold;
         }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(255,71,87,0.4); }
 
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
-        }
-
-        /* 抽獎格子區 */
+        /* 獎項格子盤 */
         .prize-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px;
         }
 
         .prize-item {
             background: var(--card-bg);
-            border: 2px solid #3f3f5a;
+            border: 2px solid #24344d;
             border-radius: 10px;
-            height: 75px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            transition: all 0.1s;
+            height: 95px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; overflow: hidden; transition: 0.1s;
         }
 
+        .prize-img {
+            width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;
+        }
+
+        .prize-label { font-size: 10px; font-weight: bold; text-align: center; width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prize-qty { font-size: 9px; color: #7f8c8d; }
+
+        /* 跑馬燈發光特效 */
         .prize-item.active {
-            border-color: var(--secondary);
-            background: #3f3f5a;
-            box-shadow: 0 0 15px var(--secondary);
-            transform: scale(1.05);
+            border-color: var(--gold) !important;
+            background: #2d3436 !important;
+            box-shadow: 0 0 15px var(--gold);
+            transform: scale(1.08);
             z-index: 10;
         }
 
-        .prize-item.sold-out {
-            opacity: 0.3;
-            filter: grayscale(1);
-        }
-
+        .prize-item.sold-out { opacity: 0.4; filter: grayscale(1); }
         .prize-item.sold-out::after {
-            content: "完售";
-            position: absolute;
-            background: rgba(255,0,0,0.7);
-            color: white;
-            font-size: 10px;
-            padding: 2px 5px;
-            border-radius: 4px;
+            content: "SOLD OUT"; position: absolute; background: rgba(255,0,0,0.8);
+            color: white; font-size: 9px; font-weight: bold; padding: 2px 4px; border-radius: 3px;
         }
-
-        .prize-label { font-size: 11px; font-weight: bold; text-align: center; margin-top: 5px; }
-        .prize-qty { font-size: 9px; color: var(--text-dim); }
 
         /* 按鈕區 */
-        .action-area {
-            position: sticky;
-            bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        .action-area { display: flex; flex-direction: column; gap: 10px; }
         .main-btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            width: 100%; padding: 15px; border: none; border-radius: 30px;
+            font-size: 1.1rem; font-weight: bold; color: white; cursor: pointer;
         }
-
-        .btn-single { background: linear-gradient(45deg, #57606f, #2f3542); }
-        .btn-multi { background: linear-gradient(45deg, #ff4757, #ff6b81); }
-
-        .main-btn:disabled {
-            background: #747d8c !important;
-            opacity: 0.6;
-            transform: scale(0.98);
-        }
-
-        .cost-info {
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--secondary);
-            font-weight: bold;
-        }
+        .btn-single { background: #57606f; }
+        .btn-multi { background: linear-gradient(45deg, #ff4757, #ff6b81); box-shadow: 0 4px 15px rgba(255,71,87,0.4); }
+        .main-btn:disabled { background: #2f3542 !important; opacity: 0.5; }
     </style>
 </head>
 <body>
 
-<div class="header-card animate__animated animate__fadeIn">
-    <div>
-        <div style="font-size: 0.8rem; color: var(--text-dim);">PLAYER</div>
-        <div class="user-name" id="disp-name">讀取中...</div>
-    </div>
-    <div style="text-align: right;">
-        <div style="font-size: 0.8rem; color: var(--text-dim);">POINTS</div>
-        <div class="user-points" id="disp-points">0</div>
-    </div>
+<div class="header-card">
+    <div><small style="color:#7f8c8d">玩家</small><div id="disp-name" style="font-weight:bold">讀取中...</div></div>
+    <div style="text-align:right"><small style="color:#7f8c8d">點數餘額</small><div class="user-points" id="disp-points">0</div></div>
 </div>
 
 <div class="tab-container">
@@ -171,167 +103,127 @@
     <button class="tab-btn" onclick="changeMode('B區')">B區</button>
 </div>
 
-<div class="prize-grid" id="grid-box">
-    </div>
+<div class="prize-grid" id="grid-box"></div>
 
 <div class="action-area">
-    <div class="cost-info">本次消耗：<span id="cost-val">0</span> P</div>
+    <div style="text-align: center; color: var(--gold); font-size: 0.9rem; font-weight: bold;">
+        單抽：<span id="cost-val">0</span> P
+    </div>
     <button id="btn-1" class="main-btn btn-single" onclick="handleDraw(1)">單抽一次</button>
     <button id="btn-5" class="main-btn btn-multi" onclick="handleDraw(5)">五連抽 (爽快感提升)</button>
 </div>
 
 <script>
-    // --- 配置區 ---
     const CONFIG = {
         GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
-        LIFF_ID: "YOUR_LIFF_ID" // 請替換
+        LIFF_ID: "2009072982-6smlV2gu"
     };
 
-    let state = {
-        uid: "",
-        name: "",
-        points: 0,
-        mode: "單挑套",
-        prizes: [],
-        cost: 0,
-        isRunning: false
-    };
+    let state = { uid: "", name: "", points: 0, mode: "單挑套", prizes: [], cost: 0, isRunning: false };
 
-    // --- 初始化 ---
     async function init() {
         try {
             await liff.init({ liffId: CONFIG.LIFF_ID });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             const profile = await liff.getProfile();
             state.uid = profile.userId;
             state.name = profile.displayName;
             document.getElementById('disp-name').innerText = state.name;
             await syncData();
-        } catch (err) {
-            console.error(err);
-            // 測試環境預防報錯
-            state.uid = "TEST_USER";
-            state.name = "測試玩家";
-            await syncData();
-        }
+        } catch (err) { console.error(err); }
     }
 
-    // --- 資料同步 ---
     async function syncData() {
-        try {
-            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
-            const data = await res.json();
-            if(data.status === "success") {
-                state.points = data.userPoints;
-                state.prizes = data.prizes;
-                state.cost = data.cost;
-                updateUI();
-            }
-        } catch (e) { console.error("同步失敗", e); }
+        const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
+        const data = await res.json();
+        if(data.status === "success") {
+            state.points = data.userPoints;
+            state.prizes = data.prizes;
+            state.cost = data.cost;
+            updateUI();
+        }
     }
 
     function updateUI() {
         document.getElementById('disp-points').innerText = state.points.toLocaleString();
         document.getElementById('cost-val').innerText = state.cost;
         const grid = document.getElementById('grid-box');
-        grid.innerHTML = state.prizes.map((p, i) => `
-            <div class="prize-item ${p.stock <= 0 ? 'sold-out' : ''}" id="prize-${i}">
-                <div class="prize-label">${p.name}</div>
-                <div class="prize-qty">剩:${p.stock}</div>
-            </div>
-        `).join('');
+        grid.innerHTML = state.prizes.map((p, i) => {
+            const imgHtml = p.img ? `<img src="${p.img}" class="prize-img">` : `<div style="font-size:20px">🎁</div>`;
+            return `
+                <div class="prize-item ${p.stock <= 0 ? 'sold-out' : ''}" id="prize-${i}">
+                    ${imgHtml}
+                    <div class="prize-label">${p.name}</div>
+                    <div class="prize-qty">剩:${p.stock}</div>
+                </div>`;
+        }).join('');
     }
 
     function changeMode(m) {
         if(state.isRunning) return;
         state.mode = m;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText === m));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(m)));
         syncData();
     }
 
-    // --- 抽獎邏輯 ---
     async function handleDraw(count) {
         if(state.isRunning) return;
-        const totalCost = state.cost * count;
-        
-        if(state.points < totalCost) {
-            Swal.fire("點數不足", "趕快去聯繫小編儲值吧！", "warning");
-            return;
+        if(state.points < state.cost * count) {
+            Swal.fire("點數不足", "請聯繫店員儲值！", "warning"); return;
         }
 
         state.isRunning = true;
         setBtns(false);
 
-        try {
-            const res = await fetch(CONFIG.GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    uid: state.uid,
-                    mode: state.mode,
-                    count: count
-                })
-            });
-            const result = await res.json();
+        const res = await fetch(CONFIG.GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ uid: state.uid, mode: state.mode, count: count })
+        });
+        const result = await res.json();
 
-            if(result.status === "success") {
-                // 執行跑馬燈，帶入第一個獎項作為停點
-                playAnimation(result.results, result.remainingPoints);
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (e) {
-            Swal.fire("抽獎失敗", e.message, "error");
-            state.isRunning = false;
-            setBtns(true);
+        if(result.status === "success") {
+            playMarquee(result.results, result.remainingPoints);
+        } else {
+            Swal.fire("錯誤", result.message, "error");
+            state.isRunning = false; setBtns(true);
         }
     }
 
-    function playAnimation(results, newPoints) {
+    function playMarquee(results, newPoints) {
         let current = 0;
         let laps = 0;
-        const speed = 60;
         const total = state.prizes.length;
         
         const timer = setInterval(() => {
             document.querySelectorAll('.prize-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`prize-${current}`).classList.add('active');
+            const currentEl = document.getElementById(`prize-${current}`);
+            if(currentEl) currentEl.classList.add('active');
             
             current = (current + 1) % total;
             if(current === 0) laps++;
 
-            // 跑滿三圈後，尋找第一個結果的中獎位置停止
             if(laps >= 3) {
                 const targetIdx = state.prizes.findIndex(p => p.name === results[0]);
                 if(current === targetIdx) {
                     clearInterval(timer);
-                    setTimeout(() => showResult(results, newPoints), 500);
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: '🎊 恭喜獲獎！',
+                            html: `<b style="color:#ff4757; font-size:1.2rem">${results.join('<br>')}</b>`,
+                            icon: 'success', confirmButtonColor: '#ff4757'
+                        });
+                        state.points = newPoints;
+                        state.isRunning = false; setBtns(true);
+                        syncData();
+                    }, 500);
                 }
             }
-        }, speed);
+        }, 80);
     }
 
-    function showResult(results, newPoints) {
-        Swal.fire({
-            title: '🎊 恭喜獲獎！',
-            html: `<div style="color: #ff4757; font-weight: bold; font-size: 1.2rem;">${results.join('<br>')}</div>`,
-            icon: 'success',
-            background: '#1e1e2e',
-            color: '#fff',
-            confirmButtonColor: '#ff4757'
-        });
-        
-        state.points = newPoints;
-        state.isRunning = false;
-        setBtns(true);
-        syncData(); // 刷新庫存
-    }
-
-    function setBtns(enabled) {
-        document.getElementById('btn-1').disabled = !enabled;
-        document.getElementById('btn-5').disabled = !enabled;
+    function setBtns(e) {
+        document.getElementById('btn-1').disabled = !e;
+        document.getElementById('btn-5').disabled = !e;
     }
 
     window.onload = init;
