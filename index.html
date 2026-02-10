@@ -3,205 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂抽獎小幫手</title>
+    <title>盲玩樂抽獎幫手 - 旗艦版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        :root { --primary-color: #ff4757; --gold-color: #ffa502; }
-        body { font-family: 'PingFang TC', sans-serif; background: #1e1e2e; color: white; margin: 0; padding: 20px; overflow-x: hidden; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .user-info { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-        
-        /* 小瑪莉格子盤 */
-        .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .prize-box { background: #2f3542; border: 2px solid #57606f; border-radius: 8px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: 0.2s; }
-        .prize-box.active { border-color: var(--gold-color); box-shadow: 0 0 15px var(--gold-color); transform: scale(1.05); background: #57606f; }
-        .prize-box.sold-out { opacity: 0.4; filter: grayscale(1); }
-        .prize-box.sold-out::after { content: "SOLD OUT"; position: absolute; font-size: 10px; color: red; font-weight: bold; background: rgba(0,0,0,0.7); width: 100%; text-align: center; }
-        .prize-name { font-size: 12px; text-align: center; padding: 2px; }
-        .prize-stock { font-size: 10px; color: #a4b0be; }
+        :root {
+            --bg-dark: #121212;
+            --card-bg: #1e1e2e;
+            --primary: #ff4757;
+            --secondary: #ffa502;
+            --text-main: #ffffff;
+            --text-dim: #a4b0be;
+        }
 
-        /* 控制區 */
-        .controls { display: flex; flex-direction: column; gap: 10px; }
-        .mode-selector { display: flex; justify-content: space-between; gap: 5px; }
-        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; background: #57606f; color: white; cursor: pointer; }
-        .mode-btn.active { background: var(--primary-color); }
-        .draw-btn { padding: 15px; font-size: 18px; font-weight: bold; border-radius: 30px; border: none; background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; box-shadow: 0 5px 15px rgba(255,71,87,0.4); cursor: pointer; }
-        .draw-btn:disabled { background: #747d8c; cursor: not-allowed; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 用戶資訊區 */
+        .header-card {
+            background: linear-gradient(135deg, #2f3542, #1e1e2e);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-name { font-size: 1.1rem; font-weight: bold; color: var(--secondary); }
+        .user-points { font-size: 1.2rem; font-weight: 800; color: #2ed573; }
+
+        /* 模式切換 */
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #2f3542;
+            color: var(--text-dim);
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+
+        /* 抽獎格子區 */
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .prize-item {
+            background: var(--card-bg);
+            border: 2px solid #3f3f5a;
+            border-radius: 10px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.1s;
+        }
+
+        .prize-item.active {
+            border-color: var(--secondary);
+            background: #3f3f5a;
+            box-shadow: 0 0 15px var(--secondary);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .prize-item.sold-out {
+            opacity: 0.3;
+            filter: grayscale(1);
+        }
+
+        .prize-item.sold-out::after {
+            content: "完售";
+            position: absolute;
+            background: rgba(255,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .prize-label { font-size: 11px; font-weight: bold; text-align: center; margin-top: 5px; }
+        .prize-qty { font-size: 9px; color: var(--text-dim); }
+
+        /* 按鈕區 */
+        .action-area {
+            position: sticky;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .btn-single { background: linear-gradient(45deg, #57606f, #2f3542); }
+        .btn-multi { background: linear-gradient(45deg, #ff4757, #ff6b81); }
+
+        .main-btn:disabled {
+            background: #747d8c !important;
+            opacity: 0.6;
+            transform: scale(0.98);
+        }
+
+        .cost-info {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h2 class="animate__animated animate__fadeInDown">盲玩樂抽獎平台</h2>
+<div class="header-card animate__animated animate__fadeIn">
+    <div>
+        <div style="font-size: 0.8rem; color: var(--text-dim);">PLAYER</div>
+        <div class="user-name" id="disp-name">讀取中...</div>
+    </div>
+    <div style="text-align: right;">
+        <div style="font-size: 0.8rem; color: var(--text-dim);">POINTS</div>
+        <div class="user-points" id="disp-points">0</div>
+    </div>
 </div>
 
-<div class="user-info">
-    <span>玩家：<b id="userName">讀取中...</b></span>
-    <span>餘額：<b id="userPoints">0</b> P</span>
+<div class="tab-container">
+    <button class="tab-btn active" onclick="changeMode('單挑套')">單挑套</button>
+    <button class="tab-btn" onclick="changeMode('A區')">A區</button>
+    <button class="tab-btn" onclick="changeMode('B區')">B區</button>
 </div>
 
-<div id="prizeGrid" class="grid-container">
+<div class="prize-grid" id="grid-box">
     </div>
 
-<div class="controls">
-    <div class="mode-selector">
-        <button class="mode-btn active" onclick="switchMode('單挑套')">單挑套</button>
-        <button class="mode-btn" onclick="switchMode('A區')">A區</button>
-        <button class="mode-btn" onclick="switchMode('B區')">B區</button>
-    </div>
-    <div style="text-align: center; color: var(--gold-color); font-weight: bold;">
-        單抽金額：<span id="currentCost">---</span> P
-    </div>
-    <button id="drawBtn1" class="draw-btn" onclick="startDraw(1)">單抽一次</button>
-    <button id="drawBtn5" class="draw-btn" style="background: linear-gradient(45deg, #ffa502, #ff7f50);" onclick="startDraw(5)">五連抽 (更優惠!)</button>
+<div class="action-area">
+    <div class="cost-info">本次消耗：<span id="cost-val">0</span> P</div>
+    <button id="btn-1" class="main-btn btn-single" onclick="handleDraw(1)">單抽一次</button>
+    <button id="btn-5" class="main-btn btn-multi" onclick="handleDraw(5)">五連抽 (爽快感提升)</button>
 </div>
 
 <script>
-    const GAS_URL = "您的_GAS_網頁應用程式_URL";
-    let currentUser = { uid: "", name: "", points: 0 };
-    let currentMode = "單挑套";
-    let isDrawing = false;
-    let prizes = [];
+    // --- 配置區 ---
+    const CONFIG = {
+        GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
+        LIFF_ID: "YOUR_LIFF_ID" // 請替換
+    };
 
-    // 初始化 LIFF
-    async function initLIFF() {
+    let state = {
+        uid: "",
+        name: "",
+        points: 0,
+        mode: "單挑套",
+        prizes: [],
+        cost: 0,
+        isRunning: false
+    };
+
+    // --- 初始化 ---
+    async function init() {
         try {
-            await liff.init({ liffId: "您的_LIFF_ID" });
+            await liff.init({ liffId: CONFIG.LIFF_ID });
             if (!liff.isLoggedIn()) {
                 liff.login();
-            } else {
-                const profile = await liff.getProfile();
-                currentUser.uid = profile.userId;
-                currentUser.name = profile.displayName;
-                document.getElementById('userName').innerText = currentUser.name;
-                fetchData(); // 初始抓取資料
+                return;
             }
-        } catch (err) { console.error("LIFF 初始化失敗", err); }
+            const profile = await liff.getProfile();
+            state.uid = profile.userId;
+            state.name = profile.displayName;
+            document.getElementById('disp-name').innerText = state.name;
+            await syncData();
+        } catch (err) {
+            console.error(err);
+            // 測試環境預防報錯
+            state.uid = "TEST_USER";
+            state.name = "測試玩家";
+            await syncData();
+        }
     }
 
-    // 從 GAS 抓取最新獎池與用戶資料
-    async function fetchData() {
+    // --- 資料同步 ---
+    async function syncData() {
         try {
-            const resp = await fetch(`${GAS_URL}?uid=${currentUser.uid}&mode=${currentMode}`);
-            const data = await resp.json();
-            currentUser.points = data.userPoints;
-            prizes = data.prizes; // 包含獎項名、剩餘數量、等級
-            document.getElementById('userPoints').innerText = currentUser.points;
-            document.getElementById('currentCost').innerText = data.cost;
-            renderGrid();
-        } catch (err) { console.error("抓取資料失敗", err); }
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
+            const data = await res.json();
+            if(data.status === "success") {
+                state.points = data.userPoints;
+                state.prizes = data.prizes;
+                state.cost = data.cost;
+                updateUI();
+            }
+        } catch (e) { console.error("同步失敗", e); }
     }
 
-    function renderGrid() {
-        const grid = document.getElementById('prizeGrid');
-        grid.innerHTML = prizes.map((p, i) => `
-            <div class="prize-box ${p.stock <= 0 ? 'sold-out' : ''}" id="box-${i}">
-                <span class="prize-name">${p.name}</span>
-                <span class="prize-stock">剩餘:${p.stock}</span>
+    function updateUI() {
+        document.getElementById('disp-points').innerText = state.points.toLocaleString();
+        document.getElementById('cost-val').innerText = state.cost;
+        const grid = document.getElementById('grid-box');
+        grid.innerHTML = state.prizes.map((p, i) => `
+            <div class="prize-item ${p.stock <= 0 ? 'sold-out' : ''}" id="prize-${i}">
+                <div class="prize-label">${p.name}</div>
+                <div class="prize-qty">剩:${p.stock}</div>
             </div>
         `).join('');
     }
 
-    function switchMode(mode) {
-        if (isDrawing) return;
-        currentMode = mode;
-        document.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText === mode);
-        });
-        fetchData();
+    function changeMode(m) {
+        if(state.isRunning) return;
+        state.mode = m;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText === m));
+        syncData();
     }
 
-    async function startDraw(count) {
-        if (isDrawing) return;
+    // --- 抽獎邏輯 ---
+    async function handleDraw(count) {
+        if(state.isRunning) return;
+        const totalCost = state.cost * count;
         
-        // 1. 基本檢查
-        const cost = parseInt(document.getElementById('currentCost').innerText) * count;
-        if (currentUser.points < cost) {
-            Swal.fire("點數不足", "請聯繫小編儲值後再試！", "error");
+        if(state.points < totalCost) {
+            Swal.fire("點數不足", "趕快去聯繫小編儲值吧！", "warning");
             return;
         }
 
-        isDrawing = true;
-        toggleButtons(false);
+        state.isRunning = true;
+        setBtns(false);
 
         try {
-            // 2. 向後端請求抽獎結果
-            const response = await fetch(GAS_URL, {
+            const res = await fetch(CONFIG.GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    uid: currentUser.uid,
-                    userName: currentUser.name,
-                    mode: currentMode,
+                    uid: state.uid,
+                    mode: state.mode,
                     count: count
                 })
             });
-            const result = await response.json();
+            const result = await res.json();
 
-            if (result.status === "error") {
-                Swal.fire("錯誤", result.message, "error");
-                isDrawing = false;
-                toggleButtons(true);
-                return;
+            if(result.status === "success") {
+                // 執行跑馬燈，帶入第一個獎項作為停點
+                playAnimation(result.results, result.remainingPoints);
+            } else {
+                throw new Error(result.message);
             }
-
-            // 3. 執行跑馬燈動畫 (傳入結果陣列與最終餘額)
-            runMarquee(result.results, result.remainingPoints);
-
-        } catch (err) {
-            Swal.fire("系統故障", "連線超時，請檢查網路！", "error");
-            isDrawing = false;
-            toggleButtons(true);
+        } catch (e) {
+            Swal.fire("抽獎失敗", e.message, "error");
+            state.isRunning = false;
+            setBtns(true);
         }
     }
 
-    function runMarquee(results, finalPoints) {
-        let currentPos = 0;
-        let speed = 50;
+    function playAnimation(results, newPoints) {
+        let current = 0;
         let laps = 0;
-        const totalPrizes = prizes.length;
+        const speed = 60;
+        const total = state.prizes.length;
         
-        const interval = setInterval(() => {
-            document.querySelectorAll('.prize-box').forEach(b => b.classList.remove('active'));
-            document.getElementById(`box-${currentPos}`).classList.add('active');
+        const timer = setInterval(() => {
+            document.querySelectorAll('.prize-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`prize-${current}`).classList.add('active');
+            
+            current = (current + 1) % total;
+            if(current === 0) laps++;
 
-            currentPos = (currentPos + 1) % totalPrizes;
-            if (currentPos === 0) laps++;
-
-            // 動態控制動畫結束 (假設動畫至少跑 3 圈)
-            if (laps > 3) {
-                // 找到結果在數組中的 index (以第一個結果為例展示動畫)
-                const targetIdx = prizes.findIndex(p => p.name === results[0]);
-                if (currentPos === targetIdx) {
-                    clearInterval(interval);
-                    finishDraw(results, finalPoints);
+            // 跑滿三圈後，尋找第一個結果的中獎位置停止
+            if(laps >= 3) {
+                const targetIdx = state.prizes.findIndex(p => p.name === results[0]);
+                if(current === targetIdx) {
+                    clearInterval(timer);
+                    setTimeout(() => showResult(results, newPoints), 500);
                 }
             }
         }, speed);
     }
 
-    function finishDraw(results, finalPoints) {
+    function showResult(results, newPoints) {
         Swal.fire({
-            title: '🎉 恭喜中獎！',
-            html: `<div style="font-size: 20px; color: var(--primary-color);">${results.join('<br>')}</div>`,
+            title: '🎊 恭喜獲獎！',
+            html: `<div style="color: #ff4757; font-weight: bold; font-size: 1.2rem;">${results.join('<br>')}</div>`,
             icon: 'success',
-            confirmButtonText: '收下獎項'
+            background: '#1e1e2e',
+            color: '#fff',
+            confirmButtonColor: '#ff4757'
         });
-
-        currentUser.points = finalPoints;
-        document.getElementById('userPoints').innerText = currentUser.points;
-        isDrawing = false;
-        toggleButtons(true);
-        fetchData(); // 重新整理庫存
+        
+        state.points = newPoints;
+        state.isRunning = false;
+        setBtns(true);
+        syncData(); // 刷新庫存
     }
 
-    function toggleButtons(enabled) {
-        document.getElementById('drawBtn1').disabled = !enabled;
-        document.getElementById('drawBtn5').disabled = !enabled;
+    function setBtns(enabled) {
+        document.getElementById('btn-1').disabled = !enabled;
+        document.getElementById('btn-5').disabled = !enabled;
     }
 
-    window.onload = initLIFF;
+    window.onload = init;
 </script>
 </body>
 </html>
