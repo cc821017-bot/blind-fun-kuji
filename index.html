@@ -3,6 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>盲玩樂一番賞 - Premium</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        :root {
+            --kuji-red: #e63946;
+            --kuji-dark: #1a1a1a;
+            --kuji-gold: #ffb627;
+            --kuji-card: #2d2d2d;
+            --text-white: #f1f1f1;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #000;
+            color: var(--text-white);
+            margin: 0; padding: 0;
+            padding-bottom: 120px; /* 為底部按鈕留空間 */
+        }
+
+        /* 頂部導航與 Banner */
+        .header { background: #111; padding: 15px; text-align: center; border-bottom: 2px solid var(--kuji-red); }
+        .banner-box { width: 100%; height: 220px; overflow: hidden; background: #222; }
+        .banner-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 用戶資訊條 */
+        .user-status {
+            display: flex; justify-content: space-between; padding: 10px 20px;
+            background: rgba(230, 57, 70, 0.1); font-size: 0.9rem;
+        }
+
+        /* 模式切換 */
+        .mode-tabs { display: flex; background: #111; position: sticky; top: 0; z-index: 100; }
+        .tab { 
+            flex: 1; text-align: center; padding: 15px; font-weight: bold; color: #888;
+            border-bottom: 3px solid transparent; cursor: pointer;
+        }
+        .tab.active { color: var(--kuji-red); border-bottom: 3px solid var(--kuji-red); background: rgba(230, 57, 70, 0.05); }
+
+        /* 獎項列表容器 */
+        .prize-section { padding: 15px; }
+        .section-title { font-size: 1.1rem; border-left: 4px solid var(--kuji-red); padding-left: 10px; margin-bottom: 15px; }
+
+        /* Kuji 網格樣式 */
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            gap: 10px;
+        }
+
+        .kuji-card {
+            background: var(--kuji-card);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            position: relative;
+            border: 1px solid #444;
+            transition: 0.2s;
+        }
+
+        .kuji-card.active { border-color: var(--kuji-gold); box-shadow: 0 0 15px var(--kuji-gold); transform: scale(1.05); }
+
+        .kuji-card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; border-radius: 4px; margin-bottom: 5px; background: #fff; }
+        
+        .kuji-badge {
+            position: absolute; top: 0; left: 0; background: var(--kuji-red);
+            font-size: 10px; padding: 2px 6px; border-radius: 8px 0 8px 0; font-weight: bold;
+        }
+
+        .kuji-name { font-size: 10px; height: 28px; overflow: hidden; margin-bottom: 4px; line-height: 1.2; }
+
+        .kuji-stock-bar {
+            background: #444; height: 4px; border-radius: 2px; margin-top: 5px; overflow: hidden;
+        }
+        .stock-fill { background: var(--kuji-red); height: 100%; transition: width 0.3s; }
+
+        .kuji-stock-text { font-size: 9px; margin-top: 4px; color: #bbb; }
+
+        .kuji-card.sold-out { opacity: 0.5; filter: grayscale(1); }
+        .kuji-card.sold-out::after {
+            content: "完售"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold;
+        }
+
+        /* 底部操作區 */
+        .footer-actions {
+            position: fixed; bottom: 0; width: 100%; background: #111;
+            padding: 15px 0; border-top: 1px solid #333; display: flex;
+            flex-direction: column; align-items: center; z-index: 1000;
+        }
+        .price-tag { font-size: 1.1rem; font-weight: bold; color: var(--kuji-gold); margin-bottom: 10px; }
+        .btn-group { display: flex; gap: 10px; width: 90%; }
+        .draw-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 4px;
+            font-size: 1rem; font-weight: bold; color: #fff; cursor: pointer;
+        }
+        .btn-1 { background: #444; }
+        .btn-5 { background: var(--kuji-red); }
+
+        /* 中獎彈窗優化 */
+        .win-popup-img { width: 150px; height: 150px; object-fit: contain; background: #fff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="https://i.imgur.com/8Nn3lA6.png" height="30" alt="盲玩樂">
+</div>
+
+<div class="banner-box">
+    <img id="main-banner" src="https://i.imgur.com/m5S8W6g.jpeg">
+</div>
+
+<div class="user-status">
+    <div>玩家：<span id="disp-name">---</span></div>
+    <div>點數：<span id="disp-points" style="color:var(--kuji-gold)">0</span> P</div>
+</div>
+
+<div class="mode-tabs">
+    <div class="tab active" onclick="changeMode('單挑套')">單挑套</div>
+    <div class="tab" onclick="changeMode('A區')">A區</div>
+    <div class="tab" onclick="changeMode('B區')">B區</div>
+</div>
+
+<div class="prize-section">
+    <div class="section-title">獎項剩餘情況</div>
+    <div class="prize-grid" id="grid-box">
+        </div>
+</div>
+
+<div class="footer-actions">
+    <div class="price-tag">單抽價格：<span id="cost-val">0</span> P</div>
+    <div class="btn-group">
+        <button id="btn-1" class="draw-btn btn-1" onclick="handleDraw(1)">單抽</button>
+        <button id="btn-5" class="draw-btn btn-5" onclick="handleDraw(5)">五連抽</button>
+    </div>
+</div>
+
+<script>
+    const CONFIG = {
+        GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
+        LIFF_ID: "2009072982-6smlV2gu"
+    };
+
+    const BANNERS = {
+        "單挑套": "https://i.imgur.com/m5S8W6g.jpeg", 
+        "A區": "https://i.imgur.com/Your_A_Banner.jpg",
+        "B區": "https://i.imgur.com/Your_B_Banner.jpg"
+    };
+
+    let state = { uid: "", name: "", points: 0, mode: "單挑套", prizes: [], cost: 0, isRunning: false };
+
+    async function init() {
+        try {
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            const profile = await liff.getProfile();
+            state.uid = profile.userId;
+            state.name = profile.displayName;
+            document.getElementById('disp-name').innerText = state.name;
+            await syncData();
+        } catch (err) { console.error(err); }
+    }
+
+    async function syncData() {
+        const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&userName=${encodeURIComponent(state.name)}`);
+        const data = await res.json();
+        if(data.status === "success") {
+            state.points = data.userPoints;
+            state.prizes = data.prizes;
+            state.cost = data.cost;
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('disp-points').innerText = state.points.toLocaleString();
+        document.getElementById('cost-val').innerText = state.cost;
+        document.getElementById('main-banner').src = BANNERS[state.mode] || BANNERS["單挑套"];
+
+        const grid = document.getElementById('grid-box');
+        grid.innerHTML = state.prizes.map((p, i) => {
+            const stockPercent = (p.stock / p.total) * 100;
+            const imgUrl = p.img || 'https://via.placeholder.com/150?text=Prize';
+            // 抓取獎項等級 (如 A賞, B賞)
+            const prizeLevel = p.name.split('賞')[0] + '賞';
+
+            return `
+                <div class="kuji-card ${p.stock <= 0 ? 'sold-out' : ''}" id="prize-${i}">
+                    <div class="kuji-badge">${prizeLevel}</div>
+                    <img src="${imgUrl}">
+                    <div class="kuji-name">${p.name}</div>
+                    <div class="kuji-stock-text">${p.stock} / ${p.total}</div>
+                    <div class="kuji-stock-bar">
+                        <div class="stock-fill" style="width: ${stockPercent}%"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function changeMode(m) {
+        if(state.isRunning) return;
+        state.mode = m;
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.innerText.includes(m)));
+        syncData();
+    }
+
+    async function handleDraw(count) {
+        if(state.isRunning) return;
+        if(state.points < state.cost * count) {
+            Swal.fire("點數不足", "請聯繫店員儲值！", "warning"); return;
+        }
+
+        state.isRunning = true;
+        setBtns(false);
+
+        try {
+            const res = await fetch(CONFIG.GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ uid: state.uid, mode: state.mode, count: count })
+            });
+            const result = await res.json();
+            if(result.status === "success") {
+                playKujiAnimation(result.results, result.remainingPoints);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (e) {
+            Swal.fire("錯誤", e.message, "error");
+            state.isRunning = false; setBtns(true);
+        }
+    }
+
+    function playKujiAnimation(results, newPoints) {
+        let current = 0; let laps = 0; const total = state.prizes.length;
+        const timer = setInterval(() => {
+            document.querySelectorAll('.kuji-card').forEach(el => el.classList.remove('active'));
+            const currentEl = document.getElementById(`prize-${current}`);
+            if(currentEl) currentEl.classList.add('active');
+            
+            current = (current + 1) % total;
+            if(current === 0) laps++;
+
+            if(laps >= 2) { // 模擬 Kuji 轉圈
+                const targetIdx = state.prizes.findIndex(p => p.name === results[0]);
+                if(current === targetIdx) {
+                    clearInterval(timer);
+                    showKujiResult(results, newPoints);
+                }
+            }
+        }, 70);
+    }
+
+    function showKujiResult(results, newPoints) {
+        const itemsHtml = results.map(resName => {
+            const p = state.prizes.find(x => x.name === resName);
+            const img = p && p.img ? p.img : 'https://via.placeholder.com/150?text=Gift';
+            return `
+                <div class="animate__animated animate__jackInTheBox" style="margin-bottom:20px;">
+                    <img src="${img}" class="win-popup-img"><br>
+                    <b style="color:var(--kuji-red); font-size:1.4rem;">${resName}</b>
+                </div>`;
+        }).join('');
+
+        Swal.fire({
+            title: '恭喜中獎！',
+            html: `<div style="max-height:400px; overflow-y:auto; padding:10px;">${itemsHtml}</div>`,
+            background: '#1a1a1a',
+            color: '#fff',
+            confirmButtonText: '確定收下',
+            confirmButtonColor: '#e63946'
+        });
+
+        state.points = newPoints;
+        state.isRunning = false;
+        setBtns(true);
+        syncData();
+    }
+
+    function setBtns(e) {
+        document.getElementById('btn-1').disabled = !e;
+        document.getElementById('btn-5').disabled = !e;
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>盲玩樂抽獎幫手 - 豪華旗艦版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
