@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦實體籤盤 Pro</title>
+    <title>盲玩樂 - 旗艦互動籤盤 Pro</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -11,53 +11,60 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #1f1f35; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 140px; overflow-x: hidden; }
-        
-        /* 標題與導覽 */
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; 
+            margin: 0; padding-bottom: 140px; overflow-x: hidden;
+            transition: background 0.3s;
+        }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(22, 22, 37, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
-        .u-pts { color: var(--gold); font-weight: 900; font-size: 1.3rem; }
-
+        .u-pts { color: var(--gold); font-weight: 900; font-size: 1.2rem; }
         .tabs { display: flex; padding: 10px 15px; gap: 8px; }
-        .tab { flex: 1; text-align: center; padding: 12px; color: #aaa; background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: 900; cursor: pointer; }
+        .tab { flex: 1; text-align: center; padding: 10px; color: #aaa; background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: 900; }
         .tab.active { color: #fff; background: var(--red); box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4); }
-
-        /* 獎項展示廊 */
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: rgba(0,0,0,0.3); min-height: 150px; }
-        .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 8px; margin-bottom: 5px; }
-        .p-name { font-size: 11px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        /* 籤盤區域 */
+        .quick-select { display: flex; justify-content: center; gap: 8px; margin: 5px 15px 15px; }
+        .btn-quick { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 8px; border-radius: 12px; font-weight: 900; font-family: inherit; }
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: rgba(0,0,0,0.2); }
+        .prize-item { flex: 0 0 110px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .prize-item img { width: 80px; height: 80px; object-fit: cover; background: #fff; border-radius: 8px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .ticket { aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #666; transition: 0.2s; }
         .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-3px); box-shadow: 0 0 15px var(--gold); }
-        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.4; pointer-events: none; }
-
-        /* 底部操作與旗艦按鈕 */
-        .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: linear-gradient(90deg, #1f1f35, #2d2d44); border-radius: 50px; border: 1px solid var(--gold); padding: 15px 25px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        .btn-draw { 
-            background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 15px 45px; border-radius: 40px; 
-            font-family: 'Noto Sans TC', sans-serif !important; font-weight: 900 !important; font-size: 1.4rem !important; 
-            animation: pulse-red 2s infinite; cursor: pointer; letter-spacing: 2px;
-        }
+        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; }
         
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
-        @keyframes flash-gold { 0%, 100% { background: var(--bg); } 50% { background: #4a3b00; } }
-        .big-win-flash { animation: flash-gold 0.5s 3; }
+        /* 旗艦級開籤按鈕 */
+        .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: linear-gradient(90deg, #1f1f35, #2d2d44); border-radius: 50px; border: 1px solid var(--gold); padding: 12px 25px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .btn-draw { 
+            background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 14px 35px; border-radius: 35px; 
+            font-family: inherit; font-weight: 900; font-size: 1.2rem; animation: pulse-red 2s infinite; cursor: pointer;
+        }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
 
+        /* 翻牌樣式 */
+        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; perspective: 1000px; padding: 15px; max-height: 50vh; overflow-y: auto; }
+        .flip-card { width: 95px; height: 135px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+        .flip-card.flipped { transform: rotateY(180deg); }
+        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--gold); }
+        .flip-front { background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); color: var(--gold); font-size: 2rem; font-weight: 900; }
+        .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; text-align: center; }
+        .flip-back img { width: 85%; height: auto; border-radius: 5px; margin-bottom: 5px; }
+
+        @keyframes flash-gold { 0%, 100% { background: var(--bg); } 50% { background: #5a4a00; } }
+        .big-win-flash { animation: flash-gold 0.5s 3; }
         #draw-animation { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .draw-scanner { width: 80%; height: 2px; background: var(--gold); box-shadow: 0 0 15px var(--gold); position: absolute; animation: scan 1.5s infinite; }
+        @keyframes scan { 0%, 100% { top: 35%; } 50% { top: 65%; } }
         .loading { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:20px; font-weight:900;">連線雲端籤盤...</p></div>
-<div id="draw-animation"><div class="spinner"></div><h3 style="color:var(--gold); margin-top:25px; font-weight:900; letter-spacing:3px;">揭曉中...</h3></div>
+<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">同步中...</p></div>
+<div id="draw-animation"><div class="draw-scanner"></div><div class="animate__animated animate__pulse animate__infinite"><img src="https://cdn-icons-png.flaticon.com/512/6101/6101413.png" width="80" style="filter: invert(1);"></div><h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px; font-weight:900;">揭曉中...</h3></div>
 
 <div class="header">
-    <div style="font-weight:900;">玩家: <span id="u-name">...</span></div>
-    <div class="u-pts"><span id="u-pts">0</span> <small>P</small></div>
+    <div style="font-weight:700; color:#ccc; font-size:0.8rem;">PLAYER: <span id="u-name" style="color:#fff;">...</span></div>
+    <div class="u-pts"><span id="u-pts">0</span> <small>PTS</small></div>
 </div>
 
 <div class="tabs">
@@ -66,16 +73,22 @@
     <div class="tab" data-mode="B區" onclick="changeMode('B區')">💎 B區</div>
 </div>
 
-<div id="prize-gallery" class="prize-gallery"></div>
+<div class="quick-select">
+    <button class="btn-quick" onclick="randomSelect(5)">隨機 5 抽</button>
+    <button class="btn-quick" onclick="randomSelect(10)">隨機 10 抽</button>
+    <button class="btn-quick" onclick="selectAll()">全包</button>
+</div>
+
+<div class="prize-gallery" id="prize-gallery"></div>
 
 <div class="grid-area">
-    <div id="status-msg" style="text-align:center; color:var(--gold); margin: 15px 0; font-weight:900;">初始化數據...</div>
-    <div id="main-grid" class="grid"></div>
+    <div id="status-msg" style="text-align:center; color:var(--gold); margin-bottom:10px; font-weight:900;">載入中...</div>
+    <div class="grid" id="main-grid"></div>
 </div>
 
 <div class="cart-bar" id="cart-bar">
     <div><small style="color:#aaa; font-weight:900;">SELECTED</small><br><b style="font-size:1.3rem; color:var(--gold); font-weight:900;"><span id="sel-count">0</span> <small>抽</small></b></div>
-    <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
+    <button class="btn-draw" onclick="handleCheckout()">確認開籤</button>
 </div>
 
 <script>
@@ -101,44 +114,54 @@
         state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
-            const url = `${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`;
-            const res = await fetch(url);
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&t=${Date.now()}`);
             const data = await res.json();
-            console.log("Sync Data:", data); // 除錯用
-            
             if(data.status === "success") {
-                state.tickets = data.tickets; 
-                state.cost = data.cost; 
-                state.points = data.userPoints;
+                state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
-                document.getElementById('status-msg').innerText = `${state.mode} | 每抽 ${state.cost} P`;
+                document.getElementById('status-msg').innerText = `每抽 ${state.cost} P | 剩餘 ${state.tickets.filter(x=>!x.isTaken).length} 抽`;
                 
-                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
-                    <div class="prize-item"><img src="${p.img || ''}"><div class="p-name">${p.name}</div><div style="color:var(--gold); font-size:10px; font-weight:900;">剩 ${p.stock}</div></div>
-                `).join('');
+                let gHtml = "";
+                data.prizeSummary.forEach(p => {
+                    gHtml += `<div class="prize-item"><img src="${p.img || 'https://via.placeholder.com/80'}"><div style="font-size:10px; font-weight:900;">${p.name}</div><div style="color:var(--gold); font-size:10px">剩 ${p.stock}</div></div>`;
+                });
+                document.getElementById('prize-gallery').innerHTML = gHtml;
                 renderGrid();
-            } else {
-                Swal.fire("同步錯誤", data.message, "error");
             }
-        } catch (e) { 
-            console.error(e);
-            Swal.fire("連線失敗", "無法連接至雲端伺服器", "error"); 
         } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
     function renderGrid() {
         document.getElementById('main-grid').innerHTML = state.tickets.map(t => `
-            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect(${t.id})`}">
+            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="toggleSelect(${t.id})">
                 ${t.isTaken ? '✘' : t.id}
             </div>
         `).join('');
     }
 
     function toggleSelect(tid) {
+        const t = state.tickets.find(x => x.id === tid);
+        if(!t || t.isTaken) return;
         const idx = state.selected.indexOf(tid);
         const el = document.getElementById(`t-${tid}`);
         if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
         else { state.selected.push(tid); el.classList.add('selected'); }
+        updateCartUI();
+    }
+
+    function randomSelect(n) {
+        state.selected = []; document.querySelectorAll('.ticket').forEach(e => e.classList.remove('selected'));
+        state.tickets.filter(t => !t.isTaken).sort(() => 0.5 - Math.random()).slice(0, n).forEach(t => {
+            state.selected.push(t.id); document.getElementById(`t-${t.id}`).classList.add('selected');
+        });
+        updateCartUI();
+    }
+
+    function selectAll() {
+        state.selected = [];
+        state.tickets.filter(t => !t.isTaken).forEach(t => {
+            state.selected.push(t.id); document.getElementById(`t-${t.id}`).classList.add('selected');
+        });
         updateCartUI();
     }
 
@@ -147,67 +170,84 @@
         document.getElementById('sel-count').innerText = state.selected.length;
     }
 
-    function checkBigWin(name) {
-        const upName = (name || "").toUpperCase().trim();
-        if (/A賞|最後|LAST|SP|1賞/.test(upName)) {
-            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, zIndex: 10000 });
+    // 翻牌特效核心邏輯
+    function handleFlip(el, prizeName) {
+        if(el.classList.contains('flipped')) return;
+        el.classList.add('flipped');
+
+        const name = prizeName.toString().toUpperCase().trim();
+        // 判定大獎
+        const isBigWin = /A賞|SP|最後|LAST|1賞|TOP|GRAND/.test(name);
+
+        if (isBigWin) {
+            // 多重噴彩帶
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ffcc00', '#ff4d4d', '#ffffff'] });
+            confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 } });
+            confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 } });
+            
             document.body.classList.add('big-win-flash');
-            setTimeout(() => document.body.classList.remove('big-win-flash'), 2000);
+            setTimeout(() => document.body.classList.remove('big-win-flash'), 1500);
             if (navigator.vibrate) navigator.vibrate([100, 50, 200, 50, 300]);
         }
     }
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire("餘額不足", "點數不夠，請連繫店長", "warning"); return; }
+        if(state.points < total) { Swal.fire("餘額不足", "請聯繫店長儲值", "warning"); return; }
         
         const confirm = await Swal.fire({
-            title: '確定開籤？', text: `選取 ${state.selected.length} 抽，共 ${total} P`, 
-            showCancelButton: true, confirmButtonColor: '#ff4d4d', background: '#1f1f35', color: '#fff'
+            title: '確認開籤？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff4d4d', background: '#1f1f35', color: '#fff'
         });
 
         if(confirm.isConfirmed) {
-            document.getElementById('drawBtn').disabled = true;
             document.getElementById('draw-animation').style.display = 'flex';
             try {
-                const res = await fetch(CONFIG.GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
-                });
+                const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
-                document.getElementById('draw-animation').style.display = 'none';
+                
+                // 立即鎖定前端籤位
+                state.selected.forEach(id => {
+                    const t = state.tickets.find(x => x.id === id);
+                    if(t) t.isTaken = true;
+                });
 
-                if(result.status === "success") {
-                    let flipHtml = `<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; max-height: 50vh; overflow-y: auto;">`;
-                    result.results.forEach((p, i) => {
-                        flipHtml += `
-                            <div class="flip-card" id="card-${i}" onclick="this.classList.toggle('flipped'); window.handleCardFlip('${p.name}')" style="width: 95px; height: 135px; perspective: 1000px; cursor: pointer;">
-                                <div class="card-inner" style="position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d;">
-                                    <div class="flip-front" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); background: #1a1a2e; color: var(--gold); font-size: 2rem; font-weight: 900; display: flex; align-items: center; justify-content: center;">?</div>
-                                    <div class="flip-back" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                        <img src="${p.img || ''}" style="width: 75px; height: 75px; object-fit: contain;">
-                                        <div style="font-size:11px; font-weight:900; margin-top:5px; color:#333;">${p.name}</div>
+                setTimeout(async () => {
+                    document.getElementById('draw-animation').style.display = 'none';
+                    if(result.status === "success") {
+                        let flipHtml = `<div class="flip-container">`;
+                        result.results.forEach((p, i) => {
+                            flipHtml += `
+                                <div class="flip-card" onclick="handleFlip(this, '${p.name}')">
+                                    <div class="flip-front">?</div>
+                                    <div class="flip-back">
+                                        <img src="${p.img || 'https://via.placeholder.com/100'}">
+                                        <div style="font-size:11px; margin-top:5px; font-weight:900; color:#333;">${p.name}</div>
                                     </div>
-                                </div>
-                            </div>`;
-                    });
-                    flipHtml += `</div><button id="rvBtn" onclick="revealAllCards()" style="margin:20px 0; padding:12px 30px; border-radius:30px; border:none; background:var(--gold); font-weight:900; font-family:inherit;">全部揭曉</button>`;
-                    
-                    await Swal.fire({ title: '翻牌時刻', html: flipHtml, background: '#1f1f35', color: '#fff', width: '95%', showConfirmButton: true, confirmButtonText: '完成', allowOutsideClick: false });
-                    await sync(); 
-                } else { Swal.fire("錯誤", result.message, "error"); }
+                                </div>`;
+                        });
+                        flipHtml += `</div><button id="reveal-btn" onclick="revealAllCards()" style="margin:20px 0; padding:12px 30px; border-radius:30px; border:none; background:var(--gold); font-weight:900; font-family:inherit; box-shadow:0 4px 10px rgba(0,0,0,0.5);">全部揭曉</button>`;
+                        
+                        await Swal.fire({ 
+                            title: '✨ 請點擊翻牌 ✨', html: flipHtml, background: '#1f1f35', color: '#fff', 
+                            width: '95%', showConfirmButton: true, confirmButtonText: '結束開獎', allowOutsideClick: false 
+                        });
+                        await sync(); 
+                    }
+                }, 1500);
             } catch (e) { document.getElementById('draw-animation').style.display='none'; }
-            finally { document.getElementById('drawBtn').disabled = false; }
         }
     }
 
-    window.handleCardFlip = (name) => checkBigWin(name);
     window.revealAllCards = () => {
-        document.querySelectorAll('.flip-card:not(.flipped)').forEach((c, i) => setTimeout(() => c.click(), i * 200));
-        document.getElementById('rvBtn').style.display = 'none';
+        const cards = document.querySelectorAll('.flip-card:not(.flipped)');
+        cards.forEach((c, i) => {
+            setTimeout(() => c.click(), i * 200);
+        });
+        document.getElementById('reveal-btn').style.display = 'none';
     };
 
     function changeMode(m) {
+        if(state.mode === m) return;
         state.mode = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m));
         sync();
