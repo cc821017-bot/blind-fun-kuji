@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦互動籤盤</title>
+    <title>盲玩樂 - 旗艦實體籤盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,74 +13,66 @@
         :root { --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #1f1f35; }
         body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 140px; overflow-x: hidden; }
         
-        /* 標題與分區 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(22, 22, 37, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
         .u-pts { color: var(--gold); font-weight: 900; font-size: 1.2rem; }
+
         .tabs { display: flex; padding: 10px 15px; gap: 8px; }
         .tab { flex: 1; text-align: center; padding: 12px; color: #aaa; background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: 900; cursor: pointer; }
         .tab.active { color: #fff; background: var(--red); box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4); }
 
-        /* 獎項展示廊 - 修正圖片比例 */
         .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: rgba(0,0,0,0.3); }
         .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
         .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 8px; }
-        .p-name { font-size: 10px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 5px; }
 
-        /* 籤盤 - 5欄佈局 */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .ticket { aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #666; transition: 0.2s; }
         .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-3px); box-shadow: 0 0 15px var(--gold); }
-        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.4; }
+        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.4; pointer-events: none; }
 
-        /* 底部按鈕 - 旗艦大按鈕 */
         .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: linear-gradient(90deg, #1f1f35, #2d2d44); border-radius: 50px; border: 1px solid var(--gold); padding: 12px 25px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn-draw { background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 14px 30px; border-radius: 35px; font-weight: 900; font-size: 1.1rem; animation: pulse-red 2s infinite; font-family: inherit; cursor: pointer; }
+        /* 強化按鈕樣式 */
+        .btn-draw { 
+            background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 14px 40px; border-radius: 35px; 
+            font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 1.3rem; animation: pulse-red 2s infinite; cursor: pointer; 
+        }
         
-        /* 翻牌容器 */
-        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; max-height: 50vh; overflow-y: auto; }
-        .flip-card { width: 90px; height: 130px; perspective: 1000px; }
-        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
-        .flip-card.flipped .card-inner { transform: rotateY(180deg); }
-        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .flip-front { background: #1a1a2e; color: var(--gold); font-size: 2rem; font-weight: 900; }
-        .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; }
-        .flip-back img { width: 70px; height: 70px; object-fit: contain; }
-
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
         @keyframes flash-gold { 0%, 100% { background: var(--bg); } 50% { background: #5a4a00; } }
         .big-win-flash { animation: flash-gold 0.5s 3; }
 
+        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; perspective: 1000px; }
+        .flip-card { width: 90px; height: 130px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .flip-card.flipped { transform: rotateY(180deg); }
+        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .flip-front { background: #1a1a2e; color: var(--gold); font-size: 2rem; font-weight: 900; }
+        .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; text-align: center; }
+        .flip-back img { width: 75px; height: 75px; object-fit: contain; }
+
         #draw-animation { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .loading { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">同步雲端資料中...</p></div>
-<div id="draw-animation"><div class="spinner"></div><h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px; font-weight:900;">揭曉中，請稍候...</h3></div>
+<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">同步中...</p></div>
+<div id="draw-animation"><div class="spinner"></div><h3 style="color:var(--gold); margin-top:25px; font-weight:900;">揭曉中...</h3></div>
 
 <div class="header">
-    <div style="font-weight:700;">玩家: <span id="u-name">...</span></div>
+    <div>玩家: <b id="u-name">...</b></div>
     <div class="u-pts"><span id="u-pts">0</span> <small>P</small></div>
 </div>
 
 <div class="tabs">
-    <div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">🔥 單挑套</div>
-    <div class="tab" data-mode="A區" onclick="changeMode('A區')">✨ A區</div>
-    <div class="tab" data-mode="B區" onclick="changeMode('B區')">💎 B區</div>
+    <div class="tab active" data-mode="A區" onclick="changeMode('A區')">🔥 A區</div>
+    <div class="tab" data-mode="B區" onclick="changeMode('B區')">✨ B區</div>
 </div>
 
 <div id="prize-gallery" class="prize-gallery"></div>
-
-<div class="grid-area">
-    <div id="status-msg" style="text-align:center; color:var(--gold); margin: 10px 0; font-weight:900;">連線中...</div>
-    <div class="grid" id="main-grid"></div>
-</div>
+<div id="main-grid" class="grid"></div>
 
 <div class="cart-bar" id="cart-bar">
-    <div><small style="color:#aaa;">已選</small><br><b style="font-size:1.2rem; color:var(--gold);"><span id="sel-count">0</span> 抽</b></div>
+    <div><b style="font-size:1.2rem; color:var(--gold);"><span id="sel-count">0</span> 抽</b></div>
     <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
 </div>
 
@@ -90,7 +82,7 @@
         LIFF_ID: "2009072982-6smlV2gu"
     };
 
-    let state = { uid: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
+    let state = { uid: "", mode: "A區", tickets: [], cost: 0, points: 0, selected: [] };
 
     async function init() {
         try {
@@ -100,12 +92,11 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (e) { document.getElementById('loader').style.display='none'; }
+        } finally { document.getElementById('loader').style.display='none'; }
     }
 
     async function sync() {
-        state.selected = [];
-        updateCartUI();
+        state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&t=${Date.now()}`);
@@ -115,13 +106,9 @@
                 state.cost = data.cost; 
                 state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
-                document.getElementById('status-msg').innerText = `${state.mode} | 每抽 ${state.cost} P`;
-                
-                let gHtml = "";
-                data.prizeSummary.forEach(p => {
-                    gHtml += `<div class="prize-item"><img src="${p.img || 'https://via.placeholder.com/80'}"><div class="p-name">${p.name}</div><div style="color:var(--gold); font-size:9px;">剩 ${p.stock}</div></div>`;
-                });
-                document.getElementById('prize-gallery').innerHTML = gHtml;
+                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
+                    <div class="prize-item"><img src="${p.img || ''}"><div class="p-name">${p.name}</div><div style="color:var(--gold);font-size:10px">剩 ${p.stock}</div></div>
+                `).join('');
                 renderGrid();
             }
         } finally { document.getElementById('loader').style.display = 'none'; }
@@ -129,16 +116,13 @@
 
     function renderGrid() {
         document.getElementById('main-grid').innerHTML = state.tickets.map(t => `
-            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" 
-                 onclick="${t.isTaken ? '' : `toggleSelect(${t.id})`}">
+            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect(${t.id})`}">
                 ${t.isTaken ? '✘' : t.id}
             </div>
         `).join('');
     }
 
     function toggleSelect(tid) {
-        const t = state.tickets.find(x => x.id === tid);
-        if(!t || t.isTaken) return;
         const idx = state.selected.indexOf(tid);
         const el = document.getElementById(`t-${tid}`);
         if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
@@ -151,86 +135,67 @@
         document.getElementById('sel-count').innerText = state.selected.length;
     }
 
-    // 噴發特效函式 - 提高 Z-index
-    function fireConfetti() {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 10000 });
-    }
-
-    function handleFlip(el, prizeName) {
-        if(el.classList.contains('flipped')) return;
-        el.classList.add('flipped');
-        const name = prizeName.toString().toUpperCase();
-        if (/A賞|SP|最後|LAST|1賞/.test(name)) {
-            fireConfetti();
+    // 解決層級問題的特效
+    function doBigWin(name) {
+        if (/A賞|最後|SP|1/.test(name.toUpperCase())) {
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, zIndex: 10000 });
             document.body.classList.add('big-win-flash');
-            setTimeout(() => document.body.classList.remove('big-win-flash'), 1500);
+            setTimeout(() => document.body.classList.remove('big-win-flash'), 2000);
         }
     }
 
     async function handleCheckout() {
-        const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire("餘額不足", "請聯繫店長儲值", "warning"); return; }
-        
-        const confirm = await Swal.fire({
-            title: '確定開籤？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff4d4d', background: '#1f1f35', color: '#fff'
-        });
+        const drawBtn = document.getElementById('drawBtn');
+        drawBtn.disabled = true;
+        document.getElementById('draw-animation').style.display = 'flex';
 
-        if(confirm.isConfirmed) {
-            document.getElementById('drawBtn').disabled = true;
-            document.getElementById('draw-animation').style.display = 'flex';
+        try {
+            const res = await fetch(CONFIG.GAS_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
+            });
+            const result = await res.json();
+            document.getElementById('draw-animation').style.display = 'none';
 
-            try {
-                const res = await fetch(CONFIG.GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
+            if(result.status === "success") {
+                let flipHtml = `<div class="flip-container">`;
+                result.results.forEach((p, i) => {
+                    flipHtml += `
+                        <div class="flip-card" id="card-${i}" onclick="this.classList.toggle('flipped'); handleCardClick('${p.name}')">
+                            <div class="flip-front">?</div>
+                            <div class="flip-back">
+                                <img src="${p.img || ''}">
+                                <div style="font-size:11px; font-weight:900; margin-top:5px;">${p.name}</div>
+                            </div>
+                        </div>`;
                 });
-                const result = await res.json();
+                flipHtml += `</div><button id="revealAll" onclick="allOpen()" style="margin:15px; padding:10px 20px; background:var(--gold); border:none; border-radius:20px; font-weight:900;">全部翻開</button>`;
                 
-                if(result.status === "success") {
-                    setTimeout(async () => {
-                        document.getElementById('draw-animation').style.display = 'none';
-                        let flipHtml = `<div class="flip-container">`;
-                        result.results.forEach((p, i) => {
-                            flipHtml += `
-                                <div class="flip-card" onclick="handleFlip(this, '${p.name}')">
-                                    <div class="card-inner">
-                                        <div class="flip-front">?</div>
-                                        <div class="flip-back">
-                                            <img src="${p.img || 'https://via.placeholder.com/100'}">
-                                            <div style="font-size:11px; margin-top:5px; font-weight:900;">${p.name}</div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                        flipHtml += `</div><button id="rvBtn" onclick="rvAll()" style="margin:20px 0; padding:12px 30px; border-radius:30px; border:none; background:var(--gold); font-weight:900;">全部揭曉</button>`;
-                        
-                        await Swal.fire({ 
-                            title: '✨ 翻開獎項 ✨', html: flipHtml, background: '#1f1f35', color: '#fff', 
-                            width: '95%', showConfirmButton: true, confirmButtonText: '完成', allowOutsideClick: false 
-                        });
-                        
-                        document.getElementById('drawBtn').disabled = false;
-                        await sync(); // 關鍵：翻牌視窗關閉後強制同步，大獎若抽完格子會變黑
-                    }, 1000);
-                } else { throw new Error(result.message); }
-            } catch (e) { 
-                document.getElementById('draw-animation').style.display='none';
-                document.getElementById('drawBtn').disabled = false;
-                Swal.fire("系統忙碌", "請重新載入或連繫店長", "error");
+                await Swal.fire({ title: '翻牌揭曉', html: flipHtml, background: '#1f1f35', color: '#fff', showConfirmButton: true, confirmButtonText: '結束', allowOutsideClick: false });
+                
+                // 結束後強制同步，這步是防止大獎後還能點的關鍵
+                await sync(); 
+            } else {
+                Swal.fire("錯誤", result.message, "error");
             }
+        } catch(e) {
+            document.getElementById('draw-animation').style.display = 'none';
+        } finally {
+            drawBtn.disabled = false;
         }
     }
 
-    window.rvAll = () => {
-        const cards = document.querySelectorAll('.flip-card');
-        cards.forEach((c, i) => setTimeout(() => c.click(), i * 150));
-        document.getElementById('rvBtn').style.display = 'none';
+    window.handleCardClick = (name) => { doBigWin(name); };
+    window.allOpen = () => { 
+        document.querySelectorAll('.flip-card').forEach((c, i) => {
+            setTimeout(() => { if(!c.classList.contains('flipped')) c.click(); }, i * 200);
+        });
+        document.getElementById('revealAll').style.display='none';
     };
 
     function changeMode(m) {
-        if(state.mode === m) return;
         state.mode = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m));
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
         sync();
     }
 
