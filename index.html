@@ -14,17 +14,19 @@
         .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--red); position: sticky; top: 0; z-index: 1000; }
         .u-pts { color: var(--gold); font-weight: bold; }
 
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: #111; border-bottom: 1px solid #333; min-height: 140px; scrollbar-width: none; }
-        .prize-gallery::-webkit-scrollbar { display: none; }
+        /* 獎項展示廊 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: #111; border-bottom: 1px solid #333; min-height: 140px; }
         .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 8px; padding: 8px; border: 1px solid #333; }
-        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 4px; margin-bottom: 5px; }
-        .p-name { font-size: 10px; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 4px; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto; }
+        .p-name { font-size: 10px; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 5px; }
         .p-stock { font-size: 9px; color: #888; }
 
+        /* 分區切換 */
         .tabs { display: flex; background: #000; border-bottom: 1px solid #333; }
-        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; }
+        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .tab.active { color: var(--red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--red); }
 
+        /* 籤盤區域 */
         .grid-area { padding: 15px; }
         .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; background: #111; padding: 12px; border-radius: 10px; border: 1px solid #333; }
         
@@ -37,14 +39,17 @@
         .ticket.taken::after { content: '済'; position: absolute; font-size: 10px; }
         .ticket.selected { border-color: var(--gold) !important; background: rgba(255,182,39,0.2) !important; color: #fff; transform: scale(1.05); z-index: 10; }
 
+        /* 底部購物車 */
         .cart-bar { position: fixed; bottom: 0; width: 100%; background: #161625; border-top: 2px solid var(--gold); padding: 15px 20px; box-sizing: border-box; display: none; z-index: 2000; }
         .cart-content { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto; }
         .btn-draw { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
 
+        /* 開獎結果 */
         .win-card { display: inline-block; width: 120px; margin: 10px; vertical-align: top; }
         .win-img { width: 100px; height: 100px; object-fit: contain; background: #fff; border-radius: 8px; }
         
-        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
+        /* 載入中 */
+        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -53,24 +58,24 @@
 
 <div id="loader" class="loading">
     <div class="spinner"></div>
-    <p style="margin-top:15px; color:#fff;">正在切換區塊...</p>
+    <p style="margin-top:15px; color:#fff;">正在切換分區...</p>
 </div>
 
 <div class="header">
-    <div>玩家：<b id="u-name">---</b></div>
+    <div>玩家：<b id="u-name">載入中</b></div>
     <div>餘額：<b id="u-pts" class="u-pts">0</b> P</div>
 </div>
 
 <div class="tabs">
-    <div class="tab active" onclick="changeMode('單挑套')">單挑套</div>
-    <div class="tab" onclick="changeMode('A區')">A區</div>
-    <div class="tab" onclick="changeMode('B區')">B區</div>
+    <div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">單挑套</div>
+    <div class="tab" data-mode="A區" onclick="changeMode('A區')">A區</div>
+    <div class="tab" data-mode="B區" onclick="changeMode('B區')">B區</div>
 </div>
 
 <div class="prize-gallery" id="prize-gallery"></div>
 
 <div class="grid-area">
-    <div id="status-msg" style="margin-bottom:10px; font-size:0.85rem; color:#888;">連線中...</div>
+    <div id="status-msg" style="margin-bottom:10px; font-size:0.85rem; color:#888;">伺服器連線中...</div>
     <div class="grid" id="main-grid"></div>
 </div>
 
@@ -102,7 +107,7 @@
             await sync();
         } catch (err) {
             document.getElementById('loader').style.display = 'none';
-            document.getElementById('status-msg').innerText = "LIFF 初始化失敗";
+            document.getElementById('status-msg').innerText = "LIFF 啟動失敗，請在 LINE 中打開";
         }
     }
 
@@ -111,39 +116,46 @@
         updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         
-        // 核心修正：切換區塊時徹底清空內容
+        // 物理清空容器，防止舊圖殘留
         const gallery = document.getElementById('prize-gallery');
         const grid = document.getElementById('main-grid');
-        gallery.innerHTML = ""; grid.innerHTML = "";
+        gallery.innerHTML = "";
+        grid.innerHTML = "";
         
         try {
-            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&_t=${new Date().getTime()}`);
+            const url = `${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&cache=${Date.now()}`;
+            const res = await fetch(url);
             const data = await res.json();
             
             if(data.status === "success") {
                 state.tickets = data.tickets || [];
                 state.cost = data.cost || 0;
                 state.points = data.userPoints || 0;
-                document.getElementById('u-pts').innerText = state.points.toLocaleString();
-                document.getElementById('status-msg').innerText = `${state.mode} (單抽 ${state.cost} P)`;
                 
-                // 渲染上方獎項，加入二次網址校正
+                document.getElementById('u-pts').innerText = state.points.toLocaleString();
+                document.getElementById('status-msg').innerText = `${state.mode} (每抽 ${state.cost} P)`;
+                
+                // 渲染大賞展示區
                 if(data.prizeSummary && data.prizeSummary.length > 0) {
-                    gallery.innerHTML = data.prizeSummary.map(p => {
-                        const safeImg = p.img && p.img.startsWith('http') ? p.img.trim() : 'https://via.placeholder.com/80?text=No+Img';
-                        return `
+                    let galleryHtml = "";
+                    data.prizeSummary.forEach(p => {
+                        const imgPath = p.img ? p.img : "https://via.placeholder.com/80?text=No+Img";
+                        galleryHtml += `
                             <div class="prize-item animate__animated animate__fadeIn">
-                                <img src="${safeImg}" crossorigin="anonymous" onerror="this.src='https://via.placeholder.com/80?text=Error'">
+                                <img src="${imgPath}">
                                 <div class="p-name">${p.name}</div>
                                 <div class="p-stock">${p.stock}/${p.total}</div>
                             </div>
                         `;
-                    }).join('');
+                    });
+                    gallery.innerHTML = galleryHtml;
                 }
+
+                // 渲染籤位
                 renderGrid();
             } else { throw new Error(data.message); }
         } catch (e) {
-            Swal.fire("讀取失敗", e.message, "error");
+            Swal.fire("載入錯誤", "伺服器回應異常，請檢查試算表洗牌狀態", "error");
         } finally {
             document.getElementById('loader').style.display = 'none';
         }
@@ -184,7 +196,7 @@
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire("餘額不足", "請聯繫小編儲值", "warning"); return; }
+        if(state.points < total) { Swal.fire("餘額不足", "請聯繫店長儲值", "warning"); return; }
 
         const confirm = await Swal.fire({
             title: '確認開籤？',
@@ -208,14 +220,14 @@
                     
                     let resHtml = `<div style="display:flex; flex-wrap:wrap; justify-content:center; max-height:300px; overflow-y:auto;">`;
                     result.results.forEach(p => {
-                        const safeWinImg = p.img && p.img.startsWith('http') ? p.img.trim() : 'https://via.placeholder.com/100?text=No+Img';
                         resHtml += `
                             <div class="win-card animate__animated animate__zoomIn">
-                                <img src="${safeWinImg}" crossorigin="anonymous" class="win-img" onerror="this.src='https://via.placeholder.com/100?text=No+Img'">
+                                <img src="${p.img || 'https://via.placeholder.com/100?text=No+Img'}" class="win-img">
                                 <div style="font-size:11px; margin-top:5px; color:var(--gold); font-weight:bold;">${p.name}</div>
                             </div>`;
                     });
                     resHtml += `</div>`;
+                    
                     if(result.isLastOne) resHtml += `<div style="margin-top:15px; border:2px dashed var(--gold); padding:10px; color:var(--red); font-weight:bold;">🎊 獲得最後賞 🎊</div>`;
 
                     await Swal.fire({ title: '🎉 中獎結果', html: resHtml, background: '#161625', color: '#fff', width: '90%' });
@@ -223,7 +235,7 @@
                 } else { throw new Error(result.message); }
             } catch (e) {
                 document.getElementById('loader').style.display = 'none';
-                Swal.fire("系統錯誤", e.message, "error");
+                Swal.fire("系統異常", "請稍後再試", "error");
             }
         }
     }
@@ -231,7 +243,9 @@
     function changeMode(m) {
         if(state.mode === m) return;
         state.mode = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.innerText.includes(m)));
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.getAttribute('data-mode') === m);
+        });
         sync();
     }
 
