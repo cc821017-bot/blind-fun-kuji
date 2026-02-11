@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 實體盤旗艦版</title>
+    <title>盲玩樂 - 旗艦實體籤盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         :root { --red: #e63946; --gold: #ffb627; --bg: #0a0a12; --card: #1a1a2e; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 100px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 120px; }
         
-        /* 頂部導航 */
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--red); position: sticky; top: 0; z-index: 100; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--red); position: sticky; top: 0; z-index: 1000; }
         .u-pts { color: var(--gold); font-weight: bold; }
 
-        /* 模式切換 */
-        .tabs { display: flex; background: #000; border-bottom: 1px solid #333; overflow-x: auto; }
-        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; min-width: 80px; }
+        /* 獎項展示廊 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: #111; border-bottom: 1px solid #333; scrollbar-width: none; }
+        .prize-gallery::-webkit-scrollbar { display: none; }
+        .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 8px; padding: 8px; border: 1px solid #333; }
+        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 4px; margin-bottom: 5px; }
+        .p-name { font-size: 10px; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .p-stock { font-size: 9px; color: #888; }
+
+        .tabs { display: flex; background: #000; border-bottom: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; }
         .tab.active { color: var(--red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--red); }
 
-        /* 實體籤盤 */
-        .plate-area { padding: 15px; }
+        .grid-area { padding: 15px; }
         .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; background: #111; padding: 12px; border-radius: 10px; border: 1px solid #333; }
         
         .ticket {
@@ -29,29 +34,25 @@
             display: flex; align-items: center; justify-content: center; font-size: 11px;
             font-weight: bold; color: #888; cursor: pointer; transition: 0.2s; position: relative;
         }
-
-        /* 狀態樣式 */
         .ticket.taken { background: #050505 !important; color: #333 !important; border-color: #222 !important; cursor: default; }
         .ticket.taken::after { content: '済'; position: absolute; font-size: 10px; }
-        
-        .ticket.selected { border-color: var(--gold) !important; background: rgba(255, 182, 39, 0.2) !important; color: #fff; transform: scale(1.05); }
+        .ticket.selected { border-color: var(--gold) !important; background: rgba(255,182,39,0.2) !important; color: #fff; transform: scale(1.05); z-index: 10; }
         .ticket.selected::before { content: '✓'; position: absolute; top: -5px; right: -5px; background: var(--gold); color: #000; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: 900; }
 
-        /* 購物車浮動條 */
-        .cart-bar {
-            position: fixed; bottom: 0; width: 100%; background: #161625; 
-            border-top: 2px solid var(--gold); padding: 15px 20px; box-sizing: border-box;
-            display: none; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
-        }
+        .cart-bar { position: fixed; bottom: 0; width: 100%; background: #161625; border-top: 2px solid var(--gold); padding: 15px 20px; box-sizing: border-box; display: none; z-index: 2000; }
         .cart-content { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto; }
         .btn-draw { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
 
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
+        /* 開獎圖片樣式 */
+        .win-card { display: inline-block; width: 120px; margin: 10px; vertical-align: top; }
+        .win-img { width: 100px; height: 100px; object-fit: contain; background: #fff; border-radius: 8px; }
+        
+        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">正在開籤，請稍候...</div>
+<div id="loader" class="loading">正在連線伺服器...</div>
 
 <div class="header">
     <div>玩家：<b id="u-name">載入中</b></div>
@@ -64,8 +65,10 @@
     <div class="tab" onclick="changeMode('B區')">B區</div>
 </div>
 
-<div class="plate-area">
-    <div id="status-msg" style="margin-bottom:10px; font-size:0.85rem; color:#888;">連線中...</div>
+<div class="prize-gallery" id="prize-gallery"></div>
+
+<div class="grid-area">
+    <div id="status-msg" style="margin-bottom:10px; font-size:0.85rem; color:#888;">初始化盤面...</div>
     <div class="grid" id="main-grid"></div>
 </div>
 
@@ -95,14 +98,14 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (err) { document.getElementById('status-msg').innerText = "請於 LINE 環境開啟"; }
+        } catch (err) { document.getElementById('status-msg').innerText = "請在 LINE 中開啟"; }
     }
 
     async function sync() {
         state.selected = [];
         updateCartUI();
         document.getElementById('main-grid').innerHTML = "";
-        document.getElementById('status-msg').innerText = "讀取盤面中...";
+        document.getElementById('prize-gallery').innerHTML = "";
         
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
@@ -113,12 +116,23 @@
                 state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 document.getElementById('status-msg').innerText = `${state.mode} (每抽 ${state.cost} P)`;
-                render();
+                
+                // 渲染上方獎項展示
+                const gallery = document.getElementById('prize-gallery');
+                gallery.innerHTML = data.prizeSummary.map(p => `
+                    <div class="prize-item">
+                        <img src="${p.img || 'https://via.placeholder.com/100'}">
+                        <div class="p-name">${p.name}</div>
+                        <div class="p-stock">${p.stock}/${p.total}</div>
+                    </div>
+                `).join('');
+
+                renderGrid();
             } else { document.getElementById('status-msg').innerText = data.message; }
-        } catch (e) { document.getElementById('status-msg').innerText = "網路錯誤"; }
+        } catch (e) { document.getElementById('status-msg').innerText = "網路異常"; }
     }
 
-    function render() {
+    function renderGrid() {
         const container = document.getElementById('main-grid');
         container.innerHTML = state.tickets.map(t => `
             <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="toggleSelect(${t.id})">
@@ -150,68 +164,11 @@
             bar.style.display = 'block';
             document.getElementById('sel-count').innerText = state.selected.length;
             document.getElementById('sel-total').innerText = (state.selected.length * state.cost).toLocaleString();
-        } else {
-            bar.style.display = 'none';
-        }
+        } else { bar.style.display = 'none'; }
     }
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) {
-            Swal.fire("點數不足", "請聯繫管理員儲值", "error");
-            return;
-        }
+        if(state.points < total) { Swal.fire("餘額不足", "請聯繫店員儲值", "error"); return; }
 
         const confirm = await Swal.fire({
-            title: `確定開籤？`,
-            text: `將選取 ${state.selected.length} 個號碼，共消耗 ${total} P`,
-            background: '#161625', color: '#fff', showCancelButton: true, confirmButtonColor: '#e63946'
-        });
-
-        if(confirm.isConfirmed) {
-            document.getElementById('loader').style.display = 'flex';
-            try {
-                const res = await fetch(CONFIG.GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected })
-                });
-                const result = await res.json();
-                document.getElementById('loader').style.display = 'none';
-
-                if(result.status === "success") {
-                    let resHtml = `<div style="text-align:left; max-height:200px; overflow-y:auto; padding:10px; background:#000; border-radius:5px;">`;
-                    result.results.forEach(p => {
-                        resHtml += `<div style="margin-bottom:5px; color:var(--gold)">⭐ ${p}</div>`;
-                    });
-                    resHtml += `</div>`;
-                    
-                    if(result.isLastOne) {
-                        resHtml += `<div style="margin-top:15px; color:var(--red); font-weight:bold; font-size:1.2rem;">🎊 恭喜獲得最後賞！</div>`;
-                    }
-
-                    await Swal.fire({
-                        title: '🎊 開獎結果',
-                        html: resHtml,
-                        background: '#161625', color: '#fff'
-                    });
-                    await sync();
-                } else {
-                    Swal.fire("錯誤", result.message, "error");
-                }
-            } catch (e) {
-                document.getElementById('loader').style.display = 'none';
-                Swal.fire("錯誤", "連線超時", "error");
-            }
-        }
-    }
-
-    function changeMode(m) {
-        state.mode = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.innerText.includes(m)));
-        sync();
-    }
-
-    window.onload = init;
-</script>
-</body>
-</html>
