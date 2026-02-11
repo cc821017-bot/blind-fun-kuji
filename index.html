@@ -27,7 +27,7 @@
             background-image: radial-gradient(circle at 50% 0%, #252545 0%, #0f0f1a 70%);
         }
 
-        /* 標題列美化 */
+        /* 標題列 */
         .header { 
             display: flex; 
             justify-content: space-between; 
@@ -36,128 +36,98 @@
             background: rgba(22, 22, 37, 0.95); 
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.1); 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
+            position: sticky; top: 0; z-index: 1000; 
         }
-        .u-pts { 
-            color: var(--gold); 
-            font-weight: 900; 
-            font-size: 1.2rem;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
-        }
+        .u-pts { color: var(--gold); font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
 
-        /* 獎項展示廊 - 增加高度與質感 */
-        .prize-gallery { 
-            display: flex; 
-            overflow-x: auto; 
-            padding: 20px 15px; 
-            gap: 15px; 
-            background: rgba(0,0,0,0.2);
-            scrollbar-width: none;
-        }
-        .prize-gallery::-webkit-scrollbar { display: none; }
-        
-        .prize-item { 
-            flex: 0 0 120px; 
-            text-align: center; 
-            background: var(--card); 
-            border-radius: 12px; 
-            padding: 12px; 
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .prize-item img { 
-            width: 90px; height: 90px; 
-            object-fit: cover; 
-            background: #fff; 
-            border-radius: 8px; 
-            margin-bottom: 8px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-        }
-        .p-name { font-size: 12px; font-weight: bold; color: #fff; margin-top: 5px; }
-        .p-stock { font-size: 11px; color: var(--gold); background: rgba(0,0,0,0.3); border-radius: 10px; margin-top: 4px; }
-
-        /* 分區切換 - 更有按鈕感 */
-        .tabs { display: flex; padding: 10px 15px; gap: 10px; }
+        /* 分區與快速選籤 */
+        .tabs { display: flex; padding: 10px 15px; gap: 8px; }
         .tab { 
-            flex: 1; text-align: center; padding: 10px; 
-            color: #aaa; background: rgba(255,255,255,0.05);
-            border-radius: 8px; transition: 0.3s; font-weight: bold;
+            flex: 1; text-align: center; padding: 10px; color: #aaa; 
+            background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: bold; transition: 0.3s;
         }
-        .tab.active { 
-            color: #fff; 
-            background: var(--red); 
-            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4);
-        }
+        .tab.active { color: #fff; background: var(--red); box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4); }
 
-        /* 籤盤區域 - 放大籤位 */
+        .quick-select { display: flex; justify-content: center; gap: 8px; margin: 5px 15px 15px; }
+        .btn-quick { 
+            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: #ccc; padding: 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
+        }
+        .btn-quick:active { background: var(--gold); color: #000; }
+
+        /* 獎項展示廊 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: rgba(0,0,0,0.2); scrollbar-width: none; }
+        .prize-gallery::-webkit-scrollbar { display: none; }
+        .prize-item { flex: 0 0 110px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .prize-item img { width: 80px; height: 80px; object-fit: cover; background: #fff; border-radius: 8px; margin-bottom: 5px; }
+        .p-name { font-size: 11px; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .p-stock { font-size: 10px; color: var(--gold); margin-top: 3px; }
+
+        /* 籤盤區域 */
         .grid-area { padding: 15px; }
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); /* 從8格改為5格，讓格子變大 */
-            gap: 10px; 
-            background: rgba(255,255,255,0.03); 
-            padding: 15px; 
-            border-radius: 15px; 
-        }
-        
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; }
         .ticket {
-            aspect-ratio: 1/1; 
-            background: linear-gradient(145deg, #2d2d44, #1a1a2e); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 8px;
+            aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
             display: flex; align-items: center; justify-content: center; 
-            font-size: 16px; /* 號碼放大 */
-            font-weight: 900; color: #666; 
-            box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-            transition: 0.2s;
+            font-size: 16px; font-weight: 900; color: #666; transition: 0.2s;
         }
-        .ticket.taken { 
-            background: #0a0a12 !important; 
-            color: #222 !important; 
-            border: none !important;
-            box-shadow: none !important;
-        }
+        .ticket.taken { background: #0a0a12 !important; color: #222 !important; border: none !important; }
         .ticket.selected { 
-            border-color: var(--gold) !important; 
-            background: var(--gold) !important; 
-            color: #000 !important; 
-            transform: translateY(-5px);
-            box-shadow: 0 0 15px var(--gold);
+            border-color: var(--gold) !important; background: var(--gold) !important; color: #000 !important; 
+            transform: translateY(-5px); box-shadow: 0 0 15px var(--gold);
         }
 
-        /* 底部購物車 - 懸浮感 */
+        /* 底部購物車 */
         .cart-bar { 
             position: fixed; bottom: 20px; left: 5%; width: 90%; 
             background: linear-gradient(90deg, #1f1f35, #2d2d44);
-            border-radius: 50px;
-            border: 1px solid var(--gold);
-            padding: 12px 25px; 
-            box-sizing: border-box; 
-            z-index: 2000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 50px; border: 1px solid var(--gold);
+            padding: 12px 25px; box-sizing: border-box; z-index: 2000;
+            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .btn-draw { 
             background: linear-gradient(45deg, var(--red), #ff7675); 
-            color: white; border: none; padding: 12px 30px; 
-            border-radius: 25px; font-weight: 900; font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4);
+            color: white; border: none; padding: 10px 25px; 
+            border-radius: 25px; font-weight: 900; font-size: 1rem;
         }
 
-        /* 開獎結果視窗優化 */
-        .swal2-popup { border-radius: 20px !important; border: 1px solid var(--gold) !important; }
-        .win-img { border: 3px solid var(--gold); padding: 5px; background: #fff; }
+        /* 開獎動畫遮罩 */
+        #draw-animation {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.95); z-index: 5000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .draw-scanner {
+            width: 80%; height: 2px; background: var(--gold);
+            box-shadow: 0 0 15px var(--gold); position: absolute;
+            animation: scan 1.5s infinite;
+        }
+        @keyframes scan { 0%, 100% { top: 35%; } 50% { top: 65%; } }
+
+        /* 載入中 */
+        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+
 <div id="loader" class="loading">
     <div class="spinner"></div>
-    <p style="margin-top:15px; color:#fff;">正在切換分區...</p>
+    <p style="margin-top:15px; color:#fff;">正在與伺服器同步...</p>
+</div>
+
+<div id="draw-animation">
+    <div class="draw-scanner"></div>
+    <div class="animate__animated animate__pulse animate__infinite">
+        <img src="https://cdn-icons-png.flaticon.com/512/6101/6101413.png" width="80" style="filter: invert(1);">
+    </div>
+    <h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px;">正在揭曉獎項...</h3>
 </div>
 
 <div class="header">
-    <div style="font-size: 0.9rem; color: #ccc;">Player: <b id="u-name" style="color:#fff">載入中</b></div>
+    <div style="font-size: 0.8rem; color: #ccc;">PLAYER: <b id="u-name" style="color:#fff">...</b></div>
     <div class="u-pts"><span id="u-pts">0</span> <small style="font-size:0.6rem">PTS</small></div>
 </div>
 
@@ -167,28 +137,30 @@
     <div class="tab" data-mode="B區" onclick="changeMode('B區')">💎 B區</div>
 </div>
 
+<div class="quick-select">
+    <button class="btn-quick" onclick="randomSelect(5)">隨機 5 抽</button>
+    <button class="btn-quick" onclick="randomSelect(10)">隨機 10 抽</button>
+    <button class="btn-quick" onclick="selectAll()">全包</button>
+</div>
+
 <div class="prize-gallery" id="prize-gallery"></div>
 
 <div class="grid-area">
-    <div id="status-msg" style="margin-bottom:12px; font-size:0.9rem; color:var(--gold); font-weight:bold; text-align:center;">--- 載入中 ---</div>
+    <div id="status-msg" style="margin-bottom:12px; font-size:0.85rem; color:var(--gold); text-align:center; font-weight:bold;">連線中...</div>
     <div class="grid" id="main-grid"></div>
 </div>
 
 <div class="cart-bar" id="cart-bar">
-    <div class="cart-content" style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <div style="font-size: 0.8rem; color: #aaa; letter-spacing: 1px;">SELECTED</div>
-            <div style="font-weight: 900; font-size: 1.2rem;"><span id="sel-count" style="color:var(--gold)">0</span> <small>抽</small></div>
+            <div style="font-size: 0.7rem; color: #aaa;">已選擇</div>
+            <div style="font-weight: 900; font-size: 1.1rem;"><span id="sel-count" style="color:var(--gold)">0</span> <small>抽</small></div>
         </div>
-        <button class="btn-draw" onclick="handleCheckout()">立即開籤</button>
+        <button class="btn-draw" onclick="handleCheckout()">確認開籤</button>
     </div>
 </div>
 
 <script>
-    // ... (保留原本的 JS 邏輯，僅需確認 renderGrid 的部分) ...
-    // ... (這裡的 JS 邏輯與你原本的完全相容，不需大幅修改) ...
-
-    /* 這裡貼回你原本的 script 內容 */
     const CONFIG = {
         GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
         LIFF_ID: "2009072982-6smlV2gu"
@@ -214,14 +186,9 @@
         state.selected = [];
         updateCartUI();
         document.getElementById('loader').style.display = 'flex';
-        const gallery = document.getElementById('prize-gallery');
-        const grid = document.getElementById('main-grid');
-        gallery.innerHTML = "";
-        grid.innerHTML = "";
         
         try {
-            const url = `${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&cache=${Date.now()}`;
-            const res = await fetch(url);
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&t=${Date.now()}`);
             const data = await res.json();
             
             if(data.status === "success") {
@@ -230,25 +197,25 @@
                 state.points = data.userPoints || 0;
                 
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
-                document.getElementById('status-msg').innerText = `每抽 ${state.cost} P / 剩餘 ${state.tickets.filter(x=>!x.isTaken).length} 抽`;
+                document.getElementById('status-msg').innerText = `每抽 ${state.cost} P | 剩餘 ${state.tickets.filter(x=>!x.isTaken).length} 抽`;
                 
+                // 獎項展示
+                let gHtml = "";
                 if(data.prizeSummary) {
-                    let galleryHtml = "";
                     data.prizeSummary.forEach(p => {
-                        galleryHtml += `
-                            <div class="prize-item animate__animated animate__fadeInUp">
+                        gHtml += `
+                            <div class="prize-item animate__animated animate__fadeIn">
                                 <img src="${p.img || 'https://via.placeholder.com/80'}">
                                 <div class="p-name">${p.name}</div>
                                 <div class="p-stock">剩餘 ${p.stock}</div>
-                            </div>
-                        `;
+                            </div>`;
                     });
-                    gallery.innerHTML = galleryHtml;
                 }
+                document.getElementById('prize-gallery').innerHTML = gHtml;
                 renderGrid();
             }
         } catch (e) {
-            Swal.fire("錯誤", "連線失敗", "error");
+            Swal.fire("錯誤", "資料同步失敗", "error");
         } finally {
             document.getElementById('loader').style.display = 'none';
         }
@@ -278,6 +245,27 @@
         updateCartUI();
     }
 
+    function randomSelect(num) {
+        state.selected = [];
+        document.querySelectorAll('.ticket').forEach(el => el.classList.remove('selected'));
+        const available = state.tickets.filter(t => !t.isTaken);
+        const picked = available.sort(() => 0.5 - Math.random()).slice(0, num);
+        picked.forEach(t => {
+            state.selected.push(t.id);
+            document.getElementById(`t-${t.id}`).classList.add('selected');
+        });
+        updateCartUI();
+    }
+
+    function selectAll() {
+        state.selected = [];
+        state.tickets.filter(t => !t.isTaken).forEach(t => {
+            state.selected.push(t.id);
+            document.getElementById(`t-${t.id}`).classList.add('selected');
+        });
+        updateCartUI();
+    }
+
     function updateCartUI() {
         const bar = document.getElementById('cart-bar');
         if(state.selected.length > 0) {
@@ -291,46 +279,43 @@
         if(state.points < total) { Swal.fire("餘額不足", "請聯繫店長儲值", "warning"); return; }
 
         const confirm = await Swal.fire({
-            title: '確定開抽？',
-            text: `確認消耗 ${total} P`,
-            icon: 'question',
+            title: '確認開籤？',
+            text: `即將消耗 ${total} P`,
             showCancelButton: true,
             confirmButtonColor: '#ff4d4d',
-            cancelButtonColor: '#444',
-            background: '#1f1f35',
-            color: '#fff'
+            background: '#1f1f35', color: '#fff'
         });
 
         if(confirm.isConfirmed) {
-            document.getElementById('loader').style.display = 'flex';
+            const anim = document.getElementById('draw-animation');
+            anim.style.display = 'flex';
+
             try {
                 const res = await fetch(CONFIG.GAS_URL, {
                     method: 'POST',
                     body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected })
                 });
                 const result = await res.json();
-                document.getElementById('loader').style.display = 'none';
 
-                if(result.status === "success") {
-                    state.selected = [];
-                    updateCartUI();
-                    
-                    let resHtml = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
-                    result.results.forEach(p => {
-                        resHtml += `
-                            <div class="win-card animate__animated animate__backInDown">
-                                <img src="${p.img || 'https://via.placeholder.com/100'}" class="win-img" style="width:120px; border-radius:10px;">
-                                <div style="font-weight:bold; color:#ffcc00; margin-top:10px;">${p.name}</div>
-                            </div>`;
-                    });
-                    resHtml += `</div>`;
-                    
-                    await Swal.fire({ title: '恭喜中獎！', html: resHtml, background: '#1f1f35', color: '#fff', width: '90%' });
-                    await sync();
-                }
+                setTimeout(async () => {
+                    anim.style.display = 'none';
+                    if(result.status === "success") {
+                        let resHtml = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; max-height:60vh; overflow-y:auto;">`;
+                        result.results.forEach(p => {
+                            resHtml += `
+                                <div class="win-card animate__animated animate__backInDown">
+                                    <img src="${p.img || 'https://via.placeholder.com/100'}" style="width:110px; border:2px solid var(--gold); border-radius:10px;">
+                                    <div style="font-weight:bold; color:var(--gold); margin-top:8px; font-size:12px;">${p.name}</div>
+                                </div>`;
+                        });
+                        resHtml += `</div>`;
+                        await Swal.fire({ title: '🎉 抽獎結果', html: resHtml, background: '#1f1f35', color: '#fff', width: '90%' });
+                        await sync();
+                    }
+                }, 2000); // 強制動畫跑 2 秒
             } catch (e) {
-                document.getElementById('loader').style.display = 'none';
-                Swal.fire("系統異常", "請檢查網路", "error");
+                anim.style.display = 'none';
+                Swal.fire("錯誤", "連線中斷", "error");
             }
         }
     }
@@ -338,9 +323,7 @@
     function changeMode(m) {
         if(state.mode === m) return;
         state.mode = m;
-        document.querySelectorAll('.tab').forEach(t => {
-            t.classList.toggle('active', t.getAttribute('data-mode') === m);
-        });
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m));
         sync();
     }
 
