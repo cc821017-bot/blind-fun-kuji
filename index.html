@@ -14,7 +14,9 @@
         .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--red); position: sticky; top: 0; z-index: 1000; }
         .u-pts { color: var(--gold); font-weight: bold; }
 
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: #111; border-bottom: 1px solid #333; min-height: 140px; }
+        /* 獎項展示廊 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: #111; border-bottom: 1px solid #333; min-height: 140px; scrollbar-width: none; }
+        .prize-gallery::-webkit-scrollbar { display: none; }
         .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 8px; padding: 8px; border: 1px solid #333; }
         .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 4px; margin-bottom: 5px; }
         .p-name { font-size: 10px; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -35,7 +37,7 @@
         .ticket.taken { background: #050505 !important; color: #333 !important; border-color: #222 !important; cursor: default; }
         .ticket.taken::after { content: '済'; position: absolute; font-size: 10px; }
         .ticket.selected { border-color: var(--gold) !important; background: rgba(255,182,39,0.2) !important; color: #fff; transform: scale(1.05); z-index: 10; }
-        
+
         .cart-bar { position: fixed; bottom: 0; width: 100%; background: #161625; border-top: 2px solid var(--gold); padding: 15px 20px; box-sizing: border-box; display: none; z-index: 2000; }
         .cart-content { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto; }
         .btn-draw { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
@@ -44,19 +46,18 @@
         .win-img { width: 100px; height: 100px; object-fit: contain; background: #fff; border-radius: 8px; }
         
         .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div id="loader" class="loading">
-    <div class="spinner"></div>
+    <div style="border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
     <p style="margin-top:15px; color:#fff;">正在讀取數據...</p>
 </div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
 <div class="header">
-    <div>玩家：<b id="u-name">載入中</b></div>
+    <div>玩家：<b id="u-name">---</b></div>
     <div>餘額：<b id="u-pts" class="u-pts">0</b> P</div>
 </div>
 
@@ -102,7 +103,6 @@
         } catch (err) {
             document.getElementById('loader').style.display = 'none';
             document.getElementById('status-msg').innerText = "LIFF 初始化失敗";
-            Swal.fire("系統提示", "請在 LINE App 中開啟此網頁", "info");
         }
     }
 
@@ -114,10 +114,7 @@
         document.getElementById('prize-gallery').innerHTML = "";
         
         try {
-            const fetchUrl = `${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`;
-            console.log("Fetching from:", fetchUrl);
-            
-            const res = await fetch(fetchUrl);
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
             const data = await res.json();
             
             if(data.status === "success") {
@@ -133,35 +130,23 @@
                 if(data.prizeSummary && data.prizeSummary.length > 0) {
                     gallery.innerHTML = data.prizeSummary.map(p => `
                         <div class="prize-item">
-                            <img src="${p.img || 'https://via.placeholder.com/80?text=No+Img'}">
+                            <img src="${p.img || 'https://via.placeholder.com/80?text=No+Img'}" onerror="this.src='https://via.placeholder.com/80?text=Error'">
                             <div class="p-name">${p.name}</div>
                             <div class="p-stock">${p.stock}/${p.total}</div>
                         </div>
                     `).join('');
                 }
-
                 renderGrid();
                 document.getElementById('loader').style.display = 'none';
-            } else {
-                throw new Error(data.message || "未知錯誤");
-            }
+            } else { throw new Error(data.message); }
         } catch (e) {
             document.getElementById('loader').style.display = 'none';
-            document.getElementById('status-msg').innerText = "載入失敗：" + e.message;
-            Swal.fire({
-                title: "資料讀取失敗",
-                text: "原因：" + e.message + "\n請確認試算表分頁名稱是否正確，且已執行過洗牌。",
-                icon: "error"
-            });
+            Swal.fire("讀取失敗", e.message, "error");
         }
     }
 
     function renderGrid() {
         const container = document.getElementById('main-grid');
-        if(state.tickets.length === 0) {
-            container.innerHTML = `<div style="grid-column: span 8; text-align:center; padding:20px; color:#666;">此區域尚無資料，請先在試算表點擊洗牌。</div>`;
-            return;
-        }
         container.innerHTML = state.tickets.map(t => `
             <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="toggleSelect(${t.id})">
                 ${t.isTaken ? '' : t.id}
@@ -195,11 +180,11 @@
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire("餘額不足", "請聯繫小編儲值", "warning"); return; }
+        if(state.points < total) { Swal.fire("點數不足", "請聯繫管理員儲值", "warning"); return; }
 
         const confirm = await Swal.fire({
             title: '確認開籤？',
-            text: `已選 ${state.selected.length} 籤，共計 ${total} P`,
+            text: `選取 ${state.selected.length} 籤，花費 ${total} P`,
             background: '#161625', color: '#fff', showCancelButton: true, confirmButtonColor: '#e63946'
         });
 
@@ -221,7 +206,7 @@
                     result.results.forEach(p => {
                         resHtml += `
                             <div class="win-card animate__animated animate__zoomIn">
-                                <img src="${p.img || 'https://via.placeholder.com/100?text=No+Img'}" class="win-img">
+                                <img src="${p.img || 'https://via.placeholder.com/100'}" class="win-img">
                                 <div style="font-size:11px; margin-top:5px; color:var(--gold); font-weight:bold;">${p.name}</div>
                             </div>`;
                     });
@@ -233,7 +218,7 @@
                 } else { throw new Error(result.message); }
             } catch (e) {
                 document.getElementById('loader').style.display = 'none';
-                Swal.fire("錯誤", e.message, "error");
+                Swal.fire("系統錯誤", e.message, "error");
             }
         }
     }
