@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 固定實體盤</title>
+    <title>盲玩樂 - 實體籤位盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --main-red: #e63946; --gold: #ffb627; --bg: #0a0a12; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 30px; }
+        :root { --red: #e63946; --gold: #ffb627; --bg: #0a0a12; --ticket-bg: #1f1f2e; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 20px; }
         
         /* 頂部導航 */
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--main-red); position: sticky; top: 0; z-index: 100; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--red); position: sticky; top: 0; z-index: 100; }
         .u-pts { color: var(--gold); font-weight: bold; }
 
-        /* 模式切換 */
-        .tabs { display: flex; background: #000; border-bottom: 1px solid #333; }
-        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; }
-        .tab.active { color: var(--main-red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--main-red); }
+        /* 分區切換 */
+        .tabs { display: flex; background: #000; border-bottom: 1px solid #333; overflow-x: auto; }
+        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; min-width: 80px; transition: 0.3s; }
+        .tab.active { color: var(--red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--red); }
 
-        /* 實體抽獎盤 */
+        /* 籤盤區域 */
         .plate-area { padding: 15px; }
         .grid {
             display: grid;
-            grid-template-columns: repeat(8, 1fr); /* 每排 8 格 */
+            grid-template-columns: repeat(8, 1fr); 
             gap: 6px;
             background: #111;
             padding: 12px;
@@ -33,7 +33,7 @@
 
         .ticket {
             aspect-ratio: 1/1;
-            background: #2d2d44;
+            background: var(--ticket-bg);
             border: 1px solid #444;
             border-radius: 4px;
             display: flex;
@@ -63,7 +63,7 @@
             color: #fff;
         }
 
-        /* 處理中遮罩 */
+        /* 讀取中遮罩 */
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: none;
@@ -73,7 +73,7 @@
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">正在開啟籤位...</div>
+<div id="loader" class="loading-overlay">處理中...</div>
 
 <div class="header">
     <div>玩家：<b id="u-name">---</b></div>
@@ -83,12 +83,12 @@
 <div class="tabs">
     <div class="tab active" onclick="changeMode('單挑套')">單挑套</div>
     <div class="tab" onclick="changeMode('A區')">A區</div>
+    <div class="tab" onclick="changeMode('B區')">B區</div>
 </div>
 
 <div class="plate-area">
-    <div style="margin-bottom:10px; font-size:0.85rem; color:#888;">請點擊號碼直接抽籤：</div>
-    <div class="grid" id="main-grid">
-        </div>
+    <div id="msg" style="margin-bottom:10px; font-size:0.85rem; color:#888;">正在初始化盤面...</div>
+    <div class="grid" id="main-grid"></div>
 </div>
 
 <script>
@@ -97,7 +97,7 @@
         LIFF_ID: "2009072982-6smlV2gu"
     };
 
-    let state = { uid: "", name: "", mode: "單挑套", tickets: [] };
+    let state = { uid: "", mode: "單挑套", tickets: [] };
 
     async function init() {
         try {
@@ -105,21 +105,32 @@
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const profile = await liff.getProfile();
             state.uid = profile.userId;
-            state.name = profile.displayName;
-            document.getElementById('u-name').innerText = state.name;
+            document.getElementById('u-name').innerText = profile.displayName;
             await sync();
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            document.getElementById('msg').innerText = "請在 LINE 中開啟應用程式";
+        }
     }
 
     async function sync() {
-        // 向 GAS 請求該模式下的所有籤位狀態
-        const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&action=getTickets`);
-        const data = await res.json();
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = ""; // 清空舊盤
+        document.getElementById('msg').innerText = `正在讀取 ${state.mode} 盤面數據...`;
         
-        if(data.status === "success") {
-            state.tickets = data.tickets; // 格式: [{id:1, isTaken:false}, ...]
-            document.getElementById('u-pts').innerText = data.userPoints.toLocaleString();
-            render();
+        try {
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}`);
+            const data = await res.json();
+            
+            if(data.status === "success") {
+                state.tickets = data.tickets; 
+                document.getElementById('u-pts').innerText = data.userPoints.toLocaleString();
+                document.getElementById('msg').innerText = `已成功載入 ${state.mode}，共計 ${state.tickets.length} 籤`;
+                render();
+            } else {
+                document.getElementById('msg').innerText = "錯誤: " + data.message;
+            }
+        } catch (e) {
+            document.getElementById('msg').innerText = "連線失敗，請檢查網路或洗牌狀態";
         }
     }
 
@@ -138,43 +149,34 @@
 
         const result = await Swal.fire({
             title: `確定抽取 ${ticketId} 號？`,
-            background: '#161625',
-            color: '#fff',
-            showCancelButton: true,
-            confirmButtonColor: '#e63946',
-            confirmButtonText: '確定',
-            cancelButtonText: '取消'
+            background: '#161625', color: '#fff',
+            showCancelButton: true, confirmButtonColor: '#e63946',
+            confirmButtonText: '確定', cancelButtonText: '取消'
         });
 
         if(result.isConfirmed) {
             document.getElementById('loader').style.display = 'flex';
-            
             try {
                 const res = await fetch(CONFIG.GAS_URL, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        uid: state.uid,
-                        mode: state.mode,
-                        ticketId: ticketId // 傳送具體編號
-                    })
+                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketId: ticketId })
                 });
                 const final = await res.json();
                 document.getElementById('loader').style.display = 'none';
 
                 if(final.status === "success") {
-                    Swal.fire({
+                    await Swal.fire({
                         title: '🎊 揭曉獎項',
                         html: `<b style="font-size:1.5rem; color:#e63946">${final.prizeName}</b>`,
-                        background: '#161625',
-                        color: '#fff'
+                        background: '#161625', color: '#fff'
                     });
-                    await sync(); // 重新整理盤面狀態
+                    await sync(); 
                 } else {
                     Swal.fire("錯誤", final.message, "error");
                 }
             } catch (e) {
                 document.getElementById('loader').style.display = 'none';
-                Swal.fire("連線錯誤", "請檢查網路狀態", "error");
+                Swal.fire("錯誤", "連線超時", "error");
             }
         }
     }
