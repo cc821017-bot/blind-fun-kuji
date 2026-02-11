@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦實體籤盤</title>
+    <title>盲玩樂 - 旗艦互動籤盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -11,63 +11,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #1f1f35; }
-        body { 
-            font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; 
-            margin: 0; padding-bottom: 140px; overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, #252545 0%, #0f0f1a 70%);
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 140px; overflow-x: hidden; }
         
-        /* 頁首 */
+        /* 標題與分區 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(22, 22, 37, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
         .u-pts { color: var(--gold); font-weight: 900; font-size: 1.2rem; }
-
-        /* 分區切換 */
         .tabs { display: flex; padding: 10px 15px; gap: 8px; }
         .tab { flex: 1; text-align: center; padding: 12px; color: #aaa; background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: 900; cursor: pointer; }
         .tab.active { color: #fff; background: var(--red); box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4); }
 
-        /* 修正後的獎項展示廊 */
-        .prize-gallery { 
-            display: flex; overflow-x: auto; padding: 15px; gap: 12px; 
-            background: rgba(0,0,0,0.3); border-bottom: 1px solid #333;
-            -webkit-overflow-scrolling: touch;
-        }
-        .prize-item { 
-            flex: 0 0 100px; /* 強制寬度 */
-            text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); 
-        }
-        .prize-item img { 
-            width: 80px; height: 80px; object-fit: contain; /* 改為 contain 避免圖片跑掉 */
-            background: #fff; border-radius: 8px; margin-bottom: 6px; 
-        }
-        .p-name { font-size: 10px; font-weight: 900; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .p-stock { font-size: 9px; color: var(--gold); margin-top: 2px; }
+        /* 獎項展示廊 - 修正圖片比例 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; background: rgba(0,0,0,0.3); }
+        .prize-item { flex: 0 0 100px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 8px; }
+        .p-name { font-size: 10px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 5px; }
 
-        /* 籤盤區域 */
+        /* 籤盤 - 5欄佈局 */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
-        .ticket { 
-            aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); 
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 18px; font-weight: 900; color: #666; transition: 0.2s; 
-        }
+        .ticket { aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #666; transition: 0.2s; }
         .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-3px); box-shadow: 0 0 15px var(--gold); }
         .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.4; }
 
-        /* 修正後的翻牌視窗 */
-        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; }
-        .flip-card { width: 90px; height: 130px; position: relative; perspective: 1000px; }
-        .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        /* 底部按鈕 - 旗艦大按鈕 */
+        .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: linear-gradient(90deg, #1f1f35, #2d2d44); border-radius: 50px; border: 1px solid var(--gold); padding: 12px 25px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .btn-draw { background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 14px 30px; border-radius: 35px; font-weight: 900; font-size: 1.1rem; animation: pulse-red 2s infinite; font-family: inherit; cursor: pointer; }
+        
+        /* 翻牌容器 */
+        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; max-height: 50vh; overflow-y: auto; }
+        .flip-card { width: 90px; height: 130px; perspective: 1000px; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
         .flip-card.flipped .card-inner { transform: rotateY(180deg); }
         .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .flip-front { background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); color: var(--gold); font-size: 2rem; font-weight: 900; }
+        .flip-front { background: #1a1a2e; color: var(--gold); font-size: 2rem; font-weight: 900; }
         .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; }
         .flip-back img { width: 70px; height: 70px; object-fit: contain; }
 
-        /* 底部按鈕欄 */
-        .cart-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background: linear-gradient(90deg, #1f1f35, #2d2d44); border-radius: 50px; border: 1px solid var(--gold); padding: 12px 25px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; }
-        .btn-draw { background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 14px 30px; border-radius: 35px; font-weight: 900; font-size: 1.1rem; animation: pulse-red 2s infinite; font-family: inherit; }
-        
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
         @keyframes flash-gold { 0%, 100% { background: var(--bg); } 50% { background: #5a4a00; } }
         .big-win-flash { animation: flash-gold 0.5s 3; }
@@ -80,11 +58,11 @@
 </head>
 <body>
 
-<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">正在同步雲端資料...</p></div>
-<div id="draw-animation"><div class="spinner"></div><h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px; font-weight:900;">揭曉中，請勿關閉視窗...</h3></div>
+<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">同步雲端資料中...</p></div>
+<div id="draw-animation"><div class="spinner"></div><h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px; font-weight:900;">揭曉中，請稍候...</h3></div>
 
 <div class="header">
-    <div style="font-weight:700; color:#ccc;">玩家: <span id="u-name" style="color:#fff;">...</span></div>
+    <div style="font-weight:700;">玩家: <span id="u-name">...</span></div>
     <div class="u-pts"><span id="u-pts">0</span> <small>P</small></div>
 </div>
 
@@ -97,7 +75,7 @@
 <div id="prize-gallery" class="prize-gallery"></div>
 
 <div class="grid-area">
-    <div id="status-msg" style="text-align:center; color:var(--gold); margin: 10px 0; font-weight:900;">讀取中...</div>
+    <div id="status-msg" style="text-align:center; color:var(--gold); margin: 10px 0; font-weight:900;">連線中...</div>
     <div class="grid" id="main-grid"></div>
 </div>
 
@@ -126,7 +104,7 @@
     }
 
     async function sync() {
-        state.selected = []; 
+        state.selected = [];
         updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
@@ -141,13 +119,11 @@
                 
                 let gHtml = "";
                 data.prizeSummary.forEach(p => {
-                    gHtml += `<div class="prize-item"><img src="${p.img || 'https://via.placeholder.com/80'}"><div class="p-name">${p.name}</div><div class="p-stock">剩 ${p.stock}</div></div>`;
+                    gHtml += `<div class="prize-item"><img src="${p.img || 'https://via.placeholder.com/80'}"><div class="p-name">${p.name}</div><div style="color:var(--gold); font-size:9px;">剩 ${p.stock}</div></div>`;
                 });
                 document.getElementById('prize-gallery').innerHTML = gHtml;
                 renderGrid();
             }
-        } catch(e) {
-            Swal.fire("同步失敗", "請檢查連線", "error");
         } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
@@ -175,12 +151,17 @@
         document.getElementById('sel-count').innerText = state.selected.length;
     }
 
+    // 噴發特效函式 - 提高 Z-index
+    function fireConfetti() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 10000 });
+    }
+
     function handleFlip(el, prizeName) {
         if(el.classList.contains('flipped')) return;
         el.classList.add('flipped');
-        const name = prizeName.toString().toUpperCase().trim();
-        if (/A賞|SP|最後|LAST|1賞|TOP/.test(name)) {
-            confetti({ particleCount: 200, spread: 90, origin: { y: 0.7 }, zIndex: 10000 });
+        const name = prizeName.toString().toUpperCase();
+        if (/A賞|SP|最後|LAST|1賞/.test(name)) {
+            fireConfetti();
             document.body.classList.add('big-win-flash');
             setTimeout(() => document.body.classList.remove('big-win-flash'), 1500);
         }
@@ -199,13 +180,10 @@
             document.getElementById('draw-animation').style.display = 'flex';
 
             try {
-                // 發送 POST 請求
                 const res = await fetch(CONFIG.GAS_URL, { 
                     method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain' }, // 避免某些 GAS 設定錯誤
                     body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
                 });
-                
                 const result = await res.json();
                 
                 if(result.status === "success") {
@@ -228,18 +206,17 @@
                         
                         await Swal.fire({ 
                             title: '✨ 翻開獎項 ✨', html: flipHtml, background: '#1f1f35', color: '#fff', 
-                            width: '95%', showConfirmButton: true, confirmButtonText: '結束', allowOutsideClick: false 
+                            width: '95%', showConfirmButton: true, confirmButtonText: '完成', allowOutsideClick: false 
                         });
                         
                         document.getElementById('drawBtn').disabled = false;
-                        await sync(); 
+                        await sync(); // 關鍵：翻牌視窗關閉後強制同步，大獎若抽完格子會變黑
                     }, 1000);
                 } else { throw new Error(result.message); }
-
             } catch (e) { 
                 document.getElementById('draw-animation').style.display='none';
                 document.getElementById('drawBtn').disabled = false;
-                Swal.fire("系統繁忙", "伺服器無回應，請重新載入或連繫店長", "error");
+                Swal.fire("系統忙碌", "請重新載入或連繫店長", "error");
             }
         }
     }
