@@ -3,48 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦實體籤盤</title>
+    <title>盲玩樂 - 旗艦互動籤盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --red: #ff4d4d; 
-            --gold: #ffcc00; 
-            --bg: #0f0f1a; 
-            --card: #1f1f35;
-            --accent: #7000ff;
+            --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #1f1f35;
         }
         
         body { 
-            font-family: 'Noto Sans TC', sans-serif; 
-            background: var(--bg); 
-            color: #fff; 
-            margin: 0; 
-            padding-bottom: 140px; 
-            overflow-x: hidden;
+            font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; 
+            margin: 0; padding-bottom: 140px; overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, #252545 0%, #0f0f1a 70%);
         }
 
-        /* 標題列 */
+        /* UI 元件 */
         .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            padding: 18px 20px; 
-            background: rgba(22, 22, 37, 0.95); 
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1); 
-            position: sticky; top: 0; z-index: 1000; 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 20px; background: rgba(22, 22, 37, 0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; 
         }
         .u-pts { color: var(--gold); font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
 
-        /* 分區與快速選籤 */
         .tabs { display: flex; padding: 10px 15px; gap: 8px; }
         .tab { 
-            flex: 1; text-align: center; padding: 10px; color: #aaa; 
-            background: rgba(255,255,255,0.05); border-radius: 8px; font-weight: bold; transition: 0.3s;
+            flex: 1; text-align: center; padding: 10px; color: #aaa; background: rgba(255,255,255,0.05); 
+            border-radius: 8px; font-weight: bold; transition: 0.3s;
         }
         .tab.active { color: #fff; background: var(--red); box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4); }
 
@@ -53,32 +39,21 @@
             flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
             color: #ccc; padding: 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
         }
-        .btn-quick:active { background: var(--gold); color: #000; }
 
-        /* 獎項展示廊 */
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: rgba(0,0,0,0.2); scrollbar-width: none; }
-        .prize-gallery::-webkit-scrollbar { display: none; }
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: rgba(0,0,0,0.2); }
         .prize-item { flex: 0 0 110px; text-align: center; background: var(--card); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .prize-item img { width: 80px; height: 80px; object-fit: cover; background: #fff; border-radius: 8px; margin-bottom: 5px; }
-        .p-name { font-size: 11px; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .p-stock { font-size: 10px; color: var(--gold); margin-top: 3px; }
+        .prize-item img { width: 80px; height: 80px; object-fit: cover; background: #fff; border-radius: 8px; }
 
-        /* 籤盤區域 */
-        .grid-area { padding: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .ticket {
             aspect-ratio: 1/1; background: linear-gradient(145deg, #2d2d44, #1a1a2e); 
             border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
             display: flex; align-items: center; justify-content: center; 
             font-size: 16px; font-weight: 900; color: #666; transition: 0.2s;
         }
-        .ticket.taken { background: #0a0a12 !important; color: #222 !important; border: none !important; }
-        .ticket.selected { 
-            border-color: var(--gold) !important; background: var(--gold) !important; color: #000 !important; 
-            transform: translateY(-5px); box-shadow: 0 0 15px var(--gold);
-        }
+        .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-5px); box-shadow: 0 0 15px var(--gold); }
+        .ticket.taken { background: #0a0a12 !important; color: #222 !important; border: none; }
 
-        /* 底部購物車 */
         .cart-bar { 
             position: fixed; bottom: 20px; left: 5%; width: 90%; 
             background: linear-gradient(90deg, #1f1f35, #2d2d44);
@@ -86,49 +61,45 @@
             padding: 12px 25px; box-sizing: border-box; z-index: 2000;
             display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .btn-draw { 
-            background: linear-gradient(45deg, var(--red), #ff7675); 
-            color: white; border: none; padding: 10px 25px; 
-            border-radius: 25px; font-weight: 900; font-size: 1rem;
-        }
 
-        /* 開獎動畫遮罩 */
+        /* 3D 翻牌動畫 */
+        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; perspective: 1000px; padding: 10px; }
+        .flip-card { width: 100px; height: 140px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+        .flip-card.flipped { transform: rotateY(180deg); }
+        .flip-front, .flip-back { 
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden; 
+            border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--gold);
+        }
+        .flip-front { background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); color: var(--gold); font-size: 2rem; font-weight: 900; }
+        .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 5px; }
+        .flip-back img { width: 80%; height: auto; border-radius: 5px; }
+
+        /* 過場動畫 */
         #draw-animation {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.95); z-index: 5000;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); 
+            z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center;
         }
-        .draw-scanner {
-            width: 80%; height: 2px; background: var(--gold);
-            box-shadow: 0 0 15px var(--gold); position: absolute;
-            animation: scan 1.5s infinite;
-        }
+        .draw-scanner { width: 80%; height: 2px; background: var(--gold); box-shadow: 0 0 15px var(--gold); position: absolute; animation: scan 1.5s infinite; }
         @keyframes scan { 0%, 100% { top: 35%; } 50% { top: 65%; } }
 
-        /* 載入中 */
-        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .loading { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading">
-    <div class="spinner"></div>
-    <p style="margin-top:15px; color:#fff;">正在與伺服器同步...</p>
-</div>
+<div id="loader" class="loading"><div class="spinner"></div><p style="margin-top:15px">正在與伺服器同步...</p></div>
 
 <div id="draw-animation">
     <div class="draw-scanner"></div>
-    <div class="animate__animated animate__pulse animate__infinite">
-        <img src="https://cdn-icons-png.flaticon.com/512/6101/6101413.png" width="80" style="filter: invert(1);">
-    </div>
+    <div class="animate__animated animate__pulse animate__infinite"><img src="https://cdn-icons-png.flaticon.com/512/6101/6101413.png" width="80" style="filter: invert(1);"></div>
     <h3 style="color:var(--gold); margin-top:25px; letter-spacing:3px;">正在揭曉獎項...</h3>
 </div>
 
 <div class="header">
-    <div style="font-size: 0.8rem; color: #ccc;">PLAYER: <b id="u-name" style="color:#fff">...</b></div>
-    <div class="u-pts"><span id="u-pts">0</span> <small style="font-size:0.6rem">PTS</small></div>
+    <div>PLAYER: <b id="u-name">...</b></div>
+    <div class="u-pts"><span id="u-pts">0</span> <small>PTS</small></div>
 </div>
 
 <div class="tabs">
@@ -146,16 +117,13 @@
 <div class="prize-gallery" id="prize-gallery"></div>
 
 <div class="grid-area">
-    <div id="status-msg" style="margin-bottom:12px; font-size:0.85rem; color:var(--gold); text-align:center; font-weight:bold;">連線中...</div>
+    <div id="status-msg" style="text-align:center; color:var(--gold); margin-bottom:10px; font-weight:bold;">連線中...</div>
     <div class="grid" id="main-grid"></div>
 </div>
 
 <div class="cart-bar" id="cart-bar">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <div style="font-size: 0.7rem; color: #aaa;">已選擇</div>
-            <div style="font-weight: 900; font-size: 1.1rem;"><span id="sel-count" style="color:var(--gold)">0</span> <small>抽</small></div>
-        </div>
+        <div><small>已選擇</small><br><b style="font-size:1.2rem; color:var(--gold)"><span id="sel-count">0</span> 抽</b></div>
         <button class="btn-draw" onclick="handleCheckout()">確認開籤</button>
     </div>
 </div>
@@ -176,54 +144,32 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (err) {
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('status-msg').innerText = "請在 LINE 中打開";
-        }
+        } catch (e) { document.getElementById('loader').style.display='none'; }
     }
 
     async function sync() {
-        state.selected = [];
-        updateCartUI();
+        state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
-        
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&t=${Date.now()}`);
             const data = await res.json();
-            
             if(data.status === "success") {
-                state.tickets = data.tickets || [];
-                state.cost = data.cost || 0;
-                state.points = data.userPoints || 0;
-                
+                state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 document.getElementById('status-msg').innerText = `每抽 ${state.cost} P | 剩餘 ${state.tickets.filter(x=>!x.isTaken).length} 抽`;
                 
-                // 獎項展示
                 let gHtml = "";
-                if(data.prizeSummary) {
-                    data.prizeSummary.forEach(p => {
-                        gHtml += `
-                            <div class="prize-item animate__animated animate__fadeIn">
-                                <img src="${p.img || 'https://via.placeholder.com/80'}">
-                                <div class="p-name">${p.name}</div>
-                                <div class="p-stock">剩餘 ${p.stock}</div>
-                            </div>`;
-                    });
-                }
+                data.prizeSummary.forEach(p => {
+                    gHtml += `<div class="prize-item"><img src="${p.img || 'https://via.placeholder.com/80'}"><div style="font-size:10px">${p.name}</div><div style="color:var(--gold); font-size:10px">剩 ${p.stock}</div></div>`;
+                });
                 document.getElementById('prize-gallery').innerHTML = gHtml;
                 renderGrid();
             }
-        } catch (e) {
-            Swal.fire("錯誤", "資料同步失敗", "error");
-        } finally {
-            document.getElementById('loader').style.display = 'none';
-        }
+        } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
     function renderGrid() {
-        const container = document.getElementById('main-grid');
-        container.innerHTML = state.tickets.map(t => `
+        document.getElementById('main-grid').innerHTML = state.tickets.map(t => `
             <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="toggleSelect(${t.id})">
                 ${t.isTaken ? '✘' : t.id}
             </div>
@@ -234,25 +180,15 @@
         const t = state.tickets.find(x => x.id === tid);
         if(!t || t.isTaken) return;
         const idx = state.selected.indexOf(tid);
-        const el = document.getElementById(`t-${tid}`);
-        if(idx > -1) {
-            state.selected.splice(idx, 1);
-            el.classList.remove('selected');
-        } else {
-            state.selected.push(tid);
-            el.classList.add('selected');
-        }
+        if(idx > -1) { state.selected.splice(idx, 1); document.getElementById(`t-${tid}`).classList.remove('selected'); }
+        else { state.selected.push(tid); document.getElementById(`t-${tid}`).classList.add('selected'); }
         updateCartUI();
     }
 
-    function randomSelect(num) {
-        state.selected = [];
-        document.querySelectorAll('.ticket').forEach(el => el.classList.remove('selected'));
-        const available = state.tickets.filter(t => !t.isTaken);
-        const picked = available.sort(() => 0.5 - Math.random()).slice(0, num);
-        picked.forEach(t => {
-            state.selected.push(t.id);
-            document.getElementById(`t-${t.id}`).classList.add('selected');
+    function randomSelect(n) {
+        state.selected = []; document.querySelectorAll('.ticket').forEach(e => e.classList.remove('selected'));
+        state.tickets.filter(t => !t.isTaken).sort(() => 0.5 - Math.random()).slice(0, n).forEach(t => {
+            state.selected.push(t.id); document.getElementById(`t-${t.id}`).classList.add('selected');
         });
         updateCartUI();
     }
@@ -260,65 +196,58 @@
     function selectAll() {
         state.selected = [];
         state.tickets.filter(t => !t.isTaken).forEach(t => {
-            state.selected.push(t.id);
-            document.getElementById(`t-${t.id}`).classList.add('selected');
+            state.selected.push(t.id); document.getElementById(`t-${t.id}`).classList.add('selected');
         });
         updateCartUI();
     }
 
     function updateCartUI() {
-        const bar = document.getElementById('cart-bar');
-        if(state.selected.length > 0) {
-            bar.style.display = 'block';
-            document.getElementById('sel-count').innerText = state.selected.length;
-        } else { bar.style.display = 'none'; }
+        document.getElementById('cart-bar').style.display = state.selected.length > 0 ? 'block' : 'none';
+        document.getElementById('sel-count').innerText = state.selected.length;
     }
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire("餘額不足", "請聯繫店長儲值", "warning"); return; }
-
+        if(state.points < total) { Swal.fire("餘額不足", "請儲值", "warning"); return; }
+        
         const confirm = await Swal.fire({
-            title: '確認開籤？',
-            text: `即將消耗 ${total} P`,
-            showCancelButton: true,
-            confirmButtonColor: '#ff4d4d',
-            background: '#1f1f35', color: '#fff'
+            title: '確認開籤？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff4d4d', background: '#1f1f35', color: '#fff'
         });
 
         if(confirm.isConfirmed) {
             const anim = document.getElementById('draw-animation');
             anim.style.display = 'flex';
-
             try {
-                const res = await fetch(CONFIG.GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected })
-                });
+                const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
-
+                
                 setTimeout(async () => {
                     anim.style.display = 'none';
                     if(result.status === "success") {
-                        let resHtml = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; max-height:60vh; overflow-y:auto;">`;
-                        result.results.forEach(p => {
-                            resHtml += `
-                                <div class="win-card animate__animated animate__backInDown">
-                                    <img src="${p.img || 'https://via.placeholder.com/100'}" style="width:110px; border:2px solid var(--gold); border-radius:10px;">
-                                    <div style="font-weight:bold; color:var(--gold); margin-top:8px; font-size:12px;">${p.name}</div>
+                        let flipHtml = `<div class="flip-container">`;
+                        result.results.forEach((p, i) => {
+                            flipHtml += `
+                                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                                    <div class="flip-front">?</div>
+                                    <div class="flip-back">
+                                        <img src="${p.img || 'https://via.placeholder.com/80'}">
+                                        <div style="font-size:10px; margin-top:5px; font-weight:bold;">${p.name}</div>
+                                    </div>
                                 </div>`;
                         });
-                        resHtml += `</div>`;
-                        await Swal.fire({ title: '🎉 抽獎結果', html: resHtml, background: '#1f1f35', color: '#fff', width: '90%' });
+                        flipHtml += `</div><button onclick="revealAll()" style="margin:20px 0; padding:10px 25px; border-radius:20px; border:none; background:var(--gold); font-weight:bold;">全部揭曉</button>`;
+                        
+                        await Swal.fire({ title: '請翻牌', html: flipHtml, background: '#1f1f35', color: '#fff', width: '95%', showConfirmButton: true, confirmButtonText: '結束', allowOutsideClick: false });
                         await sync();
                     }
-                }, 2000); // 強制動畫跑 2 秒
-            } catch (e) {
-                anim.style.display = 'none';
-                Swal.fire("錯誤", "連線中斷", "error");
-            }
+                }, 1500);
+            } catch (e) { anim.style.display='none'; }
         }
     }
+
+    window.revealAll = () => {
+        document.querySelectorAll('.flip-card').forEach((c, i) => setTimeout(() => c.classList.add('flipped'), i * 150));
+    };
 
     function changeMode(m) {
         if(state.mode === m) return;
