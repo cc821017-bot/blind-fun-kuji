@@ -3,70 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦實體籤盤</title>
+    <title>盲玩樂 - 職人實體籤盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Oswald:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root { --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #161625; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 150px; background-image: radial-gradient(circle at 50% 0%, #202040 0%, #0a0a0f 80%); }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(10, 10, 15, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
-        .u-pts { color: var(--gold); font-weight: 900; font-size: 1.5rem; text-shadow: 0 0 10px rgba(255,204,0,0.4); }
-        .tabs { display: flex; padding: 10px; gap: 8px; }
-        .tab { flex: 1; text-align: center; padding: 12px; color: #888; background: rgba(255,255,255,0.05); border-radius: 10px; font-weight: 900; cursor: pointer; }
-        .tab.active { color: #fff; background: var(--red); box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4); }
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; min-height: 150px; }
-        .prize-item { flex: 0 0 110px; text-align: center; background: var(--card); border-radius: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 8px; margin-bottom: 5px; }
-        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 15px; }
-        .ticket { aspect-ratio: 1/1; background: linear-gradient(135deg, #2d2d44, #1a1a2e); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #666; transition: 0.2s; }
-        .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-4px); box-shadow: 0 0 20px var(--gold); }
-        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.3; pointer-events: none; }
-        .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: rgba(22, 22, 37, 0.95); border-radius: 50px; border: 1px solid var(--gold); padding: 15px 30px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
-        .btn-draw { background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 15px 45px; border-radius: 40px; font-weight: 900; font-size: 1.4rem; cursor: pointer; }
-        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 10px; }
+        :root { --red: #e74c3c; --gold: #f1c40f; --bg: #0b0c10; --card: #1f2833; --text: #c5c6c7; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 160px; overflow-x: hidden; }
+        
+        /* 頂部玩家資訊 */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #1f2833; }
+        .u-pts-box { background: rgba(241, 196, 15, 0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--gold); }
+        .u-pts { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.4rem; font-weight: 700; }
+
+        /* 分區切換 */
+        .tabs { display: flex; padding: 10px 15px; gap: 10px; }
+        .tab { flex: 1; text-align: center; padding: 12px; color: #666; background: #161b22; border-radius: 8px; font-weight: 900; transition: 0.3s; cursor: pointer; border: 1px solid transparent; }
+        .tab.active { color: #fff; background: var(--card); border-color: var(--red); box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+
+        /* 獎項狀態廊 (參考 KujiFlip) */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 12px; scrollbar-width: none; }
+        .prize-item { flex: 0 0 110px; background: var(--card); border-radius: 12px; padding: 8px; text-align: center; border: 1px solid #45a29e44; }
+        .prize-item img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 8px; margin-bottom: 8px; }
+        .p-stock-tag { font-size: 10px; background: var(--red); color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+
+        /* 籤盤區域 */
+        .grid-container { padding: 15px; background: rgba(31, 40, 51, 0.3); margin: 0 15px; border-radius: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .ticket { 
+            aspect-ratio: 1/1; background: #1f2833; border: 1px solid #45a29e22; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; 
+            font-weight: 900; color: #45a29e; transition: 0.2s; position: relative;
+        }
+        .ticket.selected { background: var(--gold); color: #000; border-color: #fff; transform: scale(1.05); z-index: 2; box-shadow: 0 0 15px var(--gold); }
+        .ticket.taken { background: #0b0c10 !important; color: #333 !important; border: none !important; opacity: 0.5; pointer-events: none; }
+        .ticket.taken::after { content: '✕'; position: absolute; font-size: 1.5rem; color: #222; }
+
+        /* 底部結帳工具列 */
+        .cart-bar { 
+            position: fixed; bottom: 25px; left: 5%; width: 90%; 
+            background: #1f2833; border-radius: 50px; padding: 12px 25px; 
+            box-sizing: border-box; z-index: 2000; display: none; align-items: center; 
+            justify-content: space-between; border: 1px solid #45a29e;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .btn-draw { 
+            background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; border: none; 
+            padding: 14px 40px; border-radius: 30px; font-weight: 900; font-size: 1.2rem; 
+            cursor: pointer; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        /* 翻牌動畫優化 */
+        .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 20px; }
         .flip-card { width: 95px; height: 135px; perspective: 1000px; }
-        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
         .flip-card.flipped .card-inner { transform: rotateY(180deg); }
-        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; border: 2px solid var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .flip-front { background: #1a1a2e; color: var(--gold); font-size: 2rem; font-weight: 900; }
-        .flip-back { background: #fff; color: #333; transform: rotateY(180deg); padding: 8px; text-align: center; }
-        #draw-animation { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--gold); }
+        .flip-front { background: radial-gradient(#1f2833, #0b0c10); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 900; }
+        .flip-back { background: #fff; color: #000; transform: rotateY(180deg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; }
+        .flip-back img { width: 80px; height: 80px; object-fit: contain; }
     </style>
 </head>
 <body>
-<div id="loader" style="position:fixed;width:100%;height:100%;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;">同步中...</div>
-<div id="draw-animation"><h3 style="color:var(--gold);font-weight:900;">揭曉中...</h3></div>
-<div class="header">
-    <div>玩家: <span id="u-name">...</span></div>
-    <div class="u-pts"><span id="u-pts">0</span> <small>P</small></div>
+
+<div id="loader" style="position:fixed;width:100%;height:100%;background:#0b0c10;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+    <div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:#e74c3c;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    <p style="color:#45a29e;margin-top:20px;letter-spacing:2px;font-weight:900;">LOADING DATABASE...</p>
 </div>
+
+<div class="header">
+    <div style="font-weight:900;font-size:0.9rem;">PLAYER: <span id="u-name" style="color:#45a29e;">...</span></div>
+    <div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div>
+</div>
+
 <div class="tabs">
     <div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">🔥 單挑套</div>
     <div class="tab" data-mode="A區" onclick="changeMode('A區')">✨ A區</div>
     <div class="tab" data-mode="B區" onclick="changeMode('B區')">💎 B區</div>
 </div>
+
 <div id="prize-gallery" class="prize-gallery"></div>
-<div id="main-grid" class="grid"></div>
-<div class="cart-bar" id="cart-bar">
-    <div><b style="font-size:1.3rem; color:var(--gold);"><span id="sel-count">0</span> 抽</b></div>
-    <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
+
+<div class="grid-container">
+    <div id="status-msg" style="text-align:center; color:#45a29e; margin-bottom:12px; font-weight:900; font-size:0.8rem; letter-spacing:1px;"></div>
+    <div id="main-grid" class="grid"></div>
 </div>
+
+<div class="cart-bar" id="cart-bar">
+    <div>
+        <small style="color:#666;font-weight:900;">TOTAL COST</small><br>
+        <b style="font-size:1.4rem; color:var(--gold);"><span id="total-cost">0</span> <small>P</small></b>
+    </div>
+    <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">CONFIRM</button>
+</div>
+
 <script>
-    const CONFIG = { GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", LIFF_ID: "2009072982-6smlV2gu" };
+    const CONFIG = {
+        GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
+        LIFF_ID: "2009072982-6smlV2gu"
+    };
+
     let state = { uid: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
+
     async function init() {
         try {
             await liff.init({ liffId: CONFIG.LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const p = await liff.getProfile();
             state.uid = p.userId;
-            document.getElementById('u-name').innerText = p.displayName;
+            document.getElementById('u-name').innerText = p.displayName.toUpperCase();
             await sync();
-        } catch (e) { document.getElementById('loader').innerText = "連線失敗"; }
+        } catch (e) { document.getElementById('loader').innerText = "CONNECTION FAILED"; }
     }
+
     async function sync() {
         state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
@@ -74,54 +125,126 @@
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
-                state.tickets = data.tickets; state.cost = data.cost; 
-                document.getElementById('u-pts').innerText = data.userPoints.toLocaleString();
-                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `<div class="prize-item"><img src="${p.img || ''}"><div style="font-size:11px;font-weight:900;">${p.name}</div><div style="color:var(--gold);font-size:10px;">剩 ${p.stock}</div></div>`).join('');
+                state.tickets = data.tickets; 
+                state.cost = data.cost; 
+                state.points = data.userPoints;
+                document.getElementById('u-pts').innerText = state.points.toLocaleString();
+                document.getElementById('status-msg').innerText = `UNIT COST: ${state.cost} P / REMAINING: ${state.tickets.filter(x=>!x.isTaken).length}`;
+                
+                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
+                    <div class="prize-item">
+                        <img src="${p.img || ''}">
+                        <div style="font-size:11px;font-weight:900;color:#fff;">${p.name}</div>
+                        <div class="p-stock-tag">LEFT: ${p.stock}</div>
+                    </div>
+                `).join('');
                 renderGrid();
             }
         } finally { document.getElementById('loader').style.display = 'none'; }
     }
+
     function renderGrid() {
-        document.getElementById('main-grid').innerHTML = state.tickets.map(t => `<div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect(${t.id})`}">${t.isTaken ? '✘' : t.id}</div>`).join('');
+        document.getElementById('main-grid').innerHTML = state.tickets.map(t => `
+            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect('${t.id}')`}">
+                ${t.id}
+            </div>
+        `).join('');
     }
+
     function toggleSelect(tid) {
         const idx = state.selected.indexOf(tid);
         const el = document.getElementById(`t-${tid}`);
-        if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
-        else { state.selected.push(tid); el.classList.add('selected'); }
+        if(idx > -1) { 
+            state.selected.splice(idx, 1); 
+            el.classList.remove('selected'); 
+        } else { 
+            state.selected.push(tid); 
+            el.classList.add('selected'); 
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
         updateCartUI();
     }
+
     function updateCartUI() {
-        document.getElementById('cart-bar').style.display = state.selected.length > 0 ? 'flex' : 'none';
-        document.getElementById('sel-count').innerText = state.selected.length;
+        const bar = document.getElementById('cart-bar');
+        bar.style.display = state.selected.length > 0 ? 'flex' : 'none';
+        document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
+
     function handleFlip(el, name) {
         if(el.classList.contains('flipped')) return;
         el.classList.add('flipped');
         if (/A賞|最後|SP|1賞|LAST/.test(name.toUpperCase())) {
             confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, zIndex: 10000 });
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         }
     }
+
     async function handleCheckout() {
-        document.getElementById('drawBtn').disabled = true;
-        document.getElementById('draw-animation').style.display = 'flex';
-        try {
-            const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
-            const result = await res.json();
-            document.getElementById('draw-animation').style.display = 'none';
-            if(result.status === "success") {
-                let flipHtml = `<div class="flip-container">`;
-                result.results.forEach((p, i) => {
-                    flipHtml += `<div class="flip-card" onclick="handleFlip(this, '${p.name}')"><div class="card-inner"><div class="flip-front">?</div><div class="flip-back"><div style="font-size:12px;font-weight:900;margin-top:5px;color:#333;">${p.name}</div></div></div></div>`;
+        const total = state.selected.length * state.cost;
+        if(state.points < total) { Swal.fire("餘額不足", "Insufficient Points", "error"); return; }
+        
+        const confirm = await Swal.fire({
+            title: 'CONFIRM DRAW?',
+            text: `Total Spend: ${total} P`,
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            cancelButtonColor: '#1f2833',
+            background: '#161b22',
+            color: '#fff'
+        });
+
+        if(confirm.isConfirmed) {
+            document.getElementById('drawBtn').disabled = true;
+            document.body.style.overflow = 'hidden';
+            try {
+                const res = await fetch(CONFIG.GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
                 });
-                flipHtml += `</div><button onclick="document.querySelectorAll('.flip-card').forEach(c=>c.click())" style="margin:20px;padding:12px 25px;background:var(--gold);font-weight:900;border:none;border-radius:30px;">全部揭曉</button>`;
-                await Swal.fire({ title: '翻牌揭曉', html: flipHtml, background: '#1f1f35', color: '#fff', width: '95%', allowOutsideClick: false });
-                await sync(); 
+                const result = await res.json();
+                
+                if(result.status === "success") {
+                    let flipHtml = `<div class="flip-container">`;
+                    result.results.forEach((p, i) => {
+                        flipHtml += `
+                            <div class="flip-card" onclick="handleFlip(this, '${p.name}')">
+                                <div class="card-inner">
+                                    <div class="flip-front">?</div>
+                                    <div class="flip-back">
+                                        <div style="font-size:12px;font-weight:900;color:#111;">${p.name}</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    flipHtml += `</div><button onclick="document.querySelectorAll('.flip-card').forEach(c=>c.click())" style="margin:20px;padding:12px 25px;background:var(--gold);font-weight:900;border:none;border-radius:30px;cursor:pointer;">REVEAL ALL</button>`;
+                    
+                    await Swal.fire({ 
+                        title: 'RESULTS', 
+                        html: flipHtml, 
+                        background: '#161b22', 
+                        color: '#fff', 
+                        width: '95%', 
+                        showConfirmButton: true,
+                        confirmButtonText: 'CLOSE'
+                    });
+                    await sync(); 
+                }
+            } catch (e) { Swal.fire("ERROR", "System Busy", "error"); }
+            finally { 
+                document.getElementById('drawBtn').disabled = false; 
+                document.body.style.overflow = 'auto';
             }
-        } catch (e) { document.getElementById('draw-animation').style.display='none'; }
-        finally { document.getElementById('drawBtn').disabled = false; }
+        }
     }
-    function changeMode(m) { state.mode = m; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); sync(); }
+
+    function changeMode(m) {
+        state.mode = m;
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m));
+        sync();
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
     window.onload = init;
 </script>
 </body>
