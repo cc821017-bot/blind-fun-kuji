@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 旗艦實體籤盤</title>
+    <title>盲玩樂 - 旗艦實體籤盤 2.0</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,6 +13,7 @@
         :root { --red: #ff4d4d; --gold: #ffcc00; --bg: #0f0f1a; --card: #161625; }
         body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 150px; background-image: radial-gradient(circle at 50% 0%, #202040 0%, #0a0a0f 80%); }
         
+        /* 標題與導航 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(10, 10, 15, 0.9); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .u-pts { color: var(--gold); font-weight: 900; font-size: 1.5rem; text-shadow: 0 0 10px rgba(255,204,0,0.4); }
 
@@ -20,20 +21,22 @@
         .tab { flex: 1; text-align: center; padding: 12px; color: #888; background: rgba(255,255,255,0.05); border-radius: 10px; font-weight: 900; cursor: pointer; }
         .tab.active { color: #fff; background: var(--red); box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4); }
 
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; }
+        /* 獎項廊 */
+        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: rgba(0,0,0,0.3); min-height: 150px; }
         .prize-item { flex: 0 0 110px; text-align: center; background: var(--card); border-radius: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
         .prize-item img { width: 80px; height: 80px; object-fit: contain; background: #fff; border-radius: 8px; margin-bottom: 5px; }
 
+        /* 籤盤區域 */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 15px; }
         .ticket { aspect-ratio: 1/1; background: linear-gradient(135deg, #2d2d44, #1a1a2e); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #666; transition: 0.2s; }
         .ticket.selected { border-color: var(--gold); background: var(--gold); color: #000; transform: translateY(-4px); box-shadow: 0 0 20px var(--gold); }
-        
-        /* 物理鎖死：變黑且無法點擊 */
         .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.3; pointer-events: none; }
 
+        /* 底部按鈕 */
         .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: rgba(22, 22, 37, 0.95); backdrop-filter: blur(15px); border-radius: 50px; border: 1px solid var(--gold); padding: 15px 30px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .btn-draw { background: linear-gradient(45deg, #ff4d4d, #ff7675); color: white; border: none; padding: 15px 45px; border-radius: 40px; font-weight: 900; font-size: 1.4rem; animation: pulse-red 2s infinite; cursor: pointer; }
         
+        /* 翻牌動畫 */
         .flip-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 10px; }
         .flip-card { width: 95px; height: 135px; perspective: 1000px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
@@ -60,7 +63,6 @@
 <div class="tabs">
     <div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">🔥 單挑套</div>
     <div class="tab" data-mode="A區" onclick="changeMode('A區')">✨ A區</div>
-    <div class="tab" data-mode="B區" onclick="changeMode('B區')">💎 B區</div>
 </div>
 
 <div id="prize-gallery" class="prize-gallery"></div>
@@ -141,7 +143,10 @@
         document.getElementById('drawBtn').disabled = true;
         document.getElementById('draw-animation').style.display = 'flex';
         try {
-            const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
+            const res = await fetch(CONFIG.GAS_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
+            });
             const result = await res.json();
             document.getElementById('draw-animation').style.display = 'none';
             if(result.status === "success") {
@@ -152,7 +157,6 @@
                             <div class="card-inner">
                                 <div class="flip-front">?</div>
                                 <div class="flip-back">
-                                    <img src="${p.img || ''}">
                                     <div style="font-size:12px;font-weight:900;margin-top:5px;color:#333;">${p.name}</div>
                                 </div>
                             </div>
