@@ -3,43 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂一番賞 - 實體模擬盤</title>
+    <title>盲玩樂 - 固定實體盤</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        :root { 
-            --kuji-red: #e63946; 
-            --kuji-gold: #ffb627; 
-            --card-bg: #1a1a2e;
-            --ticket-taken: #050505;
-        }
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #000; color: #fff; margin: 0; padding-bottom: 130px; }
-
+        :root { --main-red: #e63946; --gold: #ffb627; --bg: #0a0a12; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 30px; }
+        
         /* 頂部導航 */
-        .header-bar { display: flex; justify-content: space-between; padding: 12px 15px; background: #161625; border-bottom: 2px solid var(--kuji-red); position: sticky; top: 0; z-index: 100; }
-        .user-pts { color: var(--kuji-gold); font-weight: bold; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #161625; border-bottom: 2px solid var(--main-red); position: sticky; top: 0; z-index: 100; }
+        .u-pts { color: var(--gold); font-weight: bold; }
 
         /* 模式切換 */
-        .tab-bar { display: flex; background: #111; border-bottom: 1px solid #333; }
-        .tab { flex: 1; text-align: center; padding: 15px; font-weight: bold; color: #666; cursor: pointer; transition: 0.3s; }
-        .tab.active { color: var(--kuji-red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--kuji-red); }
+        .tabs { display: flex; background: #000; border-bottom: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 15px; color: #666; cursor: pointer; font-weight: bold; }
+        .tab.active { color: var(--main-red); background: rgba(230,57,70,0.1); border-bottom: 3px solid var(--main-red); }
 
-        /* 獎盤區域 */
+        /* 實體抽獎盤 */
         .plate-area { padding: 15px; }
-        .plate-title { font-size: 0.9rem; color: #888; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        
-        .kuji-plate {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(8, 1fr); /* 手機端每排 8 格 */
+            grid-template-columns: repeat(8, 1fr); /* 每排 8 格 */
             gap: 6px;
-            background: rgba(255,255,255,0.03);
+            background: #111;
             padding: 12px;
             border-radius: 10px;
-            border: 1px solid #222;
+            border: 1px solid #333;
         }
 
-        /* 籤位格子 */
         .ticket {
             aspect-ratio: 1/1;
             background: #2d2d44;
@@ -48,66 +39,56 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            font-weight: 900;
-            color: rgba(255,255,255,0.3);
-            position: relative;
+            font-size: 11px;
+            font-weight: bold;
+            color: #888;
+            cursor: pointer;
             transition: 0.2s;
+            position: relative;
         }
 
-        /* 籤位顏色分級 */
-        .t-A { background: linear-gradient(135deg, #ff4757, #ff6b81) !important; color: #fff !important; box-shadow: 0 0 8px rgba(255,71,87,0.4); }
-        .t-B { background: linear-gradient(135deg, #ffa502, #eccc68) !important; color: #fff !important; }
-        .t-C { background: linear-gradient(135deg, #2ed573, #7bed9f) !important; color: #fff !important; }
-        .t-D { background: linear-gradient(135deg, #1e90ff, #70a1ff) !important; color: #fff !important; }
-        .t-normal { background: #57606f; color: #fff; }
+        /* 已抽走狀態 (済) */
+        .ticket.taken {
+            background: #050505 !important;
+            color: #333 !important;
+            border: 1px solid #222 !important;
+            cursor: default;
+        }
+        .ticket.taken::after { content: '済'; position: absolute; font-size: 10px; }
 
-        /* 已抽走狀態 */
-        .ticket.taken { background: var(--ticket-taken) !important; border: 1px solid #222 !important; color: transparent !important; }
-        .ticket.taken::after { content: '済'; color: #333; font-size: 10px; }
+        .ticket:not(.taken):hover {
+            border-color: var(--gold);
+            transform: scale(1.1);
+            z-index: 10;
+            color: #fff;
+        }
 
-        /* 抽獎動畫 */
-        .ticket.active { transform: scale(1.25); z-index: 50; background: var(--kuji-gold) !important; color: #000 !important; box-shadow: 0 0 20px var(--kuji-gold); }
-
-        /* 底部控制區 */
-        .footer { position: fixed; bottom: 0; width: 100%; background: #111; padding: 20px 0; border-top: 1px solid #333; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
-        .btn-wrap { display: flex; gap: 12px; width: 90%; margin: 0 auto; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; color: #fff; cursor: pointer; transition: 0.2s; }
-        .btn-s { background: #444; }
-        .btn-m { background: linear-gradient(45deg, var(--kuji-red), #ff6b81); box-shadow: 0 4px 15px rgba(230,57,70,0.4); }
-        .btn:disabled { opacity: 0.3; transform: scale(0.95); }
+        /* 處理中遮罩 */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none;
+            flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+        }
     </style>
 </head>
 <body>
 
-<div class="header-bar">
-    <div>玩家：<b id="disp-name">---</b></div>
-    <div>餘額：<b id="disp-points" class="user-pts">0</b> P</div>
+<div id="loader" class="loading-overlay">正在開啟籤位...</div>
+
+<div class="header">
+    <div>玩家：<b id="u-name">---</b></div>
+    <div>餘額：<b id="u-pts" class="u-pts">0</b> P</div>
 </div>
 
-<div class="tab-bar">
+<div class="tabs">
     <div class="tab active" onclick="changeMode('單挑套')">單挑套</div>
     <div class="tab" onclick="changeMode('A區')">A區</div>
-    <div class="tab" onclick="changeMode('B區')">B區</div>
 </div>
 
 <div class="plate-area">
-    <div class="plate-title">
-        <span>● 實體籤位模擬盤</span>
-        <span id="stock-info">載入中...</span>
-    </div>
-    <div class="kuji-plate" id="main-plate">
+    <div style="margin-bottom:10px; font-size:0.85rem; color:#888;">請點擊號碼直接抽籤：</div>
+    <div class="grid" id="main-grid">
         </div>
-</div>
-
-<div class="footer">
-    <div style="text-align:center; margin-bottom:10px; font-weight:bold; color:var(--kuji-gold)">
-        單抽：<span id="cost-val">---</span> P
-    </div>
-    <div class="btn-wrap">
-        <button id="btn-1" class="btn btn-s" onclick="handleDraw(1)">單抽</button>
-        <button id="btn-5" class="btn btn-m" onclick="handleDraw(5)">五連抽</button>
-    </div>
 </div>
 
 <script>
@@ -116,7 +97,7 @@
         LIFF_ID: "2009072982-6smlV2gu"
     };
 
-    let state = { uid: "", name: "", points: 0, mode: "單挑套", prizes: [], allTickets: [], isRunning: false };
+    let state = { uid: "", name: "", mode: "單挑套", tickets: [] };
 
     async function init() {
         try {
@@ -125,136 +106,83 @@
             const profile = await liff.getProfile();
             state.uid = profile.userId;
             state.name = profile.displayName;
-            document.getElementById('disp-name').innerText = state.name;
-            await syncData();
+            document.getElementById('u-name').innerText = state.name;
+            await sync();
         } catch (err) { console.error(err); }
     }
 
-    async function syncData() {
-        // 切換模式時清空盤面
-        document.getElementById('main-plate').innerHTML = "";
-        const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&userName=${encodeURIComponent(state.name)}`);
+    async function sync() {
+        // 向 GAS 請求該模式下的所有籤位狀態
+        const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${state.mode}&action=getTickets`);
         const data = await res.json();
+        
         if(data.status === "success") {
-            state.points = data.userPoints;
-            state.prizes = data.prizes;
-            state.cost = data.cost;
-            document.getElementById('disp-points').innerText = state.points.toLocaleString();
-            document.getElementById('cost-val').innerText = state.cost;
-            buildVirtualPlate();
+            state.tickets = data.tickets; // 格式: [{id:1, isTaken:false}, ...]
+            document.getElementById('u-pts').innerText = data.userPoints.toLocaleString();
+            render();
         }
     }
 
-    function buildVirtualPlate() {
-        let tempPool = [];
-        let totalRemaining = 0;
-        let totalCount = 0;
+    function render() {
+        const container = document.getElementById('main-grid');
+        container.innerHTML = state.tickets.map(t => `
+            <div class="ticket ${t.isTaken ? 'taken' : ''}" onclick="draw(${t.id})">
+                ${t.isTaken ? '' : t.id}
+            </div>
+        `).join('');
+    }
 
-        state.prizes.forEach(p => {
-            const level = p.name.charAt(0).toUpperCase();
-            // 剩餘可抽
-            for(let i=0; i<p.stock; i++) {
-                tempPool.push({ level: level, status: 'available', name: p.name });
-                totalRemaining++;
-            }
-            // 已被抽走
-            for(let i=0; i<(p.total - p.stock); i++) {
-                tempPool.push({ level: level, status: 'taken', name: p.name });
-            }
-            totalCount += p.total;
+    async function draw(ticketId) {
+        const target = state.tickets.find(t => t.id === ticketId);
+        if(!target || target.isTaken) return;
+
+        const result = await Swal.fire({
+            title: `確定抽取 ${ticketId} 號？`,
+            background: '#161625',
+            color: '#fff',
+            showCancelButton: true,
+            confirmButtonColor: '#e63946',
+            confirmButtonText: '確定',
+            cancelButtonText: '取消'
         });
 
-        // 核心：隨機洗牌 (Fisher-Yates Shuffle)
-        for (let i = tempPool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [tempPool[i], tempPool[j]] = [tempPool[j], tempPool[i]];
+        if(result.isConfirmed) {
+            document.getElementById('loader').style.display = 'flex';
+            
+            try {
+                const res = await fetch(CONFIG.GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        uid: state.uid,
+                        mode: state.mode,
+                        ticketId: ticketId // 傳送具體編號
+                    })
+                });
+                const final = await res.json();
+                document.getElementById('loader').style.display = 'none';
+
+                if(final.status === "success") {
+                    Swal.fire({
+                        title: '🎊 揭曉獎項',
+                        html: `<b style="font-size:1.5rem; color:#e63946">${final.prizeName}</b>`,
+                        background: '#161625',
+                        color: '#fff'
+                    });
+                    await sync(); // 重新整理盤面狀態
+                } else {
+                    Swal.fire("錯誤", final.message, "error");
+                }
+            } catch (e) {
+                document.getElementById('loader').style.display = 'none';
+                Swal.fire("連線錯誤", "請檢查網路狀態", "error");
+            }
         }
-
-        state.allTickets = tempPool;
-        document.getElementById('stock-info').innerText = `剩餘 ${totalRemaining} / ${totalCount}`;
-        renderTickets();
-    }
-
-    function renderTickets() {
-        const plate = document.getElementById('main-plate');
-        plate.innerHTML = state.allTickets.map((t, i) => {
-            const cssClass = (['A','B','C','D'].includes(t.level)) ? `t-${t.level}` : 't-normal';
-            return `<div class="ticket ${t.status==='taken'?'taken':cssClass}" id="t-${i}">${t.status==='taken'?'':t.level}</div>`;
-        }).join('');
     }
 
     function changeMode(m) {
-        if(state.isRunning) return;
         state.mode = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.innerText.includes(m)));
-        syncData();
-    }
-
-    async function handleDraw(count) {
-        if(state.isRunning) return;
-        if(state.points < state.cost * count) {
-            Swal.fire("點數不足", "請聯繫店員儲值點數", "warning"); return;
-        }
-
-        state.isRunning = true;
-        setBtns(false);
-
-        // 啟動跳動動畫 (模擬隨機選籤)
-        let animationId = setInterval(() => {
-            document.querySelectorAll('.ticket').forEach(el => el.classList.remove('active'));
-            // 只在還沒抽走的格子中選取
-            const availIdx = state.allTickets.map((t,i) => t.status==='available'?i:-1).filter(i=>i!==-1);
-            const rand = availIdx[Math.floor(Math.random() * availIdx.length)];
-            const target = document.getElementById(`t-${rand}`);
-            if(target) target.classList.add('active');
-        }, 80);
-
-        try {
-            const res = await fetch(CONFIG.GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ uid: state.uid, mode: state.mode, count: count })
-            });
-            const result = await res.json();
-            
-            clearInterval(animationId);
-            if(result.status === "success") {
-                showWin(result.results, result.remainingPoints);
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (e) {
-            clearInterval(animationId);
-            Swal.fire("錯誤", e.message, "error");
-            state.isRunning = false; setBtns(true);
-            syncData();
-        }
-    }
-
-    function showWin(results, newPoints) {
-        // 抓取獎項對應圖片
-        const html = results.map(res => {
-            const p = state.prizes.find(x => x.name === res);
-            return `<div class="animate__animated animate__jackInTheBox" style="margin-bottom:15px;">
-                <img src="${p?.img || ''}" style="width:100px; height:100px; background:#fff; border-radius:10px; object-fit:contain;"><br>
-                <b style="color:var(--kuji-red); font-size:1.2rem;">${res}</b>
-            </div>`;
-        }).join('');
-
-        Swal.fire({
-            title: '🎉 恭喜中獎！',
-            html: `<div style="max-height:350px; overflow-y:auto;">${html}</div>`,
-            background: '#161625', color: '#fff', confirmButtonColor: '#e63946'
-        });
-
-        state.points = newPoints;
-        state.isRunning = false;
-        setBtns(true);
-        syncData();
-    }
-
-    function setBtns(e) {
-        document.getElementById('btn-1').disabled = !e;
-        document.getElementById('btn-5').disabled = !e;
+        sync();
     }
 
     window.onload = init;
