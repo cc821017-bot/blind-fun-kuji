@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 職人抽籤系統 3.1</title>
+    <title>盲玩樂 - 職人抽籤系統 3.2</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,119 +13,62 @@
         :root { --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; --bg: #0b0c10; --card: #1f2833; }
         body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 160px; overflow-x: hidden; }
         
-        /* 頂部導覽列 */
+        /* 頂部資訊列 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--card); }
         .u-info { display: flex; flex-direction: column; }
-        .u-name { font-weight: 900; font-size: 1rem; color: #45a29e; margin-bottom: 4px; }
         .u-pts-box { background: rgba(255, 204, 0, 0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--gold); }
         .u-pts { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.4rem; font-weight: 700; }
-
         .price-tag { text-align: right; }
-        .price-label { font-size: 0.75rem; color: #888; font-weight: 900; }
-        .price-value { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.8rem; line-height: 1; text-shadow: 0 0 10px rgba(255,204,0,0.5); }
+        .price-value { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.8rem; line-height: 1; }
 
         /* 分區切換 */
         .tabs { display: flex; padding: 12px 15px; gap: 10px; }
         .tab { flex: 1; text-align: center; padding: 12px; background: #161b22; border-radius: 10px; color: #666; font-weight: 900; cursor: pointer; transition: 0.3s; }
-        .tab.active { background: var(--card); color: #fff; border-color: var(--red); box-shadow: 0 0 15px rgba(255, 62, 62, 0.3); border: 1px solid var(--red); }
+        .tab.active { background: var(--card); color: #fff; border: 1px solid var(--red); box-shadow: 0 0 15px rgba(255, 62, 62, 0.3); }
 
-        /* 獎項展示 (大圖) */
+        /* 獎項大圖展示 */
         .prize-gallery { display: flex; overflow-x: auto; padding: 20px 15px; gap: 18px; scrollbar-width: none; background: rgba(0,0,0,0.3); }
         .prize-item { flex: 0 0 140px; background: var(--card); border-radius: 15px; padding: 12px; text-align: center; border: 1px solid rgba(69, 162, 158, 0.3); }
         .prize-item img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 10px; margin-bottom: 10px; }
-        .p-name { font-size: 12px; font-weight: 900; color: #fff; margin-bottom: 5px; }
         .p-stock { font-size: 11px; background: var(--red); color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; font-family: 'Oswald', sans-serif; }
 
-        /* 籤盤區域 */
+        /* 籤盤與按鈕 */
         .grid-area { padding: 20px 15px; }
         .rem-status { text-align:center; color: var(--cyan); margin-bottom: 15px; font-weight: 900; letter-spacing: 2px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .ticket { 
-            aspect-ratio: 1/1; background: linear-gradient(145deg, #1f2833, #0b0c10); border: 1px solid rgba(69, 162, 158, 0.2); border-radius: 10px; 
-            display: flex; align-items: center; justify-content: center; font-size: 1.3rem; 
-            font-weight: 900; color: #45a29e; transition: 0.2s; position: relative;
-        }
+        .ticket { aspect-ratio: 1/1; background: linear-gradient(145deg, #1f2833, #0b0c10); border: 1px solid rgba(69, 162, 158, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 900; color: #45a29e; position: relative; transition: 0.2s; }
         .ticket.selected { background: var(--gold); color: #000; border-color: #fff; transform: translateY(-5px); box-shadow: 0 5px 20px var(--gold); }
-        .ticket.taken { background: #050505 !important; color: #222 !important; border: none !important; opacity: 0.4; pointer-events: none; }
+        .ticket.taken { background: #050505 !important; color: #222 !important; opacity: 0.4; pointer-events: none; }
         .ticket.taken::after { content: '✕'; position: absolute; font-size: 1.8rem; color: #000; }
 
-        /* 底部結帳條 */
-        .cart-bar { 
-            position: fixed; bottom: 25px; left: 5%; width: 90%; 
-            background: rgba(31, 40, 51, 0.98); border-radius: 50px; padding: 18px 35px; 
-            box-sizing: border-box; z-index: 2000; display: none; align-items: center; 
-            justify-content: space-between; border: 1px solid var(--gold);
-            box-shadow: 0 10px 50px rgba(0,0,0,1);
-        }
-        .btn-draw { 
-            background: linear-gradient(45deg, #ff3e3e, #b32d2d); color: white; border: none; 
-            padding: 15px 45px; border-radius: 40px; font-weight: 900; font-size: 1.4rem; cursor: pointer;
-        }
-
+        .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: rgba(31, 40, 51, 0.98); border-radius: 50px; padding: 18px 35px; box-sizing: border-box; z-index: 2000; display: none; align-items: center; justify-content: space-between; border: 1px solid var(--gold); box-shadow: 0 10px 50px rgba(0,0,0,1); }
+        .btn-draw { background: linear-gradient(45deg, #ff3e3e, #b32d2d); color: white; border: none; padding: 15px 45px; border-radius: 40px; font-weight: 900; font-size: 1.4rem; cursor: pointer; }
+        
         #loader { position:fixed;width:100%;height:100%;background:#0b0c10;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
-<div id="loader">
-    <div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div>
-    <p style="color:#45a29e;margin-top:20px;font-weight:900;letter-spacing:3px;">資料同步中...</p>
-</div>
-
+<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;">資料同步中...</p></div>
 <div class="header">
-    <div class="u-info">
-        <span class="u-name" id="u-name">玩家載入中</span>
-        <div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div>
-    </div>
-    <div class="price-tag">
-        <div class="price-label">每抽單價</div>
-        <div class="price-value" id="unit-cost">0 P</div>
-    </div>
+    <div class="u-info"><span class="u-name" id="u-name">載入中</span><div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div></div>
+    <div class="price-tag"><div class="price-value" id="unit-cost">0 P</div></div>
 </div>
-
-<div class="tabs">
-    <div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">單挑套</div>
-    <div class="tab" data-mode="A區" onclick="changeMode('A區')">A區</div>
-    <div class="tab" data-mode="B區" onclick="changeMode('B區')">B區</div>
-</div>
-
+<div class="tabs"><div class="tab active" data-mode="單挑套" onclick="changeMode('單挑套')">單挑套</div><div class="tab" data-mode="A區" onclick="changeMode('A區')">A區</div><div class="tab" data-mode="B區" onclick="changeMode('B區')">B區</div></div>
 <div id="prize-gallery" class="prize-gallery"></div>
-
-<div class="grid-area">
-    <div id="rem-count" class="rem-status">剩餘籤數: 0 / 0</div>
-    <div id="main-grid" class="grid"></div>
-</div>
-
-<div class="cart-bar" id="cart-bar">
-    <div class="cost-display">
-        <small style="color:#888;font-weight:900;">已選擇 <span id="sel-count">0</span> 抽</small><br>
-        <b style="font-size:1.6rem; color:var(--gold); font-family:'Oswald'"><span id="total-cost">0</span> <small>P</small></b>
-    </div>
-    <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
-</div>
+<div class="grid-area"><div id="rem-count" class="rem-status">剩餘: 0 / 0</div><div id="main-grid" class="grid"></div></div>
+<div class="cart-bar" id="cart-bar"><div class="cost-display"><small style="color:#888;">已選 <span id="sel-count">0</span> 抽</small><br><b style="font-size:1.6rem; color:var(--gold);"><span id="total-cost">0</span> P</b></div><button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button></div>
 
 <script>
-    const CONFIG = { 
-        GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
-        LIFF_ID: "2009072982-6smlV2gu" 
-    };
+    const CONFIG = { GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", LIFF_ID: "2009072982-6smlV2gu" };
     let state = { uid: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
-
     async function init() {
-        try {
-            await liff.init({ liffId: CONFIG.LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            const p = await liff.getProfile();
-            state.uid = p.userId;
-            document.getElementById('u-name').innerText = p.displayName;
-            await sync();
-        } catch (e) { document.getElementById('loader').innerHTML = "連線失敗"; }
+        try { await liff.init({ liffId: CONFIG.LIFF_ID }); if (!liff.isLoggedIn()) { liff.login(); return; }
+            const p = await liff.getProfile(); state.uid = p.userId; document.getElementById('u-name').innerText = p.displayName; await sync();
+        } catch (e) { document.getElementById('loader').innerText = "連線失敗"; }
     }
-
     async function sync() {
-        state.selected = []; updateCartUI();
-        document.getElementById('loader').style.display = 'flex';
+        state.selected = []; updateCartUI(); document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
@@ -133,72 +76,51 @@
                 state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 document.getElementById('unit-cost').innerText = `${state.cost} P`;
-                document.getElementById('rem-count').innerText = `剩餘籤數: ${state.tickets.filter(x=>!x.isTaken).length} / ${state.tickets.length}`;
-                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
-                    <div class="prize-item"><img src="${p.img || ''}"><div class="p-name">${p.name}</div><div class="p-stock">剩 ${p.stock}</div></div>
-                `).join('');
+                const rem = state.tickets.filter(x=>!x.isTaken).length;
+                document.getElementById('rem-count').innerText = `剩餘籤數: ${rem} / ${state.tickets.length}`;
+                const db = document.getElementById('drawBtn');
+                if(rem === 0) { db.innerText = "本區已完售"; db.style.background = "#333"; db.disabled = true; }
+                else { db.innerText = "確認開籤"; db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)"; db.disabled = false; }
+                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `<div class="prize-item"><img src="${p.img}"><div style="font-size:12px;font-weight:900;">${p.name}</div><div class="p-stock">剩 ${p.stock}</div></div>`).join('');
                 renderGrid();
             }
-        } catch (e) { alert("同步失敗"); } finally { document.getElementById('loader').style.display = 'none'; }
+        } finally { document.getElementById('loader').style.display = 'none'; }
     }
-
-    function renderGrid() {
-        document.getElementById('main-grid').innerHTML = state.tickets.map(t => `
-            <div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect('${t.id}')` }">${t.id}</div>
-        `).join('');
-    }
-
+    function renderGrid() { document.getElementById('main-grid').innerHTML = state.tickets.map(t => `<div id="t-${t.id}" class="ticket ${t.isTaken ? 'taken' : ''}" onclick="${t.isTaken ? '' : `toggleSelect('${t.id}')`}">${t.id}</div>`).join(''); }
     function toggleSelect(tid) {
-        const idx = state.selected.indexOf(tid);
-        const el = document.getElementById(`t-${tid}`);
+        const idx = state.selected.indexOf(tid); const el = document.getElementById(`t-${tid}`);
         if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
         else { state.selected.push(tid); el.classList.add('selected'); if (window.navigator.vibrate) window.navigator.vibrate(15); }
         updateCartUI();
     }
-
     function updateCartUI() {
-        const bar = document.getElementById('cart-bar');
-        bar.style.display = state.selected.length > 0 ? 'flex' : 'none';
+        const bar = document.getElementById('cart-bar'); bar.style.display = state.selected.length > 0 ? 'flex' : 'none';
         document.getElementById('sel-count').innerText = state.selected.length;
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
-
     async function handleCheckout() {
-        const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire({ title: "餘額不足", icon: "warning", background: "#161b22", color: "#fff" }); return; }
-        
-        const confirm = await Swal.fire({
-            title: '確認扣點抽籤？', text: `本次將消耗 ${total.toLocaleString()} P`,
-            showCancelButton: true, confirmButtonColor: '#ff3e3e', cancelButtonColor: '#1f2833', background: '#161b22', color: '#fff'
-        });
-
+        const total = state.selected.length * state.cost; if(state.points < total) { Swal.fire("點數不足", "", "error"); return; }
+        const confirm = await Swal.fire({ title: '確認扣點？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         if(confirm.isConfirmed) {
-            document.getElementById('drawBtn').disabled = true;
-            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('drawBtn').disabled = true; document.getElementById('loader').style.display = 'flex';
             try {
                 const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
-                const result = await res.json();
-                document.getElementById('loader').style.display = 'none';
-                
+                const result = await res.json(); document.getElementById('loader').style.display = 'none';
                 if(result.status === "success") {
-                    let resHtml = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px; margin-top:15px; max-height:60vh; overflow-y:auto; padding:10px;">`;
-                    result.results.forEach((p) => {
-                        resHtml += `
-                        <div style="background:#2d2d44; padding:10px; border-radius:15px; border:2px solid var(--gold); width:110px; text-align:center;">
-                            <img src="${p.img || ''}" style="width:80px; height:80px; object-fit:contain; background:#fff; border-radius:10px; margin-bottom:8px;">
-                            <div style="font-weight:900; color:#fff; font-size:0.9rem; overflow:hidden;">${p.name}</div>
-                        </div>`;
-                    });
+                    // --- 提早噴彩帶判定 ---
+                    if(result.results.some(r => /A賞|最後|SP|1賞|LAST/.test(r.name))) { 
+                        confetti({ particleCount: 350, spread: 100, origin: { y: 0.5 }, zIndex: 10000 });
+                        if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+                    }
+                    let resHtml = `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:15px;margin-top:15px;max-height:60vh;overflow-y:auto;padding:10px;">`;
+                    result.results.forEach(p => { resHtml += `<div style="background:#2d2d44;padding:10px;border-radius:15px;border:2px solid var(--gold);width:110px;text-align:center;"><img src="${p.img}" style="width:80px;height:80px;object-fit:contain;background:#fff;border-radius:10px;margin-bottom:8px;"><div style="font-weight:900;color:#fff;font-size:0.9rem;">${p.name}</div></div>`; });
                     resHtml += `</div>`;
-                    
                     await Swal.fire({ title: '🎊 恭喜中獎 🎊', html: resHtml, background: '#161b22', color: '#fff', width: '95%', confirmButtonText: '收下獎項' });
-                    if(result.results.some(r => /A賞|最後|SP|1賞|LAST/.test(r.name))) confetti({ particleCount: 250, spread: 90, origin: { y: 0.6 }, zIndex: 10000 });
-                    await sync(); 
-                }
+                    await sync();
+                } else { Swal.fire("失敗", result.message, "error"); }
             } catch (e) { alert("連線錯誤"); } finally { document.getElementById('drawBtn').disabled = false; }
         }
     }
-
     function changeMode(m) { state.mode = m; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); sync(); }
     window.onload = init;
 </script>
