@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 職人抽籤系統 3.4</title>
+    <title>盲玩樂 - 職人抽籤系統 3.5</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -23,7 +23,7 @@
         .tab.active { background: var(--card); color: #fff; border-color: var(--red); box-shadow: 0 0 15px rgba(255, 62, 62, 0.3); }
 
         .prize-gallery { display: flex; overflow-x: auto; padding: 20px 15px; gap: 18px; scrollbar-width: none; background: rgba(0,0,0,0.3); }
-        .prize-item { flex: 0 0 140px; background: var(--card); border-radius: 15px; padding: 12px; text-align: center; border: 1px solid rgba(69, 162, 158, 0.3); }
+        .prize-item { flex: 0 0 140px; background: var(--card); border-radius: 15px; padding: 12px; text-align: center; border: 1px solid rgba(69, 162, 158, 0.3); position: relative; }
         .prize-item img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 10px; margin-bottom: 10px; }
         .p-stock { font-size: 11px; background: var(--red); color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; font-family: 'Oswald', sans-serif; }
 
@@ -49,7 +49,7 @@
     </style>
 </head>
 <body>
-<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;letter-spacing:2px;">正在即時通訊中...</p></div>
+<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;">同步庫存狀態...</p></div>
 
 <div class="header">
     <div class="u-info"><span id="u-name" style="font-weight:900; color:#45a29e;">玩家載入中</span><div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div></div>
@@ -64,7 +64,7 @@
 
 <div id="prize-gallery" class="prize-gallery"></div>
 <div class="grid-area">
-    <div id="rem-count" class="rem-status">載入中...</div>
+    <div id="rem-count" class="rem-status">監控中...</div>
     <div id="main-grid" class="grid"></div>
 </div>
 
@@ -85,26 +85,38 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (e) { console.error("LIFF Error"); }
+        } catch (e) { console.error("Init Error"); }
     }
 
     async function sync() {
         state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
-            // 加入隨機數參數 t= 防止瀏覽器快取舊的試算表資料
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
                 state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 document.getElementById('unit-cost').innerText = `${state.cost} P`;
-                const rem = state.tickets.filter(x=>!x.isTaken).length;
-                document.getElementById('rem-count').innerText = `剩餘籤數: ${rem} / ${state.tickets.length}`;
                 
+                const rem = state.tickets.filter(x=>!x.isTaken).length;
                 const db = document.getElementById('drawBtn');
-                if(rem === 0) { db.innerText = "本區已完售"; db.style.background = "#333"; db.disabled = true; }
-                else { db.innerText = "確認開籤"; db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)"; db.disabled = false; }
+                const statusEl = document.getElementById('rem-count');
+
+                // --- 核心防禦邏輯：大獎消失即封盤 ---
+                if (!data.bigPrizeExists || rem === 0) {
+                    db.innerText = "本盤已結束 (大獎已出)";
+                    db.style.background = "#333";
+                    db.disabled = true;
+                    statusEl.innerText = "狀態: 獎盤已自動鎖定 (大獎已抽出)";
+                    statusEl.style.color = "var(--red)";
+                } else {
+                    db.innerText = "確認開籤";
+                    db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)";
+                    db.disabled = false;
+                    statusEl.innerText = `剩餘籤數: ${rem} / ${state.tickets.length}`;
+                    statusEl.style.color = "var(--cyan)";
+                }
                 
                 document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
                     <div class="prize-item"><img src="${p.img}"><div style="font-size:12px;font-weight:900;">${p.name}</div><div class="p-stock">剩 ${p.stock}</div></div>
@@ -127,7 +139,7 @@
 
     function updateCartUI() {
         const bar = document.getElementById('cart-bar'); 
-        bar.style.display = state.selected.length > 0 ? 'flex' : 'none';
+        bar.style.display = (state.selected.length > 0 && !document.getElementById('drawBtn').disabled) ? 'flex' : 'none';
         document.getElementById('sel-count').innerText = state.selected.length;
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
@@ -137,16 +149,7 @@
         if(state.points < total) { Swal.fire("餘額不足", "", "error"); return; }
         
         document.getElementById('cart-bar').style.display = 'none';
-        const confirm = await Swal.fire({ 
-            title: '確認扣點？', 
-            text: `本次消費將扣除 ${total} P`, 
-            showCancelButton: true, 
-            confirmButtonColor: '#ff3e3e', 
-            background: '#161b22', 
-            color: '#fff',
-            cancelButtonText: '取消',
-            confirmButtonText: '確定開籤'
-        });
+        const confirm = await Swal.fire({ title: '確認扣點？', text: `本次消費將扣除 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         
         if(confirm.isConfirmed) {
             document.getElementById('loader').style.display = 'flex';
@@ -159,9 +162,8 @@
                 const result = await res.json();
                 
                 if(result.status === "success") {
-                    // 噴彩帶判定
-                    if(result.results.some(r => /A賞|最後|SP|1賞|LAST/.test(r.name.toUpperCase()))) { 
-                        confetti({ particleCount: 350, spread: 100, origin: { y: 0.5 }, zIndex: 10000 });
+                    if(result.results.some(r => /A賞|最後|SP|1賞|大獎/.test(r.name.toUpperCase()))) { 
+                        confetti({ particleCount: 400, spread: 120, origin: { y: 0.6 }, zIndex: 10000 });
                     }
                     let resHtml = `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:15px;margin-top:15px;max-height:50vh;overflow-y:auto;padding:10px;">`;
                     result.results.forEach(p => { resHtml += `<div style="background:#2d2d44;padding:10px;border-radius:15px;border:2px solid var(--gold);width:110px;text-align:center;"><img src="${p.img}" style="width:80px;height:80px;object-fit:contain;background:#fff;border-radius:10px;margin-bottom:8px;"><div style="font-weight:900;color:#fff;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div></div>`; });
@@ -178,22 +180,15 @@
                         confirmButtonColor: '#ffcc00',
                         customClass: { confirmButton: 'swal-confirm-black' } 
                     });
-                    await sync(); // 關閉開獎視窗後，強制刷新最新同步狀態
+                    await sync(); 
                 } else { 
-                    // 【解決超賣的核心】一旦後端噴出 error（代表籤已被別人抽走）
                     document.getElementById('loader').style.display = 'none';
-                    await Swal.fire({ 
-                        title: "開籤失敗", 
-                        text: result.message, 
-                        icon: "warning", 
-                        background: '#161b22', 
-                        color: '#fff' 
-                    });
-                    await sync(); // 立刻強制同步，讓玩家看到誰搶走了那一張
+                    await Swal.fire({ title: "開籤失敗", text: result.message, icon: "warning", background: '#161b22', color: '#fff' });
+                    await sync(); 
                 }
             } catch (e) { 
                 document.getElementById('loader').style.display = 'none';
-                await Swal.fire("連線超時", "請確認網路連線或重新整理", "error");
+                await Swal.fire("連線錯誤", "請稍後再試", "error");
                 await sync();
             }
         } else {
