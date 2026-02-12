@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 職人抽籤系統 3.3</title>
+    <title>盲玩樂 - 職人抽籤系統 3.4</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -28,7 +28,7 @@
         .p-stock { font-size: 11px; background: var(--red); color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; font-family: 'Oswald', sans-serif; }
 
         .grid-area { padding: 20px 15px; }
-        .rem-status { text-align:center; color: var(--cyan); margin-bottom: 15px; font-weight: 900; font-size: 0.9rem; }
+        .rem-status { text-align:center; color: var(--cyan); margin-bottom: 15px; font-weight: 900; font-size: 0.9rem; letter-spacing: 1px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         
         .ticket { 
@@ -49,7 +49,7 @@
     </style>
 </head>
 <body>
-<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;">連線中...</p></div>
+<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;letter-spacing:2px;">正在即時通訊中...</p></div>
 
 <div class="header">
     <div class="u-info"><span id="u-name" style="font-weight:900; color:#45a29e;">玩家載入中</span><div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div></div>
@@ -64,7 +64,7 @@
 
 <div id="prize-gallery" class="prize-gallery"></div>
 <div class="grid-area">
-    <div id="rem-count" class="rem-status">載入庫存中...</div>
+    <div id="rem-count" class="rem-status">載入中...</div>
     <div id="main-grid" class="grid"></div>
 </div>
 
@@ -85,13 +85,14 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (e) { console.error("LIFF Init Error"); }
+        } catch (e) { console.error("LIFF Error"); }
     }
 
     async function sync() {
         state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
+            // 加入隨機數參數 t= 防止瀏覽器快取舊的試算表資料
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
@@ -136,15 +137,29 @@
         if(state.points < total) { Swal.fire("餘額不足", "", "error"); return; }
         
         document.getElementById('cart-bar').style.display = 'none';
-        const confirm = await Swal.fire({ title: '確認扣點？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
+        const confirm = await Swal.fire({ 
+            title: '確認扣點？', 
+            text: `本次消費將扣除 ${total} P`, 
+            showCancelButton: true, 
+            confirmButtonColor: '#ff3e3e', 
+            background: '#161b22', 
+            color: '#fff',
+            cancelButtonText: '取消',
+            confirmButtonText: '確定開籤'
+        });
         
         if(confirm.isConfirmed) {
             document.getElementById('loader').style.display = 'flex';
             try {
-                const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
+                const res = await fetch(CONFIG.GAS_URL, { 
+                    method: 'POST', 
+                    cache: 'no-store',
+                    body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) 
+                });
                 const result = await res.json();
                 
                 if(result.status === "success") {
+                    // 噴彩帶判定
                     if(result.results.some(r => /A賞|最後|SP|1賞|LAST/.test(r.name.toUpperCase()))) { 
                         confetti({ particleCount: 350, spread: 100, origin: { y: 0.5 }, zIndex: 10000 });
                     }
@@ -153,17 +168,32 @@
                     resHtml += `</div>`;
                     
                     document.getElementById('loader').style.display = 'none';
-                    await Swal.fire({ title: '🎊 恭喜中獎 🎊', html: resHtml, background: '#161b22', color: '#fff', width: '95%', confirmButtonText: '收下獎項', confirmButtonColor: '#ffcc00', customClass: { confirmButton: 'swal-confirm-black' } });
-                    await sync();
+                    await Swal.fire({ 
+                        title: '🎊 恭喜中獎 🎊', 
+                        html: resHtml, 
+                        background: '#161b22', 
+                        color: '#fff', 
+                        width: '95%', 
+                        confirmButtonText: '收下獎項',
+                        confirmButtonColor: '#ffcc00',
+                        customClass: { confirmButton: 'swal-confirm-black' } 
+                    });
+                    await sync(); // 關閉開獎視窗後，強制刷新最新同步狀態
                 } else { 
-                    // 發生超賣錯誤（已被抽走）時的處理
+                    // 【解決超賣的核心】一旦後端噴出 error（代表籤已被別人抽走）
                     document.getElementById('loader').style.display = 'none';
-                    await Swal.fire({ title: "開籤失敗", text: result.message, icon: "warning", background: '#161b22', color: '#fff' });
-                    await sync(); // 強制刷新同步最新紅 X 狀態
+                    await Swal.fire({ 
+                        title: "開籤失敗", 
+                        text: result.message, 
+                        icon: "warning", 
+                        background: '#161b22', 
+                        color: '#fff' 
+                    });
+                    await sync(); // 立刻強制同步，讓玩家看到誰搶走了那一張
                 }
             } catch (e) { 
                 document.getElementById('loader').style.display = 'none';
-                alert("連線超時，請重新整理"); 
+                await Swal.fire("連線超時", "請確認網路連線或重新整理", "error");
                 await sync();
             }
         } else {
