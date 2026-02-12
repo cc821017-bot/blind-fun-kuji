@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂旗艦版 3.7.1</title>
+    <title>盲玩樂旗艦版 3.7.2</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -37,7 +37,7 @@
 
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .ticket { aspect-ratio: 1/1; background: #1f2833; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; color: #45a29e; position: relative; transition: 0.2s; border: 1px solid #333; }
-        .ticket.selected { background: var(--gold); color: #000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,204,0,0.4); border-color: #fff; }
+        .ticket.selected { background: var(--gold); color: #000; transform: translateY(-3px); border-color: #fff; }
         
         .ticket.taken { background: #050505 !important; opacity: 0.4; pointer-events: none; color: transparent !important; }
         .ticket.taken::after { content: '✕'; position: absolute; color: var(--red); font-size: 2rem; }
@@ -90,7 +90,7 @@
 
 <script>
     const CONFIG = { GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", LIFF_ID: "2009072982-6smlV2gu" };
-    let state = { uid: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
+    let state = { uid: "", name: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
 
     async function init() {
         try {
@@ -98,6 +98,7 @@
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const p = await liff.getProfile();
             state.uid = p.userId;
+            state.name = p.displayName;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
         } catch (e) { document.getElementById('loader').innerText = "連線失敗"; }
@@ -107,10 +108,12 @@
         state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
-            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
+            // 加入 name 參數，用於後端自動註冊
+            const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
                 state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
+                
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 const remCount = state.tickets.filter(t => !t.isTaken).length;
                 const bigCount = state.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
@@ -118,16 +121,22 @@
                 document.getElementById('stat-rem').innerText = remCount;
                 document.getElementById('stat-big').innerText = bigCount;
                 document.getElementById('stat-rate').innerText = remCount > 0 ? (bigCount/remCount*100).toFixed(1) + "%" : "0%";
-                document.getElementById('win-track').innerHTML = data.history.length > 0 ? data.history.map(h => `<span class="win-item">🎉 恭喜抽出【${h.prize}】(${h.time})</span>`).join('') : "大獎均在盤內，等待幸運兒...";
+                document.getElementById('win-track').innerHTML = data.history.length > 0 ? data.history.map(h => `<span class="win-item">🎉 恭喜玩家抽出【${h.prize}】(${h.time})</span>`).join('') : "大獎均在盤內，等待幸運兒...";
 
                 const db = document.getElementById('drawBtn');
                 if(!data.bigPrizeExists || remCount === 0) { db.innerText = "本盤已封"; db.disabled = true; db.style.background = "#333"; }
                 else { db.innerText = "確認開籤"; db.disabled = false; db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)"; }
 
                 renderGrid();
-                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `<div class="p-card"><img src="${p.img}"><div style="font-size:10px; margin-top:5px; font-weight:900;">${p.name}</div><div style="color:var(--red); font-size:10px;">剩 ${p.stock}</div></div>`).join('');
+                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
+                    <div class="p-card">
+                        <img src="${p.img}">
+                        <div style="font-size:10px; margin-top:5px; font-weight:900;">${p.name}</div>
+                        <div style="color:var(--red); font-size:10px; font-weight:900;">剩 ${p.stock}</div>
+                    </div>
+                `).join('');
             }
-        } finally { document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { console.error(e); } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
     function renderGrid() {
@@ -158,14 +167,17 @@
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire({ title: "餘額不足", background: '#161b22', color: '#fff' }); return; }
-        const confirm = await Swal.fire({ title: '確認開籤？', text: `本次將消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
+        if(state.points < total) { Swal.fire({ title: "餘額不足", icon: "error", background: '#161b22', color: '#fff' }); return; }
+        
+        const confirm = await Swal.fire({ title: '確定開籤？', text: `本次將消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         
         if(confirm.isConfirmed) {
+            document.getElementById('drawBtn').disabled = true;
             document.getElementById('loader').style.display = 'flex';
             try {
                 const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
+                
                 if(result.status === "success") {
                     const bigPrizes = result.results.filter(r => /A賞|SP|1賞|大獎/i.test(r.name));
                     const normalPrizes = result.results.filter(r => !(/A賞|SP|1賞|大獎/i.test(r.name)));
