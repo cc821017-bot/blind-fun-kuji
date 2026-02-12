@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 - 職人抽籤系統 3.2</title>
+    <title>盲玩樂 - 職人抽籤系統 3.3</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,53 +13,34 @@
         :root { --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; --bg: #0b0c10; --card: #1f2833; }
         body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 160px; overflow-x: hidden; }
         
-        /* 頂部導覽列 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--card); }
-        .u-info { display: flex; flex-direction: column; }
         .u-pts-box { background: rgba(255, 204, 0, 0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--gold); }
         .u-pts { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.4rem; font-weight: 700; }
-        .price-tag { text-align: right; }
-        .price-value { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.8rem; line-height: 1; }
+        .price-value { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 1.8rem; }
 
-        /* 分區切換 */
         .tabs { display: flex; padding: 12px 15px; gap: 10px; }
         .tab { flex: 1; text-align: center; padding: 12px; background: #161b22; border-radius: 10px; color: #666; font-weight: 900; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
         .tab.active { background: var(--card); color: #fff; border-color: var(--red); box-shadow: 0 0 15px rgba(255, 62, 62, 0.3); }
 
-        /* 獎項展示 */
         .prize-gallery { display: flex; overflow-x: auto; padding: 20px 15px; gap: 18px; scrollbar-width: none; background: rgba(0,0,0,0.3); }
         .prize-item { flex: 0 0 140px; background: var(--card); border-radius: 15px; padding: 12px; text-align: center; border: 1px solid rgba(69, 162, 158, 0.3); }
         .prize-item img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 10px; margin-bottom: 10px; }
         .p-stock { font-size: 11px; background: var(--red); color: #fff; padding: 3px 8px; border-radius: 5px; display: inline-block; font-family: 'Oswald', sans-serif; }
 
-        /* 籤盤核心 */
         .grid-area { padding: 20px 15px; }
-        .rem-status { text-align:center; color: var(--cyan); margin-bottom: 15px; font-weight: 900; letter-spacing: 2px; }
+        .rem-status { text-align:center; color: var(--cyan); margin-bottom: 15px; font-weight: 900; font-size: 0.9rem; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         
         .ticket { 
             aspect-ratio: 1/1; background: linear-gradient(145deg, #1f2833, #0b0c10); 
             border: 1px solid rgba(69, 162, 158, 0.2); border-radius: 10px; 
             display: flex; align-items: center; justify-content: center; 
-            font-size: 1.3rem; font-weight: 900; color: #45a29e; 
-            position: relative; transition: 0.2s; 
+            font-size: 1.3rem; font-weight: 900; color: #45a29e; position: relative; transition: 0.2s; 
         }
-        
-        /* 選中樣式 */
         .ticket.selected { background: var(--gold); color: #000; border-color: #fff; transform: translateY(-5px); box-shadow: 0 5px 20px var(--gold); z-index: 5; }
-        
-        /* 已抽中樣式：加上紅色 X */
         .ticket.taken { background: #050505 !important; color: transparent !important; opacity: 0.6; pointer-events: none; border: none; }
-        .ticket.taken::after { 
-            content: '✕'; 
-            position: absolute; 
-            color: var(--red); 
-            font-size: 2.2rem; 
-            font-weight: 900;
-            text-shadow: 0 0 10px rgba(255, 62, 62, 0.5);
-        }
+        .ticket.taken::after { content: '✕'; position: absolute; color: var(--red); font-size: 2.2rem; font-weight: 900; text-shadow: 0 0 10px rgba(255, 62, 62, 0.5); }
 
-        /* 底部結帳條 */
         .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: rgba(31, 40, 51, 0.98); border-radius: 50px; padding: 18px 35px; box-sizing: border-box; z-index: 10; display: none; align-items: center; justify-content: space-between; border: 1px solid var(--gold); box-shadow: 0 10px 50px rgba(0,0,0,1); }
         .btn-draw { background: linear-gradient(45deg, #ff3e3e, #b32d2d); color: white; border: none; padding: 15px 45px; border-radius: 40px; font-weight: 900; font-size: 1.4rem; cursor: pointer; }
         
@@ -68,10 +49,10 @@
     </style>
 </head>
 <body>
-<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;">同步資料中...</p></div>
+<div id="loader"><div style="width:50px;height:50px;border:5px solid #1f2833;border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;"></div><p style="color:#45a29e;margin-top:20px;font-weight:900;">連線中...</p></div>
 
 <div class="header">
-    <div class="u-info"><span class="u-name" id="u-name">玩家載入中</span><div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div></div>
+    <div class="u-info"><span id="u-name" style="font-weight:900; color:#45a29e;">玩家載入中</span><div class="u-pts-box"><span id="u-pts" class="u-pts">0</span> <small style="color:var(--gold)">P</small></div></div>
     <div class="price-tag"><div class="price-value" id="unit-cost">0 P</div></div>
 </div>
 
@@ -82,14 +63,13 @@
 </div>
 
 <div id="prize-gallery" class="prize-gallery"></div>
-
 <div class="grid-area">
-    <div id="rem-count" class="rem-status">剩餘: 0 / 0</div>
+    <div id="rem-count" class="rem-status">載入庫存中...</div>
     <div id="main-grid" class="grid"></div>
 </div>
 
 <div class="cart-bar" id="cart-bar">
-    <div class="cost-display"><small style="color:#888;font-weight:900;">已選擇 <span id="sel-count">0</span> 抽</small><br><b style="font-size:1.6rem; color:var(--gold); font-family:'Oswald'"><span id="total-cost">0</span> <small>P</small></b></div>
+    <div class="cost-display"><small style="color:#888;">已選 <span id="sel-count">0</span> 抽</small><br><b style="font-size:1.6rem; color:var(--gold); font-family:'Oswald'"><span id="total-cost">0</span> P</b></div>
     <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
 </div>
 
@@ -105,12 +85,11 @@
             state.uid = p.userId;
             document.getElementById('u-name').innerText = p.displayName;
             await sync();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("LIFF Init Error"); }
     }
 
     async function sync() {
-        state.selected = []; 
-        updateCartUI();
+        state.selected = []; updateCartUI();
         document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
@@ -131,7 +110,7 @@
                 `).join('');
                 renderGrid();
             }
-        } catch (e) { console.error(e); } finally { document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { console.error("Sync Error"); } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
     function renderGrid() {
@@ -157,24 +136,13 @@
         if(state.points < total) { Swal.fire("餘額不足", "", "error"); return; }
         
         document.getElementById('cart-bar').style.display = 'none';
-
-        const confirm = await Swal.fire({ 
-            title: '確認扣點？', 
-            text: `本次消耗 ${total} P`, 
-            showCancelButton: true, 
-            confirmButtonColor: '#ff3e3e', 
-            background: '#161b22', 
-            color: '#fff',
-            cancelButtonText: '取消',
-            confirmButtonText: '確定'
-        });
+        const confirm = await Swal.fire({ title: '確認扣點？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         
         if(confirm.isConfirmed) {
             document.getElementById('loader').style.display = 'flex';
             try {
                 const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
-                document.getElementById('loader').style.display = 'none';
                 
                 if(result.status === "success") {
                     if(result.results.some(r => /A賞|最後|SP|1賞|LAST/.test(r.name.toUpperCase()))) { 
@@ -184,24 +152,19 @@
                     result.results.forEach(p => { resHtml += `<div style="background:#2d2d44;padding:10px;border-radius:15px;border:2px solid var(--gold);width:110px;text-align:center;"><img src="${p.img}" style="width:80px;height:80px;object-fit:contain;background:#fff;border-radius:10px;margin-bottom:8px;"><div style="font-weight:900;color:#fff;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div></div>`; });
                     resHtml += `</div>`;
                     
-                    await Swal.fire({ 
-                        title: '🎊 恭喜中獎 🎊', 
-                        html: resHtml, 
-                        background: '#161b22', 
-                        color: '#fff', 
-                        width: '95%', 
-                        confirmButtonText: '收下獎項',
-                        confirmButtonColor: '#ffcc00',
-                        customClass: { confirmButton: 'swal-confirm-black' }
-                    });
+                    document.getElementById('loader').style.display = 'none';
+                    await Swal.fire({ title: '🎊 恭喜中獎 🎊', html: resHtml, background: '#161b22', color: '#fff', width: '95%', confirmButtonText: '收下獎項', confirmButtonColor: '#ffcc00', customClass: { confirmButton: 'swal-confirm-black' } });
                     await sync();
                 } else { 
-                    Swal.fire("失敗", result.message, "error"); 
-                    updateCartUI();
+                    // 發生超賣錯誤（已被抽走）時的處理
+                    document.getElementById('loader').style.display = 'none';
+                    await Swal.fire({ title: "開籤失敗", text: result.message, icon: "warning", background: '#161b22', color: '#fff' });
+                    await sync(); // 強制刷新同步最新紅 X 狀態
                 }
             } catch (e) { 
-                alert("連線超時"); 
-                updateCartUI();
+                document.getElementById('loader').style.display = 'none';
+                alert("連線超時，請重新整理"); 
+                await sync();
             }
         } else {
             updateCartUI();
