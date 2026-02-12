@@ -3,79 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 3.7.10 旗艦地獄火版</title>
+    <title>盲玩樂 3.8.0 旗艦營運版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; --bg: #0b0c10; --card: #1f2833; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 180px; overflow-x: hidden; }
+        :root { 
+            --red: #ff3e3e; 
+            --gold: #ffcc00; 
+            --cyan: #00f2ff; 
+            --bg: #0b0c10; 
+            --card: #1f2833; 
+        }
         
-        /* 歷史中獎跑馬燈 */
-        .win-history { background: rgba(255, 62, 62, 0.1); border-top: 1px solid var(--red); border-bottom: 1px solid var(--red); padding: 8px 0; overflow: hidden; white-space: nowrap; }
-        .win-track { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroll 25s linear infinite; }
-        .win-item { display: inline-block; margin-right: 50px; color: var(--gold); font-weight: bold; font-size: 0.85rem; }
-        @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-200%); } }
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background: var(--bg); 
+            color: #fff; 
+            margin: 0; 
+            padding-bottom: 180px; 
+            overflow-x: hidden; 
+        }
         
-        /* 看板狀態：10抽地獄火 */
-        .stats-bar { display: flex; justify-content: space-around; background: #161b22; padding: 15px; margin: 10px; border-radius: 12px; border: 1px solid #333; position: relative; }
-        .stat-val { font-family: 'Oswald'; font-size: 1.4rem; color: var(--cyan); display: block; transition: 0.5s; }
-        /* 當進入地獄火模式時的效果 */
-        .critical-mode .stat-val#stat-rem { color: var(--red); text-shadow: 0 0 15px var(--red); font-size: 1.8rem; transform: scale(1.1); }
+        /* 歷史中獎跑馬燈 CSS - 守護邏輯 */
+        .win-history { 
+            background: rgba(255, 62, 62, 0.1); 
+            border-top: 1px solid var(--red); 
+            border-bottom: 1px solid var(--red); 
+            padding: 8px 0; 
+            overflow: hidden; 
+            white-space: nowrap; 
+        }
+        
+        .win-track { 
+            display: inline-block; 
+            white-space: nowrap; 
+            padding-left: 100%; 
+            animation: scroll 25s linear infinite; 
+        }
+        
+        .win-item { 
+            display: inline-block; 
+            margin-right: 50px; 
+            color: var(--gold); 
+            font-weight: bold; 
+            font-size: 0.85rem; 
+        }
+        
+        @keyframes scroll { 
+            from { transform: translateX(0); } 
+            to { transform: translateX(-200%); } 
+        }
+        
+        /* 10抽地獄火看板視覺 - 守護邏輯 */
+        .stats-bar { 
+            display: flex; 
+            justify-content: space-around; 
+            background: #161b22; 
+            padding: 15px; 
+            margin: 10px; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            position: relative; 
+        }
+        
+        .stat-val { 
+            font-family: 'Oswald'; 
+            font-size: 1.4rem; 
+            color: var(--cyan); 
+            display: block; 
+            transition: 0.5s; 
+        }
+        
+        .critical-mode .stat-val#stat-rem { 
+            color: var(--red); 
+            text-shadow: 0 0 15px var(--red); 
+            font-size: 1.8rem; 
+            transform: scale(1.1); 
+        }
+        
         .stat-label { font-size: 0.7rem; color: #888; font-weight: bold; }
         
-        .last-one-alert { position: absolute; top: -10px; right: 10px; background: var(--red); color: #fff; font-size: 0.65rem; padding: 2px 10px; border-radius: 10px; animation: pulse 1s infinite; display: none; font-weight: 900; z-index: 10; border: 1px solid #fff; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 5px var(--red); } 50% { transform: scale(1.1); box-shadow: 0 0 20px var(--red); } }
+        .last-one-alert { 
+            position: absolute; 
+            top: -10px; 
+            right: 10px; 
+            background: var(--red); 
+            color: #fff; 
+            font-size: 0.65rem; 
+            padding: 2px 10px; 
+            border-radius: 10px; 
+            animation: pulse 1s infinite; 
+            display: none; 
+            font-weight: 900; 
+            z-index: 10; 
+            border: 1px solid #fff; 
+        }
+        
+        @keyframes pulse { 
+            0%, 100% { transform: scale(1); box-shadow: 0 0 5px var(--red); } 
+            50% { transform: scale(1.1); box-shadow: 0 0 20px var(--red); } 
+        }
 
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(11, 12, 16, 0.95); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--card); backdrop-filter: blur(10px); }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 20px; 
+            background: rgba(11, 12, 16, 0.95); 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 2px solid var(--card); 
+            backdrop-filter: blur(10px); 
+        }
+        
         .u-pts { font-family: 'Oswald'; color: var(--gold); font-size: 1.4rem; }
 
         .tabs { display: flex; padding: 10px; gap: 8px; }
-        .tab { flex: 1; text-align: center; padding: 12px; background: #161b22; border-radius: 8px; color: #666; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .tab.active { background: var(--card); color: #fff; border: 1px solid var(--red); box-shadow: 0 0 10px rgba(255,62,62,0.3); }
-
-        .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 10px; scrollbar-width: none; }
-        .p-card { flex: 0 0 100px; background: #1f2833; border-radius: 10px; padding: 8px; text-align: center; border: 1px solid #333; }
-        .p-card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 5px; }
-
-        /* 籤位網格與地獄火抖動 */
-        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
-        .ticket { aspect-ratio: 1/1; background: #1f2833; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; color: #45a29e; position: relative; border: 1px solid #333; transition: 0.2s; }
+        .tab { 
+            flex: 1; 
+            text-align: center; 
+            padding: 12px; 
+            background: #161b22; 
+            border-radius: 8px; 
+            color: #666; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
         
-        /* 剩餘10張時觸發的地獄火特效 */
+        .tab.active { background: var(--card); color: #fff; border: 1px solid var(--red); }
+
+        .prize-gallery { 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 15px; 
+            gap: 10px; 
+            scrollbar-width: none; 
+        }
+        
+        .p-card { 
+            flex: 0 0 100px; 
+            background: #1f2833; 
+            border-radius: 10px; 
+            padding: 8px; 
+            text-align: center; 
+            border: 1px solid #333; 
+        }
+        
+        .p-card img { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            object-fit: contain; 
+            background: #fff; 
+            border-radius: 5px; 
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
+        .ticket { 
+            aspect-ratio: 1/1; 
+            background: #1f2833; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.2rem; 
+            font-weight: 900; 
+            color: #45a29e; 
+            position: relative; 
+            border: 1px solid #333; 
+            transition: 0.2s; 
+        }
+        
+        /* 10抽地獄火抖動 CSS - 守護邏輯 */
         .critical-mode .ticket:not(.taken) { 
             border: 1px solid var(--red); 
             box-shadow: 0 0 10px rgba(255, 62, 62, 0.5);
             animation: shake 0.6s infinite ease-in-out alternate;
         }
-        @keyframes shake { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+        
+        @keyframes shake { 
+            from { transform: rotate(-1.5deg); } 
+            to { transform: rotate(1.5deg); } 
+        }
 
-        .ticket.selected { background: var(--gold) !important; color: #000 !important; transform: translateY(-5px) !important; border-color: #fff !important; box-shadow: 0 5px 20px rgba(255,204,0,0.6) !important; animation: none !important; }
-        .ticket.taken { background: #050505 !important; opacity: 0.4; pointer-events: none; color: transparent !important; animation: none !important; box-shadow: none !important; }
-        .ticket.taken::after { content: '✕'; position: absolute; color: var(--red); font-size: 2rem; }
-        .ticket.big-taken { background: linear-gradient(145deg, #ffd700, #b8860b) !important; opacity: 1; border: 1px solid #fff; box-shadow: 0 0 10px var(--gold); }
+        .ticket.selected { 
+            background: var(--gold) !important; 
+            color: #000 !important; 
+            transform: translateY(-5px) !important; 
+            border-color: #fff !important; 
+            box-shadow: 0 5px 20px rgba(255,204,0,0.6) !important; 
+            animation: none !important; 
+        }
+        
+        .ticket.taken { 
+            background: #050505 !important; 
+            opacity: 0.4; 
+            pointer-events: none; 
+            color: transparent !important; 
+            animation: none !important; 
+            box-shadow: none !important; 
+        }
+        
+        .ticket.taken::after { 
+            content: '✕'; 
+            position: absolute; 
+            color: var(--red); 
+            font-size: 2rem; 
+        }
+        
+        .ticket.big-taken { 
+            background: linear-gradient(145deg, #ffd700, #b8860b) !important; 
+            opacity: 1; 
+            border: 1px solid #fff; 
+            box-shadow: 0 0 10px var(--gold); 
+        }
+        
         .ticket.big-taken::after { content: '👑'; color: #fff; font-size: 1.5rem; }
 
-        /* 結果視窗：守護滾動條與按鈕 */
-        .result-container { max-height: 55vh; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: thin; }
-        .big-prize-card { background: linear-gradient(145deg, #2d2d44, #1a1a2e); border: 3px solid var(--gold); box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); width: 85%; margin: 0 auto; padding: 15px; border-radius: 15px; text-align: center; }
-        .big-prize-card img { width: 100%; max-width: 140px; aspect-ratio: 1/1; border-radius: 10px; background: #fff; object-fit: contain; margin-bottom: 8px; }
-        .lo-card { background: linear-gradient(45deg, #ff00cc, #3333ff) !important; border-color: #fff !important; box-shadow: 0 0 30px #ff00cc !important; }
+        /* 結果視窗排版守護 - 15抽捲軸邏輯 */
+        .result-container { 
+            max-height: 55vh; 
+            overflow-y: auto; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            scrollbar-width: thin; 
+        }
         
-        .normal-prizes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-top: 1px solid #333; padding-top: 15px; }
-        .norm-item { background: #2d2d44; padding: 8px; border-radius: 10px; text-align: center; border: 1px solid #444; }
-        .norm-item img { width: 100%; aspect-ratio: 1/1; background: #fff; border-radius: 8px; object-fit: contain; }
-        .norm-name { font-size: 0.7rem; color: #ccc; margin-top: 5px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .big-prize-card { 
+            background: linear-gradient(145deg, #2d2d44, #1a1a2e); 
+            border: 3px solid var(--gold); 
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); 
+            width: 85%; 
+            margin: 0 auto; 
+            padding: 15px; 
+            border-radius: 15px; 
+            text-align: center; 
+        }
+        
+        .big-prize-card img { 
+            width: 100%; 
+            max-width: 140px; 
+            aspect-ratio: 1/1; 
+            border-radius: 10px; 
+            background: #fff; 
+            object-fit: contain; 
+            margin-bottom: 8px; 
+        }
+        
+        .lo-card { 
+            background: linear-gradient(45deg, #ff00cc, #3333ff) !important; 
+            border-color: #fff !important; 
+            box-shadow: 0 0 30px #ff00cc !important; 
+        }
+        
+        /* 普獎三欄網格 - 守護邏輯 */
+        .normal-prizes-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            border-top: 1px solid #333; 
+            padding-top: 15px; 
+        }
+        
+        .norm-item { 
+            background: #2d2d44; 
+            padding: 8px; 
+            border-radius: 10px; 
+            text-align: center; 
+            border: 1px solid #444; 
+        }
+        
+        .norm-item img { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            background: #fff; 
+            border-radius: 8px; 
+            object-fit: contain; 
+        }
+        
+        .norm-name { 
+            font-size: 0.7rem; 
+            color: #ccc; 
+            margin-top: 5px; 
+            font-weight: bold; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+        }
 
-        .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: #1f2833; border-radius: 50px; padding: 15px 30px; display: none; justify-content: space-between; align-items: center; border: 1px solid var(--gold); z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.8); box-sizing: border-box; }
-        .btn-draw { background: linear-gradient(45deg, #ff3e3e, #b32d2d); color: #fff; border: none; padding: 12px 35px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.3s; }
-        #loader { position:fixed; width:100%; height:100%; background:#0b0c10; z-index:9999; display:none; flex-direction:column; justify-content:center; align-items:center; }
+        .cart-bar { 
+            position: fixed; 
+            bottom: 25px; 
+            left: 5%; 
+            width: 90%; 
+            background: #1f2833; 
+            border-radius: 50px; 
+            padding: 15px 30px; 
+            display: none; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 1px solid var(--gold); 
+            z-index: 2000; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); 
+            box-sizing: border-box; 
+        }
+        
+        .btn-draw { 
+            background: linear-gradient(45deg, #ff3e3e, #b32d2d); 
+            color: #fff; 
+            border: none; 
+            padding: 12px 35px; 
+            border-radius: 30px; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        
+        #loader { 
+            position:fixed; 
+            width:100%; 
+            height:100%; 
+            background:#0b0c10; 
+            z-index:9999; 
+            display:none; 
+            flex-direction:column; 
+            justify-content:center; 
+            align-items:center; 
+        }
+        
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
+
 <body>
-    <div id="loader"><div style="border: 4px solid #333; border-top: 4px solid var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div><p style="margin-top:10px; color:var(--cyan); font-weight:bold;">同步數據庫...</p></div>
+    <div id="loader">
+        <div style="border: 4px solid #333; border-top: 4px solid var(--red); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top:10px; color:var(--cyan); font-weight:bold;">同步數據庫...</p>
+    </div>
     
     <div class="header">
         <div>ID: <span id="u-name" style="color:#45a29e;">載入中</span></div>
@@ -106,29 +377,34 @@
     </div>
 
 <script>
-    const CONFIG = { GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", LIFF_ID: "2009072982-6smlV2gu" };
+    const CONFIG = { 
+        GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
+        LIFF_ID: "2009072982-6smlV2gu" 
+    };
+    
     let state = { uid: "", name: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
 
     async function init() {
-        try {
-            await liff.init({ liffId: CONFIG.LIFF_ID });
+        try { 
+            await liff.init({ liffId: CONFIG.LIFF_ID }); 
             if (!liff.isLoggedIn()) { liff.login(); return; }
-            const p = await liff.getProfile();
-            state.uid = p.userId; state.name = p.displayName;
-            document.getElementById('u-name').innerText = p.displayName;
+            const p = await liff.getProfile(); 
+            state.uid = p.userId; 
+            state.name = p.displayName;
+            document.getElementById('u-name').innerText = p.displayName; 
             await sync();
         } catch (e) { document.getElementById('loader').innerText = "系統連線異常"; }
     }
 
     async function sync() {
-        state.selected = []; updateCartUI();
-        document.getElementById('loader').style.display = 'flex';
+        state.selected = []; updateCartUI(); document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
                 state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
+                
                 const rem = state.tickets.filter(t => !t.isTaken).length;
                 const big = state.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
@@ -136,12 +412,13 @@
                 document.getElementById('stat-big').innerText = big;
                 document.getElementById('stat-rate').innerText = rem > 0 ? (big/rem*100).toFixed(1) + "%" : "0%";
                 
-                // 儀式感判定
                 const isCritical = (rem <= 10 && rem > 0);
                 document.body.classList.toggle('critical-mode', isCritical);
                 document.getElementById('lo-alert').style.display = isCritical ? 'block' : 'none';
                 
-                document.getElementById('win-track').innerHTML = data.history.length > 0 ? data.history.map(h => `<span class="win-item">🎉 抽出【${h.prize}】(${h.time})</span>`).join('') : "大獎均在盤內，等待幸運兒！";
+                document.getElementById('win-track').innerHTML = data.history.length > 0 ? 
+                    data.history.map(h => `<span class="win-item">🎉 抽出【${h.prize}】(${h.time})</span>`).join('') : 
+                    "大獎均在盤內，等待幸運兒！";
 
                 const db = document.getElementById('drawBtn');
                 db.disabled = (!data.bigPrizeExists || rem === 0);
@@ -149,6 +426,7 @@
                 db.style.background = db.disabled ? "#333" : "linear-gradient(45deg,#ff3e3e,#b32d2d)";
                 
                 renderGrid();
+                
                 document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
                     <div class="p-card">
                         <img src="${p.img}">
@@ -162,25 +440,22 @@
     function renderGrid() {
         document.getElementById('main-grid').innerHTML = state.tickets.map(t => {
             const isBig = /A賞|SP|1賞|大獎/i.test(t.prizeName);
-            let cls = "ticket";
-            if(t.isTaken) cls += isBig ? " taken big-taken" : " taken";
+            let cls = "ticket"; if(t.isTaken) cls += isBig ? " taken big-taken" : " taken";
             else if(state.selected.includes(t.id)) cls += " selected";
             return `<div id="t-${t.id}" class="${cls}" onclick="${t.isTaken ? '' : `toggleSelect('${t.id}')`}">${t.isTaken && isBig ? '' : t.id}</div>`;
         }).join('');
     }
 
     function toggleSelect(tid) {
-        const idx = state.selected.indexOf(tid);
-        const el = document.getElementById(`t-${tid}`);
+        const idx = state.selected.indexOf(tid); const el = document.getElementById(`t-${tid}`);
         if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
         else { state.selected.push(tid); el.classList.add('selected'); if (window.navigator.vibrate) window.navigator.vibrate(15); }
         updateCartUI();
     }
 
     function updateCartUI() {
-        const bar = document.getElementById('cart-bar');
-        const drawBtn = document.getElementById('drawBtn');
-        bar.style.display = (state.selected.length > 0 && !drawBtn.disabled) ? 'flex' : 'none';
+        const bar = document.getElementById('cart-bar'); 
+        bar.style.display = (state.selected.length > 0 && !document.getElementById('drawBtn').disabled) ? 'flex' : 'none';
         document.getElementById('sel-count').innerText = state.selected.length;
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
@@ -188,11 +463,10 @@
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
         if(state.points < total) { Swal.fire({ title: "餘額不足", background: '#161b22', color: '#fff' }); return; }
-        const confirm = await Swal.fire({ title: '確認開籤？', text: `本次將消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
+        const confirm = await Swal.fire({ title: '確認開籤？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         
         if(confirm.isConfirmed) {
-            document.getElementById('drawBtn').disabled = true;
-            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('drawBtn').disabled = true; document.getElementById('loader').style.display = 'flex';
             try {
                 const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
@@ -202,19 +476,23 @@
                     confetti({ particleCount: result.isLastOne ? 1000 : 500, spread: 150, origin: { y: 0.6 }, zIndex: 10000 });
                     
                     let resHtml = `<div class="result-container">`;
+                    
+                    // 智慧最後賞渲染 - 守護邏輯
                     if(result.isLastOne && result.lastOneInfo) {
                         resHtml += `<div class="big-prize-card lo-card"><div style="color:#fff; font-weight:900; font-size:1.4rem;">👑 ${result.lastOneInfo.name}</div><img src="${result.lastOneInfo.img}"><p style="margin:5px 0; font-size:0.85rem; font-weight:bold;">最後一抽終極大獎獲取！</p></div>`;
                     }
+                    
                     big.forEach(p => { 
                         resHtml += `<div class="big-prize-card"><div style="color:var(--gold); font-weight:900; font-size:1rem; margin-bottom:8px;">✨ 獲得大獎 ✨</div><img src="${p.img}"><div style="font-weight:900; color:#fff; font-size:0.9rem; margin-top:8px;">${p.name}</div></div>`; 
                     });
+                    
                     if(norm.length > 0) {
                         resHtml += `<div class="normal-prizes-grid">`;
                         norm.forEach(p => { resHtml += `<div class="norm-item"><img src="${p.img}"><div class="norm-name">${p.name}</div></div>`; });
                         resHtml += `</div>`;
                     }
                     resHtml += `</div>`;
-
+                    
                     document.getElementById('loader').style.display = 'none';
                     await Swal.fire({ title: result.isLastOne ? '🎊 終極大賞 🎊' : '開籤結果', html: resHtml, background: '#161b22', color: '#fff', width: '95%', confirmButtonText: '收下獎項', confirmButtonColor: '#ffcc00' });
                     await sync();
@@ -226,7 +504,13 @@
             } catch (e) { document.getElementById('loader').style.display = 'none'; await sync(); }
         } else { updateCartUI(); }
     }
-    function changeMode(m) { state.mode = m; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); sync(); }
+    
+    function changeMode(m) { 
+        state.mode = m; 
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); 
+        sync(); 
+    }
+    
     window.onload = init;
 </script>
 </body>
