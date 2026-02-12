@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂旗艦版 3.7.5</title>
+    <title>盲玩樂旗艦版 3.7.6</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,42 +12,48 @@
         :root { --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; --bg: #0b0c10; --card: #1f2833; }
         body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 180px; overflow-x: hidden; }
         
+        /* 跑馬燈樣式 */
         .win-history { background: rgba(255, 62, 62, 0.1); border-top: 1px solid var(--red); border-bottom: 1px solid var(--red); padding: 8px 0; overflow: hidden; white-space: nowrap; }
         .win-track { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroll 25s linear infinite; }
         .win-item { display: inline-block; margin-right: 50px; color: var(--gold); font-weight: bold; font-size: 0.85rem; }
         @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-200%); } }
 
-        .stats-bar { display: flex; justify-content: space-around; background: #161b22; padding: 15px; margin: 10px; border-radius: 12px; border: 1px solid #333; }
+        /* 機率看板樣式 */
+        .stats-bar { display: flex; justify-content: space-around; background: #161b22; padding: 15px; margin: 10px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .stat-box { text-align: center; flex: 1; }
         .stat-val { font-family: 'Oswald'; font-size: 1.4rem; color: var(--cyan); display: block; line-height: 1.2; }
         .stat-label { font-size: 0.7rem; color: #888; font-weight: bold; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(11, 12, 16, 0.95); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--card); backdrop-filter: blur(10px); }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(11,12,16,0.95); position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--card); backdrop-filter: blur(10px); }
         .u-pts { font-family: 'Oswald'; color: var(--gold); font-size: 1.4rem; }
 
         .tabs { display: flex; padding: 10px; gap: 8px; }
         .tab { flex: 1; text-align: center; padding: 12px; background: #161b22; border-radius: 8px; color: #666; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .tab.active { background: var(--card); color: #fff; border: 1px solid var(--red); }
+        .tab.active { background: var(--card); color: #fff; border: 1px solid var(--red); box-shadow: 0 0 10px rgba(255,62,62,0.3); }
 
         .prize-gallery { display: flex; overflow-x: auto; padding: 15px; gap: 10px; scrollbar-width: none; }
-        .p-card { flex: 0 0 100px; background: #1f2833; border-radius: 8px; padding: 8px; text-align: center; border: 1px solid #333; }
+        .p-card { flex: 0 0 100px; background: #1f2833; border-radius: 10px; padding: 8px; text-align: center; border: 1px solid #333; }
         .p-card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; background: #fff; border-radius: 5px; }
 
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .ticket { aspect-ratio: 1/1; background: #1f2833; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; color: #45a29e; position: relative; border: 1px solid #333; transition: 0.2s; }
-        .ticket.selected { background: var(--gold); color: #000; transform: translateY(-3px); border-color: #fff; box-shadow: 0 5px 15px rgba(255,204,0,0.4); }
+        .ticket.selected { background: var(--gold); color: #000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,204,0,0.4); border-color: #fff; }
+        
         .ticket.taken { background: #050505 !important; opacity: 0.4; pointer-events: none; color: transparent !important; }
         .ticket.taken::after { content: '✕'; position: absolute; color: var(--red); font-size: 2rem; }
+        
         .ticket.big-taken { background: linear-gradient(145deg, #ffd700, #b8860b) !important; opacity: 1; border: 1px solid #fff; box-shadow: 0 0 10px var(--gold); }
         .ticket.big-taken::after { content: '👑'; color: #fff; font-size: 1.5rem; }
 
+        /* 結果視窗樣式：防止按鈕消失 */
         .big-prize-card { background: linear-gradient(145deg, #2d2d44, #1a1a2e) !important; border: 3px solid var(--gold) !important; box-shadow: 0 0 30px rgba(255, 204, 0, 0.6) !important; width: 180px !important; margin: 0 auto 15px auto; padding: 12px !important; animation: glow 2s infinite alternate; border-radius: 15px; text-align: center; }
         .big-prize-card img { width: 140px !important; height: 140px !important; border-radius: 10px; background: #fff; object-fit: contain; }
         @keyframes glow { from { box-shadow: 0 0 10px rgba(255, 204, 0, 0.4); } to { box-shadow: 0 0 30px rgba(255, 204, 0, 0.9); } }
-        .normal-prize-results { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
+        .normal-prize-results { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; border-top: 1px solid #333; padding-top: 15px; }
 
         .cart-bar { position: fixed; bottom: 25px; left: 5%; width: 90%; background: #1f2833; border-radius: 50px; padding: 15px 30px; display: none; justify-content: space-between; align-items: center; border: 1px solid var(--gold); z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.8); box-sizing: border-box; }
         .btn-draw { background: linear-gradient(45deg, #ff3e3e, #b32d2d); color: #fff; border: none; padding: 12px 35px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        
         #loader { position:fixed; width:100%; height:100%; background:#0b0c10; z-index:9999; display:none; flex-direction:column; justify-content:center; align-items:center; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -78,7 +84,7 @@
     <div id="main-grid" class="grid"></div>
 
     <div class="cart-bar" id="cart-bar">
-        <div><span id="sel-count" style="color:var(--gold); font-weight:bold;">0</span> 抽 | <b id="total-cost">0</b> P</div>
+        <div>已選 <span id="sel-count" style="color:var(--gold); font-weight:bold;">0</span> 抽 | <b id="total-cost">0</b> P</div>
         <button class="btn-draw" id="drawBtn" onclick="handleCheckout()">確認開籤</button>
     </div>
 
@@ -108,15 +114,24 @@
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 const remCount = state.tickets.filter(t => !t.isTaken).length;
                 const bigCount = state.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
+                
                 document.getElementById('stat-rem').innerText = remCount;
                 document.getElementById('stat-big').innerText = bigCount;
                 document.getElementById('stat-rate').innerText = remCount > 0 ? (bigCount/remCount*100).toFixed(1) + "%" : "0%";
-                document.getElementById('win-track').innerHTML = data.history.length > 0 ? data.history.map(h => `<span class="win-item">🎉 抽出【${h.prize}】(${h.time})</span>`).join('') : "大獎還在盤內！等待幸運兒...";
+                document.getElementById('win-track').innerHTML = data.history.length > 0 ? data.history.map(h => `<span class="win-item">🎉 恭喜玩家抽出【${h.prize}】(${h.time})</span>`).join('') : "大獎還在盤內，等待幸運兒...";
+
                 const db = document.getElementById('drawBtn');
                 if(!data.bigPrizeExists || remCount === 0) { db.innerText = "本盤已封"; db.disabled = true; db.style.background = "#333"; }
                 else { db.innerText = "確認開籤"; db.disabled = false; db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)"; }
+
                 renderGrid();
-                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `<div class="p-card"><img src="${p.img}"><div style="font-size:10px; margin-top:5px; font-weight:900;">${p.name}</div><div style="color:var(--red); font-size:10px; font-weight:900;">剩 ${p.stock}</div></div>`).join('');
+                document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
+                    <div class="p-card">
+                        <img src="${p.img}">
+                        <div style="font-size:10px; margin-top:5px; font-weight:900;">${p.name}</div>
+                        <div style="color:var(--red); font-size:10px; font-weight:900;">剩 ${p.stock}</div>
+                    </div>
+                `).join('');
             }
         } finally { document.getElementById('loader').style.display = 'none'; }
     }
@@ -141,21 +156,24 @@
 
     function updateCartUI() {
         const bar = document.getElementById('cart-bar');
-        bar.style.display = (state.selected.length > 0 && !document.getElementById('drawBtn').disabled) ? 'flex' : 'none';
+        const drawBtn = document.getElementById('drawBtn');
+        bar.style.display = (state.selected.length > 0 && !drawBtn.disabled) ? 'flex' : 'none';
         document.getElementById('sel-count').innerText = state.selected.length;
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
 
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
-        if(state.points < total) { Swal.fire({ title: "點數不足", background: '#161b22', color: '#fff' }); return; }
+        if(state.points < total) { Swal.fire({ title: "餘額不足", icon: "error", background: '#161b22', color: '#fff' }); return; }
         const confirm = await Swal.fire({ title: '確認開籤？', text: `本次將消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
+        
         if(confirm.isConfirmed) {
             document.getElementById('drawBtn').disabled = true;
             document.getElementById('loader').style.display = 'flex';
             try {
                 const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
+                
                 if(result.status === "success") {
                     const bigPrizes = result.results.filter(r => /A賞|SP|1賞|大獎/i.test(r.name));
                     const normalPrizes = result.results.filter(r => !(/A賞|SP|1賞|大獎/i.test(r.name)));
@@ -167,7 +185,7 @@
                     });
                     if(normalPrizes.length > 0) { 
                         resHtml += `<div class="normal-prize-results">`; 
-                        normalPrizes.forEach(p => { resHtml += `<div style="background:#2d2d44; padding:6px; border-radius:10px; width:80px; text-align:center;"><img src="${p.img}" style="width:60px; height:60px; background:#fff; border-radius:8px;"><div style="font-weight:900; color:#ccc; font-size:0.7rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div></div>`; }); 
+                        normalPrizes.forEach(p => { resHtml += `<div style="background:#2d2d44; padding:8px; border-radius:12px; width:90px; text-align:center;"><img src="${p.img}" style="width:70px; height:70px; background:#fff; border-radius:8px;"><div style="font-weight:900; color:#ccc; font-size:0.75rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div></div>`; }); 
                         resHtml += `</div>`; 
                     }
                     resHtml += `</div>`;
@@ -183,6 +201,7 @@
             } catch (e) { document.getElementById('loader').style.display = 'none'; await sync(); }
         } else { updateCartUI(); }
     }
+
     function changeMode(m) { state.mode = m; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); sync(); }
     window.onload = init;
 </script>
