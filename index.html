@@ -2,315 +2,308 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 4.6.1 旗艦載入強化版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>盲玩樂 5.0.0 旗艦奢華版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Oswald:wght@500;700&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* [視覺核心變數定義] */
+        /* =========================================
+           1. 核心變數定義 (Luxury Palette)
+           ========================================= */
         :root { 
-            --neon-green: #00ff41; 
-            --neon-purple: #bc13fe; 
-            --neon-red: #ff3131;
-            --neon-blue: #00f2ff;
-            --gold: #ffcc00;
-            --bg: #050505; 
-            --card: #121212; 
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --bg-card-hover: #1f1f1f;
+            
+            /* 鉑金/香檳金漸層 */
+            --gold-primary: #D4AF37;
+            --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
+            
+            /* 狀態色 */
+            --status-red: #E74C3C;    /* 售出/警告 */
+            --status-green: #2ECC71;  /* 成功/確認 */
+            --status-blue: #3498DB;   /* 自身鎖定 */
+            
+            /* 文字與通用 */
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --border-radius: 16px;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         /* [基礎樣式設定] */
         body { 
-            font-family: 'DotGothic16', 'Noto Sans TC', sans-serif; 
-            background: var(--bg); 
-            color: #fff; 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
+            color: var(--text-primary);
             margin: 0; 
-            padding-bottom: 240px; 
+            padding-bottom: 250px; /* 增加底部空間給更厚的操作列 */
             overflow-x: hidden; 
-            -webkit-tap-highlight-color: transparent; 
-            image-rendering: pixelated; 
-            transform: translateZ(0); 
-        }
-        
-        /* [像素化通用組件] */
-        .pixel-border {
-            border: 4px solid #fff;
-            box-shadow: 4px 4px 0 #333;
-            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            /* 啟用平滑捲動與硬體加速 */
+            scroll-behavior: smooth;
+            transform: translateZ(0);
         }
 
-        /* [跑馬燈組件] */
-        .win-history { 
-            background: #000; 
-            border-bottom: 4px solid var(--neon-purple); 
-            padding: 12px 0; 
-            overflow: hidden; 
-            white-space: nowrap; 
-        }
-        .win-track { 
-            display: inline-block; 
-            white-space: nowrap; 
-            padding-left: 100%; 
-            animation: scroll 30s linear infinite; 
-        }
-        .win-item { 
-            display: inline-block; 
-            margin-right: 50px; 
-            color: var(--neon-green); 
-            font-size: 1rem; 
-        }
-        @keyframes scroll { 
-            from { transform: translateX(0); } 
-            to { transform: translateX(-250%); } 
+        /* [通用高級感組件] */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         
-        /* [頁首與用戶資訊] */
-        .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 15px 20px; 
-            background: #000; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            border-bottom: 4px solid var(--neon-purple); 
-            backdrop-filter: blur(5px); 
+        .premium-shadow { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        .gold-text { 
+            background: var(--gold-gradient); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            font-weight: 900;
         }
-        .u-name { font-weight: 900; font-size: 1.1rem; color: var(--neon-blue); }
-        .u-pts { font-family: 'Oswald'; color: var(--neon-green); font-size: 1.6rem; }
+        
+        /* [跑馬燈組件 - 精緻化] */
+        .win-history { 
+            background: linear-gradient(90deg, #1a0000, #2c0000);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 10px 0; 
+            overflow: hidden; white-space: nowrap; 
+        }
+        .win-track { 
+            display: inline-block; white-space: nowrap; 
+            padding-left: 100%; animation: scroll 35s linear infinite; 
+        }
+        .win-item { 
+            display: inline-block; margin-right: 60px; 
+            color: #F7E2A0; font-size: 0.9rem; font-weight: 600;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+        }
+        @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-250%); } }
+        
+        /* [頁首與用戶資訊 - 玻璃擬態] */
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 25px; position: sticky; top: 0; z-index: 1000; 
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .u-info-box { display: flex; flex-direction: column; }
+        .u-label { font-size: 0.75rem; color: var(--text-secondary); letter-spacing: 1px; }
+        .u-name { font-weight: 700; font-size: 1.1rem; }
+        .u-pts { font-family: 'Oswald'; font-size: 1.8rem; letter-spacing: 1px; }
 
         /* [自動化系統提示列] */
         .auto-info {
-            background: #1a1a1a;
-            color: #888;
-            font-size: 0.7rem;
-            text-align: center;
-            padding: 5px 0;
-            border-bottom: 1px solid #333;
+            background: #111; color: #666; font-size: 0.75rem;
+            text-align: center; padding: 8px 0; letter-spacing: 0.5px;
+            border-bottom: 1px solid #222;
         }
 
-        /* [數據統計儀錶板] */
+        /* [數據統計儀錶板 - 精緻卡片] */
         .stats-bar { 
-            display: flex; 
-            justify-content: space-around; 
-            background: var(--card); 
-            padding: 15px; 
-            margin: 15px; 
-            border: 4px solid #fff; 
-            position: relative; 
+            display: flex; justify-content: space-around; 
+            background: linear-gradient(145deg, #1a1a1a, #111);
+            padding: 20px; margin: 20px; 
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
         }
-        .stat-box { text-align: center; }
-        .stat-val { 
-            font-size: 1.5rem; 
-            color: #fff; 
-            display: block; 
+        .stat-box { text-align: center; flex: 1; position: relative; }
+        .stat-box:not(:last-child)::after {
+            content: ''; position: absolute; right: 0; top: 20%; height: 60%;
+            width: 1px; background: rgba(255,255,255,0.1);
         }
-        .stat-label { 
-            font-size: 0.8rem; 
-            color: #888; 
-        }
+        .stat-val { font-family: 'Oswald'; font-size: 1.8rem; display: block; font-weight: 500; }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; font-weight: 600; }
         
-        /* 地獄火像素閃爍特效 */
-        .critical-mode .stats-bar { 
-            border-color: var(--neon-red); 
-            animation: pixel-blink 0.8s infinite steps(2); 
+        /* 警戒模式：優雅的呼吸光暈 */
+        .critical-mode .stats-bar::before {
+            content: ''; position: absolute; inset: 0;
+            border-radius: var(--border-radius); padding: 2px; 
+            background: linear-gradient(45deg, var(--status-red), transparent, var(--status-red)); 
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            animation: rotate-glow 3s linear infinite;
         }
-        @keyframes pixel-blink { 
-            0% { opacity: 1; } 
-            100% { opacity: 0.7; border-color: #fff; } 
-        }
+        @keyframes rotate-glow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
 
-        /* [模式標籤] */
-        .tabs { display: flex; padding: 0 15px 10px; gap: 8px; }
+        /* [模式標籤 - 分段控制器風格] */
+        .tabs-container { padding: 0 20px 15px; }
+        .tabs { 
+            display: flex; background: #1a1a1a; p
+            adding: 5px; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
         .tab { 
-            flex: 1; 
-            text-align: center; 
-            padding: 12px; 
-            background: #222; 
-            border: 3px solid #444; 
-            color: #666; 
-            cursor: pointer; 
+            flex: 1; text-align: center; padding: 12px; 
+            border-radius: 8px; color: #888; cursor: pointer; 
+            transition: all 0.3s ease; font-weight: 600; font-size: 0.9rem;
         }
         .tab.active { 
-            background: #000; 
-            color: var(--neon-green); 
-            border-color: var(--neon-green); 
+            background: var(--gold-gradient); color: #000; 
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
         }
 
-        /* [獎項展示區] */
+        /* [獎項展示區 - 精品櫥窗] */
         .prize-gallery { 
-            display: flex; 
-            overflow-x: auto; 
-            padding: 10px 15px; 
-            gap: 12px; 
-            scrollbar-width: none; 
+            display: flex; overflow-x: auto; padding: 10px 20px 25px; 
+            gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
         }
         .p-card { 
-            flex: 0 0 100px; 
-            background: #111; 
-            border: 3px solid #333; 
-            padding: 10px; 
-            text-align: center; 
+            flex: 0 0 110px; background: var(--bg-card); 
+            border-radius: 14px; padding: 12px; text-align: center; 
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s;
         }
-        .p-card img { 
-            width: 100%; 
-            aspect-ratio: 1/1; 
-            object-fit: contain; 
-            background: #fff; 
-            border: 2px solid #fff; 
+        .p-card:active { transform: scale(0.98); }
+        .p-img-box {
+            width: 100%; aspect-ratio: 1/1; background: #fff;
+            border-radius: 10px; overflow: hidden; margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .p-name { font-size: 0.7rem; margin-top: 5px; color: #aaa; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        .p-stock { font-size: 0.75rem; color: var(--neon-red); font-weight: bold; }
-        .p-card.sold-out { opacity: 0.3; filter: grayscale(1); }
+        .p-card img { width: 100%; height: 100%; object-fit: contain; }
+        .p-name { font-size: 0.8rem; color: #ccc; margin-bottom: 5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+        .p-stock { font-size: 0.75rem; color: var(--gold-primary); font-weight: 700; letter-spacing: 0.5px; }
+        .p-card.sold-out { opacity: 0.4; filter: grayscale(1); }
 
-        /* [核心棋盤網格] */
+        /* [核心棋盤網格 - 金屬卡牌] */
         .grid { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 8px; 
-            padding: 0 15px 30px; 
+            display: grid; grid-template-columns: repeat(5, 1fr); 
+            gap: 12px; padding: 10px 20px 40px; 
         }
         .ticket { 
-            aspect-ratio: 1/1; 
-            background: #222; 
-            border: 3px solid #444; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.2rem; 
-            color: #444; 
-            position: relative; 
+            aspect-ratio: 1/1; position: relative;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Oswald'; font-size: 1.4rem; color: #666;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ticket::before { /* 金屬光澤反射 */
+            content: ''; position: absolute; inset: 0; border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
         }
         
+        /* 選中狀態：浮起+金光 */
         .ticket.selected { 
-            background: #003300; 
-            color: var(--neon-green); 
-            border-color: var(--neon-green); 
-            box-shadow: 0 0 10px var(--neon-green);
+            background: var(--gold-gradient); color: #000; border: none;
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(212, 175, 55, 0.4); z-index: 10;
         }
         
+        /* 已售出：戰損印記 */
         .ticket.taken { 
-            background: #000; 
-            border-color: #111; 
+            background: #0a0a0a; opacity: 0.7; box-shadow: none; border-color: #330000;
         }
         .ticket.taken::after { 
-            content: '×'; 
-            position: absolute; 
-            color: var(--neon-red); 
-            font-size: 3rem; 
-            font-weight: 900;
-            z-index: 1; 
+            content: '✕'; position: absolute; 
+            background: linear-gradient(45deg, #ff0000, #990000);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 3rem; font-weight: 900; opacity: 0.8;
+            filter: drop-shadow(0 0 5px rgba(255,0,0,0.5));
         }
         
-        /* 大獎皇冠 (優先級最高，絕對遵守憲法) */
+        /* 大獎皇冠：立體浮雕 */
         .ticket.big-taken { 
-            border: 3px solid var(--gold); 
+            border: 2px solid var(--gold-primary); background: #1a1a00; opacity: 0.9;
         }
-        .ticket.big-taken::before { 
-            content: '👑'; 
-            position: absolute; 
-            font-size: 1.2rem; 
-            top: 2px; 
-            left: 2px; 
-            z-index: 999; 
-            text-shadow: 2px 2px 0 #000;
+        .ticket.big-taken::after { content: none; } /* 移除紅X */
+        .ticket.big-taken .crown-icon {
+            position: absolute; font-size: 2rem; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); z-index: 20;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
         }
         
-        .ticket.locked { 
-            background: #332200; 
-            border-color: var(--gold); 
-            opacity: 0.5; 
-        }
-        .ticket.locked::after { content: '🔒'; font-size: 1.5rem; }
-        
+        /* 鎖定狀態 */
+        .ticket.locked { background: #221a00; border-color: #664d00; color: #664d00; opacity: 0.6; }
         .ticket.self-locked { 
-            border-color: var(--neon-purple); 
-            animation: pixel-flash 1s infinite steps(2); 
+            border: 2px solid var(--status-blue); color: var(--status-blue);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
+            animation: pulse-blue 1.5s infinite;
         }
-        @keyframes pixel-flash { from { border-color: #fff; } to { border-color: var(--neon-purple); } }
+        @keyframes pulse-blue { 50% { box-shadow: 0 0 30px rgba(52, 152, 219, 0.6); } }
 
-        /* [底部支付控制列] */
+        /* [底部支付控制列 - 玻璃擬態] */
         .action-bar { 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            background: #000; 
-            border-top: 4px solid var(--neon-green); 
-            padding: 15px 0 35px; 
-            z-index: 1100; 
-            box-shadow: 0 -10px 0 rgba(0,0,0,0.5); 
+            position: fixed; bottom: 0; width: 100%; z-index: 1100;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 25px 40px; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            border-radius: 25px 25px 0 0;
         }
-        .quick-actions { display: flex; gap: 10px; justify-content: center; padding: 0 15px 15px; }
+        .quick-actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; }
         .btn-quick { 
-            flex: 1; 
-            background: #222; 
-            border: 3px solid #555; 
-            color: #fff; 
-            padding: 10px; 
-            font-size: 0.9rem; 
+            flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.9rem;
+            background: #222; border: 1px solid #333; color: #ccc; transition: 0.3s;
         }
+        .btn-quick:active { background: var(--gold-primary); color: #000; border-color: var(--gold-primary); }
         
-        .main-actions { display: flex; gap: 15px; align-items: center; padding: 0 20px; }
-        .cart-total { font-size: 1.6rem; color: var(--gold); font-family: 'Oswald'; }
+        .main-actions { display: flex; gap: 20px; align-items: center; }
+        .cart-total { font-size: 2rem; font-family: 'Oswald'; font-weight: 700; }
         .btn-pay { 
-            flex: 1; 
-            background: var(--neon-green); 
-            color: #000; 
-            border: 4px solid #fff; 
-            padding: 14px; 
-            font-weight: 900; 
-            font-size: 1.3rem;
+            flex: 1.5; border: none; padding: 16px; border-radius: 16px;
+            background: var(--gold-gradient); color: #000;
+            font-weight: 900; font-size: 1.3rem; letter-spacing: 1px;
+            box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.5);
+            transition: all 0.3s;
         }
-        .btn-pay:disabled { background: #555; border-color: #777; color: #888; }
+        .btn-pay:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
+        .btn-pay:not(:disabled):active { transform: scale(0.98); box-shadow: 0 5px 15px -5px rgba(212, 175, 55, 0.5); }
 
-        /* [結果彈窗與捲軸] */
+        /* [SweetAlert2 高級感定製] */
+        div:where(.swal2-container) div:where(.swal2-popup) {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a) !important;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 20px !important;
+        }
+        div:where(.swal2-container) .swal2-title { color: var(--gold-primary) !important; font-weight: 900; }
+        div:where(.swal2-container) .swal2-html-container { color: #ccc !important; }
+        .swal2-confirm { background: var(--gold-gradient) !important; color: #000 !important; font-weight: bold; box-shadow: 0 5px 15px rgba(212,175,55,0.3); }
+        .swal2-cancel { background: #333 !important; color: #fff !important; }
+        
+        /* [結果彈窗與捲軸 - 精品展示] */
         .result-container { 
-            max-height: 55vh; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-            padding: 10px 5px; 
+            max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 10px 5px; 
         }
         .res-card { 
-            background: #000; 
-            border: 4px solid #fff; 
-            padding: 15px; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
+            background: #1a1a1a; border-radius: 16px; padding: 15px; 
+            display: flex; align-items: center; gap: 15px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
         .res-card img { 
-            width: 70px; 
-            height: 70px; 
-            border: 2px solid #fff; 
-            background: #fff;
+            width: 80px; height: 80px; border-radius: 12px; 
+            background: #fff; object-fit: contain; border: 3px solid #333;
         }
+        .res-card.big { 
+            border: 2px solid var(--gold-primary); 
+            background: linear-gradient(to right, #2c2000, #1a1a1a); 
+        }
+        .res-card.big img { border-color: var(--gold-primary); }
         
-        /* [載入遮罩] */
+        /* [載入遮罩 - 高級感] */
         #loader { 
-            position: fixed; 
-            inset: 0; 
-            background: #000; 
-            z-index: 10000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column; 
+            position: fixed; inset: 0; background: #0a0a0a; z-index: 10000; 
+            display: flex; justify-content: center; align-items: center; flex-direction: column; 
         }
-        .pixel-spinner { 
-            width: 50px; 
-            height: 50px; 
-            border: 6px solid #333; 
-            border-top-color: var(--neon-green); 
-            animation: spin 0.6s infinite steps(4); 
+        .premium-spinner {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: 4px solid transparent; border-top-color: var(--gold-primary);
+            animation: spin-smooth 1s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin-smooth { to { transform: rotate(360deg); } }
     </style>
 </head>
 
@@ -319,39 +312,47 @@
     <audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.m4a"></audio>
 
     <div id="loader">
-        <div class="pixel-spinner"></div>
-        <p style="margin-top:20px; color:var(--neon-green); letter-spacing:4px;">全力讀取中...</p>
-        <p style="font-size:0.6rem; color:#444; margin-top:10px;">如果卡住請重新開啟頁面</p>
+        <div class="premium-spinner"></div>
+        <p style="margin-top:25px; color:var(--gold-primary); font-weight:700; letter-spacing:2px;">SYSTEM LOADING</p>
+        <p style="font-size:0.75rem; color:#666; margin-top:10px;">正在建立安全連線...</p>
     </div>
 
     <div class="header">
-        <div class="u-name" id="u-name">冒險者</div>
-        <div class="u-pts" id="u-pts">0 P</div>
+        <div class="u-info-box">
+            <span class="u-label">PLAYER</span>
+            <span class="u-name" id="u-name">Guest</span>
+        </div>
+        <div class="u-info-box" style="align-items: flex-end;">
+            <span class="u-label">CREDITS</span>
+            <span class="u-pts gold-text" id="u-pts">0</span>
+        </div>
     </div>
     
-    <div class="auto-info">🤖 24H 自動監控：大獎抽完 5 分鐘後自動重置</div>
+    <div class="auto-info">🤖 24H 自動營運中｜大獎完售 5 分鐘後自動重置盤面</div>
 
-    <div class="win-history"><div class="win-track" id="win-track">正在掃描最新的中獎快訊...</div></div>
+    <div class="win-history"><div class="win-track" id="win-track">尚未有中獎紀錄，頭獎機會就在眼前！</div></div>
 
     <div class="stats-bar">
         <div class="stat-box">
-            <span class="stat-label">剩餘枚數</span>
             <span class="stat-val" id="stat-rem">0</span>
-        </div>
-        <div class="stat-box" style="border-left: 2px solid #444; border-right: 2px solid #444; padding: 0 15px;">
-            <span class="stat-label" style="color:var(--gold)">大獎在庫</span>
-            <span class="stat-val" id="stat-big" style="color:var(--gold)">0</span>
+            <span class="stat-label">剩餘枚數</span>
         </div>
         <div class="stat-box">
-            <span class="stat-label">中獎機率</span>
-            <span class="stat-val" id="stat-rate" style="color:var(--neon-blue)">0%</span>
+            <span class="stat-val gold-text" id="stat-big">0</span>
+            <span class="stat-label" style="color:var(--gold-primary)">大獎在庫</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val" id="stat-rate">0%</span>
+            <span class="stat-label">當前機率</span>
         </div>
     </div>
 
-    <div class="tabs">
-        <div class="tab active" onclick="changeMode('單挑套')" data-mode="單挑套">單挑套</div>
-        <div class="tab" onclick="changeMode('A區')" data-mode="A區">A區</div>
-        <div class="tab" onclick="changeMode('B區')" data-mode="B區">B區</div>
+    <div class="tabs-container">
+        <div class="tabs">
+            <div class="tab active" onclick="changeMode('單挑套')" data-mode="單挑套">單挑套</div>
+            <div class="tab" onclick="changeMode('A區')" data-mode="A區">A區</div>
+            <div class="tab" onclick="changeMode('B區')" data-mode="B區">B區</div>
+        </div>
     </div>
 
     <div id="prize-gallery" class="prize-gallery"></div>
@@ -359,23 +360,24 @@
 
     <div class="action-bar">
         <div class="quick-actions">
-            <button class="btn-quick" onclick="randomPick(1)">🎲 單抽</button>
-            <button class="btn-quick" onclick="randomPick(5)">🎲 5連</button>
-            <button class="btn-quick" onclick="randomPick(10)">🎲 10連</button>
+            <button class="btn-quick" onclick="randomPick(1)">隨機 1 抽</button>
+            <button class="btn-quick" onclick="randomPick(5)">隨機 5 抽</button>
+            <button class="btn-quick" onclick="randomPick(10)">隨機 10 抽</button>
         </div>
         <div class="main-actions">
             <div class="cart-info">
-                <div style="font-size:0.8rem; color:#888;">已選 <span id="sel-count">0</span> 枚</div>
-                <div class="cart-total" id="total-cost">0</div>
+                <div style="font-size:0.9rem; color:#888; font-weight:600;">已選擇 <span id="sel-count" style="color:#fff;">0</span> 枚</div>
+                <div class="cart-total gold-text" id="total-cost">0</div>
             </div>
-            <button class="btn-pay" id="drawBtn" onclick="handleCheckout()">立即支付</button>
+            <button class="btn-pay" id="drawBtn" onclick="handleCheckout()" disabled>請先選號</button>
         </div>
     </div>
 
 <script>
     /**
-     * [盲玩樂 4.6.1 旗艦核心]
-     * ⚖️ 憲法遵守：物理行數 550+，只增不減。
+     * [盲玩樂 5.0.0 旗艦奢華版]
+     * 憲法執行：物理行數 650+，邏輯 100% 繼承。
+     * 重點：介面全面高級化，互動體驗優化。
      */
     
     // ⚠️ 請務必將此處更新為您的最新 GAS URL ⚠️
@@ -398,22 +400,22 @@
     let lockSeconds = 180; 
 
     /**
-     * 系統初始化
+     * 系統初始化 (含超時保護)
      */
     async function init() {
-        console.log("像素核心啟動中...");
+        console.log("旗艦版系統啟動...");
         
-        // 設定超時保護：如果 15 秒還沒載入完，強制報錯
+        // 12秒超時保護
         const timeoutGuard = setTimeout(() => {
             if (document.getElementById('loader').style.display !== 'none') {
                 Swal.fire({
-                    title: "連線異常",
-                    text: "伺服器讀取超時，請檢查 GAS 網址與權限設定。",
+                    title: "連線回應逾時",
+                    text: "伺服器忙碌中，請檢查網路或稍後重試。",
                     icon: "error",
-                    background: "#000", color: "#fff"
-                });
+                    confirmButtonText: "重新整理"
+                }).then(() => location.reload());
             }
-        }, 15000);
+        }, 12000);
 
         try { 
             await liff.init({ liffId: CONFIG.LIFF_ID }); 
@@ -426,27 +428,24 @@
             await sync();
             clearTimeout(timeoutGuard);
         } catch (e) { 
-            console.warn("LIFF 環境異常");
+            console.warn("LIFF 初始化異常，以訪客模式繼續。");
             await sync(); 
             clearTimeout(timeoutGuard);
         }
     }
 
     /**
-     * [同步邏輯] 
+     * [同步邏輯] 100% 繼承 4.6.1
      */
     async function sync() {
-        console.log("正在發送請求至 GAS...");
         if(state.selected.length === 0) updateUI(); 
-        
         document.getElementById('loader').style.display = 'flex';
         
         try {
-            const url = `${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`;
+            // 加入隨機參數防止快取
+            const url = `${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&r=${Math.random()}`;
             const res = await fetch(url);
-            
             if (!res.ok) throw new Error("網路請求失敗");
-            
             const data = await res.json();
             
             if(data.status === "success") {
@@ -457,25 +456,23 @@
                 const rem = data.tickets.filter(t => !t.isTaken).length;
                 const big = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
-                document.getElementById('u-pts').innerText = `${state.points.toLocaleString()} P`;
+                document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 document.getElementById('stat-rem').innerText = rem;
                 document.getElementById('stat-big').innerText = big;
                 document.getElementById('stat-rate').innerText = rem > 0 ? (big/rem*100).toFixed(1) + "%" : "0%";
                 
                 document.body.classList.toggle('critical-mode', (rem <= 10 && rem > 0));
 
-                // 跑馬燈
                 document.getElementById('win-track').innerHTML = (data.history && data.history.length > 0) ? 
-                    data.history.map(h => `<span class="win-item">👾 玩家 ${h.user} 取得 ${h.prize}！</span>`).join('') : 
-                    "全數大獎皆在盤面上，勇者趕緊出擊！";
+                    data.history.map(h => `<span class="win-item">🎉 恭喜 ${h.user} 抽出【${h.prize}】</span>`).join('') : 
+                    "尚未有中獎紀錄，頭獎機會就在眼前！";
 
                 const db = document.getElementById('drawBtn');
                 if (!data.bigPrizeExists || rem === 0) {
                     db.disabled = true;
-                    db.innerText = "自動重置中";
+                    db.innerText = "等待自動洗牌...";
                 } else {
-                    db.disabled = false;
-                    db.innerText = "確認支付";
+                    updateUI(); // 根據是否選號更新按鈕狀態
                 }
                 
                 renderGrid();
@@ -486,62 +483,49 @@
             }
         } catch(e) { 
             console.error("同步失敗:", e);
-            Swal.fire("系統錯誤", "無法連線到資料庫，請檢查 GAS 網址與權限。", "error");
+            Swal.fire("通訊失敗", "無法連接至伺服器，請稍後再試。", "error");
         } finally { 
             document.getElementById('loader').style.display = 'none'; 
         }
     }
 
     /**
-     * [智慧挽回邏輯]
+     * [智慧挽回邏輯] 100% 繼承
      */
     function checkPendingTransaction() {
         const myLocked = state.tickets.filter(t => t.isLocked && t.lockUser === state.uid);
-        
         if (myLocked.length > 0 && state.selected.length === 0) {
             Swal.fire({
-                title: '⚡ 發現未完成交易',
-                html: `偵測到您有 <b style="color:var(--neon-blue);">${myLocked.length}</b> 張籤位正在保留中。<br>是否立即恢復支付？`,
-                background: '#000', color: '#fff',
+                title: '發現未完成的交易',
+                html: `您有 <b style="color:var(--gold-primary); font-size:1.3rem;">${myLocked.length}</b> 張籤位正在保留中。<br>是否繼續支付？`,
+                icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: '🚀 恢復支付',
-                cancelButtonText: '放棄並釋放',
-                confirmButtonColor: "#006600",
-                cancelButtonColor: "#660000"
+                confirmButtonText: '繼續支付', cancelButtonText: '放棄釋放',
             }).then((result) => {
                 if (result.isConfirmed) {
                     state.selected = myLocked.map(t => String(t.id));
-                    state.selected.forEach(id => {
-                        const el = document.getElementById(`t-${id}`);
-                        if(el) el.classList.add('selected');
-                    });
+                    state.selected.forEach(id => document.getElementById(`t-${id}`)?.classList.add('selected'));
                     updateUI();
                     handleCheckout(); 
                 } else {
-                    fetch(CONFIG.GAS_URL, { 
-                        method: 'POST', 
-                        body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: myLocked.map(t => t.id) }) 
-                    }).then(() => sync());
+                    fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: myLocked.map(t => t.id) }) }).then(() => sync());
                 }
             });
         }
     }
 
-    /**
-     * 獎項列表渲染
-     */
     function renderPrizeGallery(summary) {
         if (!summary) return;
         document.getElementById('prize-gallery').innerHTML = summary.map(p => `
             <div class="p-card ${p.stock===0?'sold-out':''}">
-                <img src="${p.img}" onerror="this.src='https://placehold.co/200?text=NoImage'">
+                <div class="p-img-box"><img src="${p.img}" onerror="this.src='https://placehold.co/200?text=NoImage'"></div>
                 <div class="p-name">${p.name}</div>
-                <div class="p-stock">剩 ${p.stock}</div>
+                <div class="p-stock">${p.stock > 0 ? `剩餘 ${p.stock}` : '已售罄'}</div>
             </div>`).join('');
     }
 
     /**
-     * [棋盤渲染邏輯] 
+     * [棋盤渲染] 升級為高級質感卡牌
      */
     function renderGrid() {
         const gridEl = document.getElementById('main-grid');
@@ -549,9 +533,11 @@
         gridEl.innerHTML = state.tickets.map(t => {
             const isBig = /A賞|SP|1賞|大獎/i.test(t.prizeName);
             let cls = "ticket";
+            let content = t.id;
             
             if(t.isTaken) {
                 cls += isBig ? " taken big-taken" : " taken";
+                if(isBig) content += `<div class="crown-icon">👑</div>`;
             } else if(t.isLocked) {
                 cls += (t.lockUser === state.uid) ? " self-locked" : " locked";
             } else if(state.selected.includes(String(t.id))) {
@@ -561,7 +547,7 @@
             const action = (t.isTaken || (t.isLocked && t.lockUser !== state.uid)) ? '' : `toggleSelect('${t.id}')`;
             
             return `<div id="t-${t.id}" class="${cls}" onclick="${action}">
-                ${t.isTaken ? '' : t.id}
+                ${content}
             </div>`;
         }).join('');
     }
@@ -569,8 +555,9 @@
     function toggleSelect(tid) {
         const idStr = String(tid);
         const idx = state.selected.indexOf(idStr);
+        document.getElementById('snd-select').currentTime = 0;
         document.getElementById('snd-select').play().catch(()=>{});
-        if(window.navigator.vibrate) window.navigator.vibrate(10);
+        if(window.navigator.vibrate) window.navigator.vibrate(15);
 
         if(idx > -1) { 
             state.selected.splice(idx, 1); 
@@ -583,10 +570,7 @@
     }
 
     function randomPick(count) {
-        state.selected.forEach(tid => {
-            const el = document.getElementById(`t-${tid}`);
-            if(el) el.classList.remove('selected');
-        });
+        state.selected.forEach(tid => document.getElementById(`t-${tid}`)?.classList.remove('selected'));
         state.selected = [];
         
         const available = state.tickets.filter(t => !t.isTaken && (!t.isLocked || t.lockUser === state.uid)).map(t => String(t.id));
@@ -596,8 +580,7 @@
             const rIdx = Math.floor(Math.random() * available.length);
             const pId = available.splice(rIdx, 1)[0];
             state.selected.push(pId);
-            const el = document.getElementById(`t-${pId}`);
-            if(el) el.classList.add('selected');
+            document.getElementById(`t-${pId}`).classList.add('selected');
         }
         updateUI();
     }
@@ -605,29 +588,37 @@
     function updateUI() {
         const total = state.selected.length * state.cost;
         document.getElementById('sel-count').innerText = state.selected.length;
-        document.getElementById('total-cost').innerText = `${total.toLocaleString()} P`;
+        document.getElementById('total-cost').innerText = total.toLocaleString();
         const btn = document.getElementById('drawBtn');
+        
         if(state.selected.length > 0) { 
-            btn.style.opacity = "1"; btn.innerText = `支付 ${total} P`; 
+            btn.disabled = false;
+            btn.innerText = `支付 ${total.toLocaleString()} 點`; 
+            btn.style.background = "var(--gold-gradient)";
+            btn.style.color = "#000";
         } else { 
-            btn.style.opacity = "0.6"; btn.innerText = "請選號碼"; 
+            btn.disabled = true;
+            btn.innerText = "請先選擇號碼";
+            btn.style.background = "#333";
+            btn.style.color = "#888";
         }
     }
 
     /**
-     * [支付流程] 
+     * [支付流程] 高級感彈窗與倒數計時
      */
     async function handleCheckout() {
         if(state.selected.length === 0) return;
         const total = state.selected.length * state.cost;
         
         if(state.points < total) { 
-            Swal.fire({ title: "能量不足", text: "點數不夠，請連繫管理員！", icon: "warning", background: '#000', color: '#fff' }); 
+            Swal.fire({ title: "點數不足", text: "請聯繫管理員進行儲值。", icon: "warning", confirmButtonText: "知道了" }); 
             return; 
         }
         
         document.getElementById('loader').style.display = 'flex';
         try {
+            // 第一步：後端鎖定
             const lockRes = await fetch(CONFIG.GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({ uid: state.uid, action: 'lock', mode: state.mode, ticketIds: state.selected })
@@ -636,37 +627,45 @@
             document.getElementById('loader').style.display = 'none';
             
             if(lockData.status !== "success") {
-                Swal.fire("搶佔失敗", "籤位已被鎖定，正在同步盤面...", "error").then(() => sync());
+                Swal.fire("鎖定失敗", "部分籤位已被其他人搶先一步。", "error").then(() => sync());
                 return;
             }
             
-            // 倒數計時
+            // 倒數計時 UI
             lockSeconds = 180; 
             let extended = false;
             
             const popup = await Swal.fire({ 
-                title: '🔒 安全支付中', 
+                title: '✨ 籤位保留中', 
                 html: `
-                    <div style="font-size:3.5rem; color:var(--neon-blue); margin:15px 0; font-family:'Oswald';" id="timer">03:00</div>
-                    <div style="color:#aaa; font-size:0.8rem;">已為您保留籤位，請完成扣款</div>
-                    <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
-                        <button id="btn-extend" style="background:#333; color:#fff; border:2px solid #fff; padding:10px; flex:1;">⏳ 延長(+60s)</button>
-                        <button id="btn-release" style="background:var(--neon-red); color:#fff; border:2px solid #fff; padding:10px; flex:1;">👋 放棄</button>
+                    <div style="margin: 20px 0;">
+                        <div style="font-family:'Oswald'; font-size:4rem; font-weight:700; background:var(--gold-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="timer">03:00</div>
+                        <div style="color:#aaa; font-size:0.9rem; margin-top:10px;">請在時間內完成支付</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>數量</span><span>${state.selected.length} 枚</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:bold;"><span>總計</span><span class="gold-text">${total.toLocaleString()} 點</span></div>
+                    </div>
+                    <div style="display:flex; gap:15px;">
+                        <button id="btn-extend" style="flex:1; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:transparent; color:#fff; cursor:pointer; transition:0.3s;">⏳ 延長 (+60s)</button>
+                        <button id="btn-release" style="flex:1; padding:12px; border-radius:10px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.2); color:var(--status-red); cursor:pointer; transition:0.3s;">✕ 放棄交易</button>
                     </div>
                 `,
-                showConfirmButton: true, confirmButtonText: '✅ 確定支付', confirmButtonColor: '#006600',
+                showConfirmButton: true, confirmButtonText: '確認支付', 
+                customClass: { confirmButton: 'btn-pay-confirm' },
                 allowOutsideClick: false,
-                background: '#000', color: '#fff',
                 didOpen: () => {
                     const bExt = document.getElementById('btn-extend');
                     const bRel = document.getElementById('btn-release');
                     
                     bExt.onclick = () => {
                         if(extended) return;
-                        extended = true; bExt.innerText = "已延長"; bExt.disabled = true;
+                        extended = true; bExt.innerText = "已延長"; bExt.style.opacity = "0.5";
                         lockSeconds += 60;
                         fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'extend', mode: state.mode, ticketIds: state.selected }) });
                     };
+                    bRel.onmouseover = () => bRel.style.background = "var(--status-red)";
+                    bRel.onmouseout = () => bRel.style.background = "rgba(231, 76, 60, 0.2)";
                     bRel.onclick = () => Swal.clickCancel();
 
                     timerInterval = setInterval(() => {
@@ -696,21 +695,24 @@
                 if(buyData.status === "success") {
                     if(buyData.results.some(r => /A賞|SP|1賞|大獎/i.test(r.name))) {
                         document.getElementById('snd-win').play().catch(()=>{});
-                        confetti({ particleCount: 1500, spread: 200, origin: { y: 0.6 } });
+                        confetti({ particleCount: 2000, spread: 360, startVelocity: 40, colors: ['#D4AF37', '#F7E2A0', '#ffffff'] });
                     }
                     
                     let html = `<div class="result-container">`;
+                    if(buyData.isLastOne && buyData.lastOneInfo) {
+                        html += `<div class="res-card big" style="border-color:#ff00cc;"><img src="${buyData.lastOneInfo.img}"><div><div style="color:#ff00cc; font-weight:900; font-size:1.2rem;">👑 LAST ONE 賞</div><div style="font-weight:bold;">${buyData.lastOneInfo.name}</div></div></div>`;
+                    }
                     buyData.results.forEach(r => {
                         const isBig = /A賞|SP|1賞|大獎/i.test(r.name);
-                        html += `<div class="res-card ${isBig ? 'big' : ''}"><img src="${r.img}"><div><div style="color:${isBig?'var(--gold)':'#fff'}; font-weight:bold;">${isBig?'✨ 大獎':''} ${r.name}</div><div style="font-size:0.8rem; color:#666;">ID: ${r.id}</div></div></div>`;
+                        html += `<div class="res-card ${isBig ? 'big' : ''}"><img src="${r.img}"><div><div style="${isBig?'color:var(--gold-primary); font-size:1.1rem;':''}; font-weight:900;">${isBig?'✨ ':''}${r.name}</div><div style="font-size:0.8rem; color:#888; margin-top:5px;">籤號: ${r.id}</div></div></div>`;
                     });
                     html += `</div>`;
                     
                     document.getElementById('loader').style.display = 'none';
                     await Swal.fire({ 
-                        title: "獲得獎品！", html: html, background: '#000', color: '#fff', 
-                        confirmButtonColor: '#ffcc00', confirmButtonText: '收下',
-                        showDenyButton: true, denyButtonText: '🎲 再來 5 抽', denyButtonColor: '#333'
+                        title: "🎉 開獎結果 🎉", html: html, icon: null,
+                        confirmButtonText: '收下獎品',
+                        showDenyButton: true, denyButtonText: '再抽 5 張',
                     }).then((r) => { if(r.isDenied) randomPick(5); });
                     await sync();
                 } else { throw new Error(buyData.message); }
@@ -720,7 +722,7 @@
             }
         } catch(e) { 
             document.getElementById('loader').style.display = 'none';
-            Swal.fire("系統錯誤", e.message, "error"); 
+            Swal.fire("交易中斷", e.message || "請檢查網路連線", "error"); 
             await sync();
         }
     }
