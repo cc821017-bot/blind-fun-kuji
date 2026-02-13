@@ -3,21 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 4.3.0 彈性鎖定版</title>
+    <title>盲玩樂 4.4.0 自動挽回版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; --bg: #121212; --card: #1e1e1e; --dark-gray: #2c2c2c; --locked: #f1c40f; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 220px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        /* =========================================
+           1. 視覺核心變數 (維持 4.3.0)
+           ========================================= */
+        :root { 
+            --red: #ff3e3e; --gold: #ffcc00; --cyan: #00f2ff; 
+            --bg: #121212; --card: #1e1e1e; --dark-gray: #2c2c2c;
+            --locked: #f1c40f; 
+        }
         
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background: var(--bg); color: #fff; margin: 0; padding-bottom: 220px; 
+            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* 跑馬燈 */
         .win-history { background: linear-gradient(90deg, #220000, #440000); border-bottom: 1px solid var(--red); padding: 8px 0; overflow: hidden; white-space: nowrap; }
         .win-track { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scroll 35s linear infinite; }
         .win-item { display: inline-block; margin-right: 40px; color: var(--gold); font-size: 0.85rem; font-weight: bold; }
         @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-220%); } }
         
+        /* 頭部與數據 */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(18, 18, 18, 0.95); position: sticky; top: 0; z-index: 900; border-bottom: 1px solid #333; backdrop-filter: blur(10px); }
         .u-name { font-weight: bold; font-size: 0.9rem; color: #eee; }
         .u-pts { font-family: 'Oswald'; color: var(--gold); font-size: 1.4rem; }
@@ -29,6 +43,7 @@
         .critical-mode #stat-rem { color: var(--red); font-size: 1.8rem; }
         @keyframes pulse-border { 0% { box-shadow: 0 0 5px var(--red); } 50% { box-shadow: 0 0 20px var(--red); } }
 
+        /* 籤盤元件 */
         .tabs { display: flex; padding: 0 15px 10px; gap: 10px; }
         .tab { flex: 1; text-align: center; padding: 10px; background: var(--dark-gray); border-radius: 8px; color: #888; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
         .tab.active { background: #333; color: #fff; border-color: var(--cyan); }
@@ -42,14 +57,22 @@
 
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 0 15px 20px; }
         .ticket { aspect-ratio: 1/1; background: var(--card); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; color: #555; border: 1px solid #333; position: relative; transition: 0.1s; }
+        
         .ticket.selected { background: var(--gold); color: #000; border-color: #fff; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4); z-index: 2; }
         .ticket.taken { background: #000; opacity: 0.6; pointer-events: none; color: transparent; }
         .ticket.taken::after { content: '✕'; position: absolute; color: var(--red); font-size: 2.5rem; }
         .ticket.big-taken { background: #1a1a00; border: 1px solid var(--gold); opacity: 0.8; }
         .ticket.big-taken::before { content: '👑'; position: absolute; font-size: 1rem; top: 5px; left: 5px; opacity: 0.5; }
+        
+        /* 鎖定樣式 */
         .ticket.locked { background: #2c2500; border: 1px solid var(--locked); color: var(--locked); cursor: not-allowed; opacity: 0.8; pointer-events: none; }
         .ticket.locked::after { content: '🔒'; font-size: 1.5rem; }
+        
+        /* 自己的鎖定 (顯示為選取中) */
+        .ticket.self-locked { background: #004d40; border: 1px solid #00f2ff; color: #00f2ff; animation: pulse-green 1s infinite alternate; }
+        @keyframes pulse-green { from { box-shadow: 0 0 5px #00f2ff; } to { box-shadow: 0 0 15px #00f2ff; } }
 
+        /* 底部操作 */
         .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1a1a; padding: 15px 20px 30px; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 12px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         .quick-actions { display: flex; gap: 10px; justify-content: center; }
         .btn-quick { flex: 1; background: #333; border: 1px solid #555; color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
@@ -75,7 +98,7 @@
     <audio id="snd-select" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
     <audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.m4a"></audio>
 
-    <div id="loader"><div class="spinner"></div><p style="margin-top:15px; color:#888;">LOADING...</p></div>
+    <div id="loader"><div class="spinner"></div><p style="margin-top:15px; color:#888;">正在恢復連線...</p></div>
 
     <div class="header">
         <div class="u-name" id="u-name">Guest</div>
@@ -116,7 +139,7 @@
     </div>
 
 <script>
-    // ⚠️ 替換您的最新 GAS 網址 ⚠️
+    // ⚠️ 替換您的 GAS 網址 ⚠️
     const CONFIG = { 
         GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
@@ -124,7 +147,7 @@
     
     let state = { uid: "guest", name: "Guest", mode: "單挑套", tickets: [], cost: 100, points: 0, selected: [] };
     let timerInterval = null;
-    let lockSeconds = 180; // 前端同步秒數
+    let lockSeconds = 180; 
 
     async function init() {
         try { 
@@ -139,7 +162,10 @@
     }
 
     async function sync() {
-        state.selected = []; updateUI(); document.getElementById('loader').style.display = 'flex';
+        // 保留 selected 若為空 (避免覆蓋重連邏輯)
+        if(state.selected.length === 0) updateUI(); 
+        
+        document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
@@ -165,9 +191,51 @@
                 
                 renderGrid();
                 renderPrizeGallery(data.prizeSummary);
+                
+                // === 自動挽回邏輯 (Session Restore) ===
+                checkPendingTransaction();
             }
         } catch(e) { console.error(e); } 
         finally { document.getElementById('loader').style.display = 'none'; }
+    }
+
+    // 新增：檢查是否有未完成的交易
+    function checkPendingTransaction() {
+        const myLocked = state.tickets.filter(t => t.isLocked && t.lockUser === state.uid);
+        
+        if (myLocked.length > 0 && state.selected.length === 0) {
+            // 發現有鎖定，且當前未選 (代表剛刷新)
+            Swal.fire({
+                title: '⚡ 發現未完成交易',
+                html: `您有 <b style="color:#00f2ff; font-size:1.2rem;">${myLocked.length}</b> 張籤位正在保留中。<br>是否恢復交易？`,
+                icon: 'info',
+                background: '#222', color: '#fff',
+                showCancelButton: true,
+                confirmButtonText: '🚀 恢復並支付',
+                cancelButtonText: '放棄釋放',
+                confirmButtonColor: '#4cd137',
+                cancelButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // 自動選取
+                    state.selected = myLocked.map(t => String(t.id));
+                    // 更新 UI 顯示選取狀態
+                    state.selected.forEach(id => {
+                        const el = document.getElementById(`t-${id}`);
+                        if(el) el.classList.add('selected');
+                    });
+                    updateUI();
+                    // 直接觸發支付流程
+                    handleCheckout(); 
+                } else {
+                    // 主動釋放
+                    fetch(CONFIG.GAS_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: myLocked.map(t => t.id) }) 
+                    }).then(() => sync());
+                }
+            });
+        }
     }
 
     function renderPrizeGallery(summary) {
@@ -183,11 +251,15 @@
         document.getElementById('main-grid').innerHTML = state.tickets.map(t => {
             const isBig = /A賞|SP|1賞|大獎/i.test(t.prizeName);
             let cls = "ticket";
+            
             if(t.isTaken) cls += isBig ? " taken big-taken" : " taken";
-            else if(t.isLocked && t.lockUser !== state.uid) cls += " locked"; 
+            else if(t.isLocked) {
+                // 如果是自己鎖的，顯示特殊綠色，別人鎖的顯示黃色
+                cls += (t.lockUser === state.uid) ? " self-locked" : " locked";
+            }
             else if(state.selected.includes(String(t.id))) cls += " selected";
             
-            return `<div id="t-${t.id}" class="${cls}" onclick="${(t.isTaken || t.isLocked) ? '' : `toggleSelect('${t.id}')`}">
+            return `<div id="t-${t.id}" class="${cls}" onclick="${(t.isTaken || (t.isLocked && t.lockUser !== state.uid)) ? '' : `toggleSelect('${t.id}')`}">
                 ${t.isTaken ? '' : t.id}
             </div>`;
         }).join('');
@@ -203,9 +275,15 @@
     }
 
     function randomPick(count) {
+        // 先釋放舊選擇
         state.selected.forEach(tid => document.getElementById(`t-${tid}`).classList.remove('selected'));
         state.selected = [];
-        const available = state.tickets.filter(t => !t.isTaken && !t.isLocked).map(t => String(t.id));
+        
+        // 可選：未被拿走 且 (未被鎖定 OR 是我自己鎖定的)
+        const available = state.tickets.filter(t => 
+            !t.isTaken && (!t.isLocked || t.lockUser === state.uid)
+        ).map(t => String(t.id));
+        
         for(let i=0; i<count; i++) {
             if(available.length === 0) break;
             const rIdx = Math.floor(Math.random() * available.length);
@@ -225,13 +303,12 @@
         else { btn.style.opacity = "0.5"; btn.innerText = "請選號"; }
     }
 
-    // 核心：彈性鎖定交易流程
     async function handleCheckout() {
         if(state.selected.length === 0) return;
         const total = state.selected.length * state.cost;
         if(state.points < total) { Swal.fire("餘額不足", "請儲值", "warning"); return; }
         
-        // 1. 執行鎖定
+        // 1. 鎖定
         document.getElementById('loader').style.display = 'flex';
         try {
             const lockRes = await fetch(CONFIG.GAS_URL, {
@@ -246,7 +323,7 @@
                 return;
             }
             
-            // 2. 顯示倒數視窗
+            // 2. 倒數視窗
             lockSeconds = 180;
             let extended = false;
             
@@ -260,27 +337,19 @@
                         <button id="btn-release" class="swal2-cancel swal2-styled" style="background:#ff3e3e;">👋 放棄</button>
                     </div>
                 `,
-                showConfirmButton: true,
-                confirmButtonColor: '#4cd137',
-                confirmButtonText: '✅ 確認扣款',
+                showConfirmButton: true, confirmButtonColor: '#4cd137', confirmButtonText: '✅ 確認扣款',
                 allowOutsideClick: false,
                 didOpen: () => {
-                    // 綁定按鈕事件
                     const bExt = document.getElementById('btn-extend');
                     const bRel = document.getElementById('btn-release');
                     
-                    bExt.onclick = async () => {
+                    bExt.onclick = () => {
                         if(extended) return;
                         bExt.innerText = "已延長"; bExt.disabled = true;
-                        lockSeconds += 60;
-                        extended = true;
-                        // 呼叫後端延長
+                        lockSeconds += 60; extended = true;
                         fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'extend', mode: state.mode, ticketIds: state.selected }) });
                     };
-                    
-                    bRel.onclick = () => {
-                        Swal.clickCancel();
-                    };
+                    bRel.onclick = () => Swal.clickCancel();
 
                     timerInterval = setInterval(() => {
                         lockSeconds--;
@@ -290,7 +359,6 @@
                         if(lockSeconds <= 0) {
                             clearInterval(timerInterval);
                             Swal.close();
-                            // 逾時自動釋放
                             fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: state.selected }) });
                             sync();
                         }
@@ -299,9 +367,7 @@
                 willClose: () => clearInterval(timerInterval)
             });
             
-            // 3. 處理使用者選擇
             if(popup.isConfirmed) {
-                // 執行購買
                 document.getElementById('loader').style.display = 'flex';
                 const res = await fetch(CONFIG.GAS_URL, { 
                     method: 'POST', 
@@ -317,9 +383,7 @@
                     }
                     
                     let html = `<div class="result-container">`;
-                    if(result.isLastOne && result.lastOneInfo) {
-                        html += `<div class="res-card lo"><img src="${result.lastOneInfo.img}"><div><div style="color:#ff00cc; font-weight:bold;">👑 LAST ONE</div><div style="font-size:0.9rem;">${result.lastOneInfo.name}</div></div></div>`;
-                    }
+                    if(result.isLastOne && result.lastOneInfo) html += `<div class="res-card lo"><img src="${result.lastOneInfo.img}"><div><div style="color:#ff00cc; font-weight:bold;">👑 LAST ONE</div><div style="font-size:0.9rem;">${result.lastOneInfo.name}</div></div></div>`;
                     result.results.forEach(r => {
                         const isBig = /A賞|SP|1賞|大獎/i.test(r.name);
                         html += `<div class="res-card ${isBig ? 'big' : ''}"><img src="${r.img}"><div><div style="color:${isBig?'var(--gold)':'#ccc'}; font-weight:bold;">${isBig?'✨ 大獎':''} ${r.name}</div><div style="font-size:0.8rem; color:#888;">籤號: ${r.id}</div></div></div>`;
@@ -332,11 +396,8 @@
                         showDenyButton: true, denyButtonText: '🎲 再來 5 抽', denyButtonColor: '#444'
                     }).then((r)=>{ if(r.isDenied) randomPick(5); });
                     await sync();
-                } else {
-                    throw new Error(result.message);
-                }
+                } else { throw new Error(result.message); }
             } else if (popup.dismiss === Swal.DismissReason.cancel) {
-                // 主動放棄 (Release)
                 fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: state.selected }) });
                 sync();
             }
