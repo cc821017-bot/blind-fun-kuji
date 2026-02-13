@@ -3,371 +3,972 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.17.2 旗艦結構穩定版</title>
+    <meta name="format-detection" content="telephone=no">
+    <title>盲玩樂 5.18.0 憲法守護最終版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Oswald:wght@500;700&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        /* =========================================
-           [SECTION 2: 核心佈局樣式 - 救回崩潰的介面]
-           ========================================= */
+        /* ==========================================================================
+           [SECTION 2: 視覺系統變數定義 (Visual Design Tokens)]
+           禁止合併變數。每一項定義都對應介面的物理層級。
+           ========================================================================== */
         :root { 
-            --bg-dark: #0a0a0a; --bg-card: #141414; --gold-primary: #D4AF37;
-            --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
-            --status-red: #E74C3C; --status-green: #2ECC71; --status-blue: #3498DB;
-            --text-primary: #FFFFFF; --text-secondary: #A0A0A0; --glass-bg: rgba(20, 20, 20, 0.98);
+            /* 1. 背景色系 */
+            --bg-dark: #0a0a0a;
+            --bg-panel: #141414;
+            --bg-panel-highlight: #1f1f1f;
+            
+            /* 2. 品牌識別色 (Brand Identity) */
+            --gold-primary: #D4AF37;
+            --gold-light: #F7E2A0;
+            --gold-dark: #A67C00;
+            --gold-gradient: linear-gradient(135deg, var(--gold-light), var(--gold-primary), var(--gold-dark));
+            
+            /* 3. 狀態指示色 (Status Indicators) */
+            --status-red: #E74C3C;
+            --status-green: #2ECC71;
+            --status-blue: #3498DB;
+            
+            /* 4. 文字系統 (Typography) */
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-muted: #555555;
+            
+            /* 5. 介面物理常數 */
+            --glass-blur: 40px;
+            --glass-bg: rgba(15, 15, 15, 0.98);
+            --border-radius-card: 26px;
+            --z-dock: 1000;      /* 支付列層級 */
+            --z-modal: 20000;    /* 彈窗層級 */
+            --z-loader: 30000;   /* 載入遮罩層級 */
         }
         
-        /* 基礎結構重設 */
+        /* ==========================================================================
+           [SECTION 3: 全局基礎樣式重置 (Global Reset)]
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body { 
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
-            color: var(--text-primary); margin: 0; 
-            padding-bottom: 450px; /* 物理空間：防止底座遮擋內容 */
-            overflow-x: hidden; transform: translateZ(0); -webkit-font-smoothing: antialiased;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top center, #1a1a2e, #000000);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            /* [物理修正] 極厚底部填充，確保內容絕對不會被固定底座遮擋 */
+            padding-bottom: 480px !important; 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            /* 啟用 GPU 硬體加速 */
+            transform: translateZ(0);
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* [核心修正：圖片霸權系統] */
-        .img-container-moderate { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        /* 隱藏捲軸條但允許捲動 */
+        ::-webkit-scrollbar { 
+            display: none; 
+            width: 0px;
+            background: transparent;
+        }
+
+        /* ==========================================================================
+           [SECTION 4: 圖片視覺霸權系統 (Image Logic)]
+           這是被縮減導致大獎變小的核心修復。
+           ========================================================================== */
         
-        /* 普獎：縮小 60% */
+        /* 圖片容器基礎物理限制 */
+        .img-container-moderate {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* [規則 A] 小獎/普獎圖片：強制縮小至 60% */
+        /* 應用於：棋盤格、櫥窗、寶庫卡片、結果彈窗 */
         .t-matrix-cell:not(.is-big-taken) .img-container-moderate img,
         .p-show-box:not(.is-premium) .img-container-moderate img,
-        .v-asset-card:not(.is-premium) .v-asset-icon img {
-            max-width: 60% !important; max-height: 60% !important; object-fit: contain;
+        .v-asset-card:not(.is-premium-asset) .v-asset-icon img,
+        .res-premium-card:not(.is-grand-win) .res-item-thumb img {
+            max-width: 60% !important;
+            max-height: 60% !important;
+            object-fit: contain;
+            display: block;
+            margin: auto;
+            opacity: 0.9; /* 稍微降低不透明度，區分層級 */
+            transition: all 0.3s ease;
         }
 
-        /* 大獎：擴張 95% */
+        /* [規則 B] 大獎/SP賞圖片：視覺霸權 95% + 特效 */
         .t-matrix-cell.is-big-taken .img-container-moderate img,
         .p-show-box.is-premium .img-container-moderate img,
-        .v-asset-card.is-premium .v-asset-icon img {
-            max-width: 95% !important; max-height: 95% !important; object-fit: contain; transform: scale(1.1);
+        .v-asset-card.is-premium-asset .v-asset-icon img,
+        .res-premium-card.is-grand-win .res-item-thumb img {
+            max-width: 95% !important;
+            max-height: 95% !important;
+            object-fit: contain;
+            display: block;
+            margin: auto;
+            transform: scale(1.15); /* 物理放大 */
+            filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.5)); /* 黃金光暈 */
+            z-index: 5;
         }
 
-        /* [關鍵修正：底部導航絕對鎖定於 Viewport] */
-        .absolute-fixed-dock-hub { 
-            position: fixed !important; bottom: 0 !important; left: 0; right: 0; 
-            width: 100% !important; z-index: 1000; 
-            background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(45px);
-            -webkit-backdrop-filter: blur(45px);
-            border-top: 1px solid rgba(255,255,255,0.15);
-            padding: 22px 25px calc(25px + env(safe-area-inset-bottom)); 
-            border-radius: 50px 50px 0 0; box-shadow: 0 -35px 80px rgba(0,0,0,1);
-            transition: transform 0.45s cubic-bezier(0.2, 1, 0.3, 1);
-            box-sizing: border-box;
+        /* ==========================================================================
+           [SECTION 5: 頁首資訊欄 (Header)]
+           ========================================================================== */
+        .header-container { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 18px 25px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 900; 
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-
-        /* 彈窗出現時自動隱藏底座 */
-        body.swal2-shown .absolute-fixed-dock-hub { transform: translateY(115%); opacity: 0; pointer-events: none; }
-
-        /* [大廳佈局渲染] */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(10,10,10,0.5); }
-        .u-balance-pts { font-family: 'Oswald'; font-size: 2rem; font-weight: 700; color: var(--gold-primary); }
-
-        .stats-hub { display: flex; justify-content: space-around; background: #111; padding: 25px; margin: 20px; border-radius: 24px; border: 1px solid #222; }
-        .stat-item { text-align: center; }
-        .stat-val-text { font-family: 'Oswald'; font-size: 2rem; display: block; }
         
-        .gacha-grid-matrix { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 20px; }
-        .t-matrix-cell { 
-            aspect-ratio: 1/1; background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-            border-radius: 20px; border: 1px solid rgba(255,255,255,0.06); 
-            display: flex; align-items: center; justify-content: center; position: relative;
-            cursor: pointer; transition: 0.25s;
+        .user-profile-box { 
+            display: flex; 
+            flex-direction: column; 
         }
-        .t-matrix-cell.is-selected { background: var(--gold-gradient) !important; color: #000 !important; transform: translateY(-15px); z-index: 10; box-shadow: 0 15px 30px rgba(212,175,55,0.4); }
-        .t-matrix-cell.is-taken { opacity: 0.4; background: #000; cursor: not-allowed; }
-        .t-matrix-cell.is-taken::after { content: '✕'; position: absolute; color: var(--status-red); font-size: 3.5rem; font-weight: 900; }
-        .t-matrix-cell.is-big-taken { border: 2.8px solid var(--gold-primary); background: #1a1a00; }
-        .t-matrix-cell.is-big-taken::before { content: '👑'; position: absolute; font-size: 1.5rem; top: 4px; left: 4px; z-index: 999; }
-
-        /* [寶庫與收藏樣式] */
-        .v-asset-card { 
-            background: linear-gradient(145deg, #1e1e1e, #0c0c0c); border-radius: 26px; 
-            padding: 22px; display: flex; align-items: center; gap: 22px; margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
+        .user-rank-badge { 
+            font-size: 0.65rem; 
+            color: var(--text-muted); 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
         }
-        .v-asset-card.is-premium { border: 2px solid var(--gold-primary); animation: borderAura 3s infinite alternate; }
-        @keyframes borderAura { 0% { border-color: #D4AF37; } 100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212,175,55,0.4); } }
-        .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
-        .v-qty-stack { font-family: 'Oswald'; font-size: 1.5rem; color: var(--gold-primary); font-weight: 700; margin-left: 10px; }
+        .user-name-text { 
+            font-weight: 900; 
+            font-size: 1.2rem; 
+            color: #fff; 
+            margin-top: 2px;
+        }
+        
+        .user-balance-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .user-balance-val { 
+            font-family: 'Oswald'; 
+            font-size: 2.2rem; 
+            font-weight: 700; 
+            letter-spacing: 1px; 
+            color: var(--gold-primary);
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
 
-        /* 按鈕與工具 */
-        .btn-checkout-master { border: none; padding: 22px; border-radius: 24px; background: var(--gold-gradient); color: #000; font-weight: 900; font-size: 1.6rem; cursor: pointer; transition: 0.3s; }
-        .btn-checkout-master:disabled { background: #222; color: #444; opacity: 0.5; }
-        .nav-item { flex: 1; text-align: center; padding: 16px; border-radius: 18px; color: #666; background: #111; font-weight: 900; cursor: pointer; }
-        .nav-item.active { background: #fff; color: #000; box-shadow: 0 8px 15px rgba(255,255,255,0.2); }
+        /* ==========================================================================
+           [SECTION 6: 導覽切換系統 (Navigation)]
+           ========================================================================== */
+        .nav-wrapper { 
+            display: flex; 
+            padding: 15px 20px; 
+            gap: 15px; 
+            background: rgba(0,0,0,0.3); 
+            margin-bottom: 10px;
+        }
+        .nav-btn { 
+            flex: 1; 
+            text-align: center; 
+            padding: 16px; 
+            border-radius: 18px; 
+            color: #666; 
+            font-weight: 900; 
+            font-size: 0.95rem;
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .nav-btn.active { 
+            background: #fff; 
+            color: #000; 
+            border-color: #fff;
+            box-shadow: 0 8px 20px rgba(255,255,255,0.25); 
+            transform: translateY(-2px);
+        }
+
+        /* ==========================================================================
+           [SECTION 7: 探索大廳 (Lobby Interface)]
+           ========================================================================== */
+        #page-lobby { 
+            display: block; 
+            animation: fadeInPage 0.5s ease-out; 
+        }
+        @keyframes fadeInPage { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 跑馬燈 */
+        .marquee-container { 
+            background: linear-gradient(90deg, #1a0000, #2c0000);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            padding: 12px 0; 
+            overflow: hidden; 
+            white-space: nowrap; 
+            position: relative;
+        }
+        .marquee-track { 
+            display: inline-block; 
+            white-space: nowrap; 
+            padding-left: 100%; 
+            animation: scrolling 35s linear infinite; 
+        }
+        @keyframes scrolling { 0% { transform: translateX(0); } 100% { transform: translateX(-250%); } }
+
+        /* 數據監控儀錶板 */
+        .dashboard-container { 
+            display: flex; 
+            justify-content: space-around; 
+            background: linear-gradient(145deg, #1e1e1e, #111);
+            padding: 24px; 
+            margin: 20px; 
+            border-radius: 26px;
+            border: 1px solid rgba(255,255,255,0.06); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .dash-stat-box { text-align: center; flex: 1; }
+        .dash-value { font-family: 'Oswald'; font-size: 2.1rem; display: block; font-weight: 700; color: #fff; }
+        .dash-label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; font-weight: 900; letter-spacing: 1px; }
+
+        /* 獎項展示櫥窗 */
+        .showcase-scroller { 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 10px 20px 30px; 
+            gap: 15px; 
+            scrollbar-width: none; 
+        }
+        .showcase-card { 
+            flex: 0 0 120px; 
+            background: var(--bg-card); 
+            border-radius: 20px; 
+            padding: 14px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.2s;
+        }
+        .showcase-img-box {
+            width: 100%; 
+            height: 85px; 
+            background: #fff;
+            border-radius: 14px; 
+            overflow: hidden; 
+            margin-bottom: 10px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .showcase-name { font-size: 0.8rem; font-weight: 800; color: #ccc; margin-bottom: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .showcase-stock { font-size: 0.8rem; color: var(--gold-primary); font-weight: 900; }
+        .showcase-card.is-sold-out { opacity: 0.3; filter: grayscale(1); }
+
+        /* 核心棋盤網格 */
+        .grid-wrapper { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 14px; 
+            padding: 10px 20px 100px; 
+        }
+        .grid-cell { 
+            aspect-ratio: 1/1; 
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-family: 'Oswald'; 
+            font-size: 1.6rem; 
+            color: #555; 
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 10px 25px rgba(0,0,0,0.4);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* 棋盤互動狀態 */
+        .grid-cell.is-selected { 
+            background: var(--gold-gradient) !important; 
+            color: #000 !important; 
+            border: none;
+            transform: translateY(-12px) scale(1.15); 
+            box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); 
+            z-index: 100;
+        }
+        .grid-cell.is-taken { 
+            background: #050505; 
+            opacity: 0.4; 
+            color: transparent; 
+            border-color: #222; 
+            pointer-events: none;
+        }
+        .grid-cell.is-taken::after { 
+            content: '✕'; 
+            position: absolute; 
+            color: var(--status-red); 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+        }
+        
+        /* 大獎被抽走的特殊樣式 (皇冠守護) */
+        .grid-cell.is-big-taken { 
+            border: 2.5px solid var(--gold-primary); 
+            background: #1a1a00; 
+            opacity: 0.9;
+        }
+        .grid-cell.is-big-taken::before { 
+            content: '👑'; 
+            position: absolute; 
+            font-size: 1.5rem; 
+            top: 4px; left: 4px; 
+            z-index: 10; 
+            filter: drop-shadow(0 2px 4px #000); 
+        }
+
+        /* ==========================================================================
+           [SECTION 8: 我的寶庫 (Vault Interface)]
+           ========================================================================== */
+        #page-vault { display: none; padding: 0 20px; animation: fadeInPage 0.5s ease-out; }
+        
+        .vault-header { margin: 20px 10px 25px; }
+        .vault-subtitle { font-family: 'Oswald'; font-size: 0.85rem; color: var(--gold-primary); letter-spacing: 4px; font-weight: 700; }
+        .vault-title { margin: 5px 0 0; font-size: 2.5rem; font-weight: 900; letter-spacing: 1px; color: #fff; }
+
+        .vault-grid { display: flex; flex-direction: column; gap: 20px; }
+        
+        /* 資產卡片 */
+        .asset-card { 
+            background: linear-gradient(145deg, #1e1e1e, #0c0c0c); 
+            border-radius: 26px; 
+            padding: 22px; 
+            display: flex; 
+            align-items: center; 
+            gap: 22px; 
+            margin-bottom: 5px;
+            border: 1px solid rgba(255,255,255,0.06); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            position: relative; 
+            overflow: hidden;
+        }
+
+        /* 大獎流光邊框 (遺漏修復) */
+        .asset-card.is-premium-asset { 
+            border: 2px solid var(--gold-primary); 
+            box-shadow: 0 0 35px rgba(212, 175, 55, 0.25);
+            animation: pulseGlow 3s infinite alternate;
+        }
+        @keyframes pulseGlow { 
+            0% { border-color: #D4AF37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); } 
+            100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212, 175, 55, 0.5); } 
+        }
+        .asset-card.is-premium-asset::before { 
+            content: 'PREMIUM'; 
+            position: absolute; top: 0; right: 0; 
+            background: var(--gold-gradient); color: #000; 
+            font-size: 0.6rem; padding: 4px 14px; 
+            font-weight: 900; border-radius: 0 0 0 14px; 
+        }
+
+        .asset-icon-box { 
+            width: 75px; height: 75px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 20px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 2.2rem; 
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .asset-info { flex: 1; }
+        .asset-name { font-size: 1.2rem; font-weight: 900; color: #fff; margin-bottom: 4px; }
+        .asset-count { font-family: 'Oswald'; font-size: 1.5rem; color: var(--gold-primary); font-weight: 700; margin-left: 8px; }
+        .asset-meta { font-size: 0.75rem; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* 出貨按鈕 */
+        .btn-ship { 
+            background: var(--gold-gradient); color: #000; border: none; 
+            padding: 12px 20px; border-radius: 12px; font-weight: 900; font-size: 0.85rem;
+            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.3); transition: 0.2s;
+        }
+        .btn-ship:active { transform: scale(0.95); }
+        .btn-ship.disabled { background: #222; color: #555; pointer-events: none; border: 1px solid #333; box-shadow: none; }
+
+        /* ==========================================================================
+           [SECTION 9: 支付中樞絕對鎖定系統 (Absolute Dock)]
+           [重要修正]：絕對定位 + 彈窗避讓。
+           ========================================================================== */
+        .dock-container { 
+            position: fixed !important; 
+            bottom: 0 !important; 
+            left: 0 !important; 
+            right: 0 !important; 
+            width: 100% !important; 
+            height: auto !important;
+            
+            /* Z-index 層級邏輯：
+               - 低於 SweetAlert (1060)
+               - 高於 Loader (如果需要)
+               - 高於頁面內容 (10)
+            */
+            z-index: 1000 !important; 
+            
+            background: rgba(10, 10, 10, 0.98); 
+            backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border-top: 1px solid rgba(255,255,255,0.15);
+            
+            /* iPhone 安全區適配 */
+            padding: 20px 25px calc(25px + env(safe-area-inset-bottom)); 
+            
+            border-radius: 45px 45px 0 0;
+            box-shadow: 0 -30px 80px rgba(0,0,0,0.9);
+            box-sizing: border-box;
+            
+            /* 動畫過渡 */
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* [避讓機制] 當 SweetAlert 出現時，支付列往下躲藏 */
+        body.swal2-shown .dock-container {
+            transform: translateY(120%) !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+        }
+
+        .dock-buttons-row { display: flex; gap: 12px; margin-bottom: 22px; }
+        .btn-option { 
+            flex: 1; padding: 15px; border-radius: 16px; 
+            background: #1a1a1a; color: #fff; border: 1px solid #333; 
+            font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: 0.2s;
+        }
+        .btn-option:active { background: #333; transform: scale(0.96); }
+
+        .dock-main-row { display: flex; align-items: center; gap: 25px; padding: 0 5px; }
+        .dock-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .dock-label { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+        .dock-value { font-family: 'Oswald'; font-size: 2.6rem; font-weight: 700; color: var(--gold-primary); margin-top: -8px; line-height: 1; }
+        
+        .btn-checkout { 
+            flex: 2; border: none; padding: 24px; border-radius: 22px;
+            background: var(--gold-gradient); color: #000; font-weight: 900; font-size: 1.6rem;
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.45); cursor: pointer; transition: 0.3s;
+        }
+        .btn-checkout:disabled { background: #222; color: #444; opacity: 0.5; box-shadow: none; pointer-events: none; }
+
+        /* ==========================================================================
+           [SECTION 10: 載入與彈窗系統]
+           ========================================================================== */
+        #loader-overlay { 
+            position: fixed; inset: 0; background: #000; z-index: 50000; 
+            display: flex; justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .loader-spinner { 
+            width: 80px; height: 80px; border: 6px solid transparent; 
+            border-top-color: var(--gold-primary); border-radius: 50%; 
+            animation: spin 1s infinite linear; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 開獎結果彈窗樣式 (物理限高) */
+        .result-list { max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 10px 5px; }
+        .result-card { 
+            background: #181818; border-radius: 22px; padding: 18px; 
+            display: flex; align-items: center; gap: 20px; 
+            border: 1px solid rgba(255,255,255,0.06); 
+            animation: slideInResult 0.4s ease-out backwards;
+        }
+        @keyframes slideInResult { from { opacity: 0; transform: translateX(30px); } }
+        
+        .result-card.is-grand { 
+            border: 2.5px solid var(--gold-primary); 
+            background: linear-gradient(90deg, #2a2000, #181818); 
+        }
+        
+        /* 彈窗內圖片限高 */
+        .result-thumb { 
+            width: 85px; height: 85px; border-radius: 16px; background: #fff; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 3px solid #333; overflow: hidden; flex-shrink: 0;
+        }
+        .result-thumb img { max-width: 80%; max-height: 80%; object-fit: contain; }
+        .result-card.is-grand .result-thumb img { max-width: 95%; max-height: 95%; transform: scale(1.1); }
     </style>
 </head>
 
 <body>
-    <div id="global-boot-loader" style="position:fixed; inset:0; background:#000; z-index:30000; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-        <div style="width:80px; height:80px; border:6px solid transparent; border-top-color:var(--gold-primary); border-radius:50%; animation:spin 1s infinite linear;"></div>
-        <p style="margin-top:30px; color:var(--gold-primary); font-weight:900; letter-spacing:5px; font-family:'Oswald';">TREASURY SYNC...</p>
+    <div id="loader-overlay">
+        <div class="loader-spinner"></div>
+        <p style="margin-top:30px; color:var(--gold-primary); font-weight:900; letter-spacing:5px;">SYSTEM LOADING...</p>
+        <p style="font-size:0.8rem; color:#444; margin-top:10px;">正在建立安全連線</p>
     </div>
 
-    <div class="header">
-        <div class="u-info-section">
-            <span style="font-size:0.65rem; color:#444; font-weight:900; letter-spacing:2px;">ADVENTURER</span>
-            <div id="player-name" style="font-weight:900; font-size:1.2rem;">Guest</div>
+    <audio id="sfx-select" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
+    <audio id="sfx-win" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.m4a"></audio>
+
+    <div class="header-container">
+        <div class="user-profile-box">
+            <span class="user-rank-badge">PLAYER</span>
+            <div id="ui-name" class="user-name-text">Guest</div>
         </div>
-        <div class="u-balance-pts" id="player-pts">0</div>
-    </div>
-
-    <div class="nav-segment-bar" style="display:flex; padding:15px 20px; gap:15px;">
-        <div id="nav-btn-home" class="nav-item active" onclick="handlePageSwitch('home')">探索獎池</div>
-        <div id="nav-btn-vault" class="nav-item" onclick="handlePageSwitch('vault')">我的寶庫</div>
-    </div>
-
-    <div id="home-page">
-        <div class="stats-hub">
-            <div class="stat-item"><span class="stat-val-text" id="stat-rem">0</span><span style="font-size:0.7rem; color:#666; font-weight:900;">剩餘枚數</span></div>
-            <div class="stat-item" style="border-left: 1px solid #222; border-right: 1px solid #222; padding: 0 25px;"><span class="stat-val-text" id="stat-big" style="color:var(--gold-primary)">0</span><span style="font-size:0.7rem; color:var(--gold-primary); font-weight:900;">大獎在庫</span></div>
-            <div class="stat-item"><span class="stat-val-text" id="stat-rate" style="color:var(--status-blue)">0%</span><span style="font-size:0.7rem; color:#666; font-weight:900;">勝率</span></div>
+        <div class="user-balance-box">
+            <span class="user-rank-badge">BALANCE</span>
+            <div id="ui-points" class="user-balance-val">0</div>
         </div>
-
-        <div class="m-selector-row" style="display:flex; gap:15px; padding:0 20px 20px;">
-            <div id="mode-1" class="nav-item active" style="flex:1;" onclick="handleModeSwitch('單挑套')">單挑套</div>
-            <div id="mode-2" class="nav-item" style="flex:1;" onclick="handleModeSwitch('A區')">A區</div>
-        </div>
-
-        <div id="lobby-prize-gallery" style="display:flex; overflow-x:auto; padding:0 20px 20px; gap:18px; scrollbar-width:none;"></div>
-        <div id="main-ticket-grid" class="gacha-grid-matrix"></div>
     </div>
 
-    <div id="vault-page" style="display:none;">
-        <div style="padding:25px;">
-            <span style="font-family:'Oswald'; font-size:0.85rem; color:var(--gold-primary); letter-spacing:3px; font-weight:700;">TREASURY COLLECTION</span>
-            <h2 style="font-weight:900; font-size:2.3rem; margin:5px 0 0 0;">收藏資產庫</h2>
-            <p style="color:#555; font-weight:700; font-size:0.85rem; margin-top:5px;">智慧歸納系統已自動堆疊普獎資產</p>
-        </div>
-        <div id="vault-items-container" style="padding:0 20px;"></div>
+    <div class="nav-wrapper">
+        <div id="tab-btn-lobby" class="nav-btn active" onclick="navigate('lobby')">探索獎池</div>
+        <div id="tab-btn-vault" class="nav-btn" onclick="navigate('vault')">我的寶庫</div>
     </div>
 
-    <div class="absolute-fixed-dock-hub" id="action-dock-panel">
-        <div style="display:flex; gap:12px; margin-bottom:20px;">
-            <button class="nav-item" style="flex:1; border:1px solid #333;" onclick="executeBatchSelection(1)">🎲 1 抽</button>
-            <button class="nav-item" style="flex:1; border:1px solid #333;" onclick="executeBatchSelection(5)">🎲 5 抽</button>
-            <button class="nav-item" style="flex:1; border:1px solid #333;" onclick="executeBatchSelection(10)">🎲 10 抽</button>
+    <div id="page-lobby">
+        <div class="marquee-container">
+            <div id="ui-marquee" class="marquee-track">連線中...</div>
         </div>
         
-        <div style="display:flex; align-items:center; gap:35px; padding:0 10px;">
-            <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-                <span style="font-size:0.75rem; color:#555; font-weight:900; letter-spacing:1.5px;">SELECTED <span id="dock-sel-count" style="color:#fff;">0</span> 枚</span>
-                <div id="dock-total-cost" style="font-family:'Oswald'; font-size:2.7rem; font-weight:700; color:var(--gold-primary); margin-top:-8px; line-height:1;">0</div>
+        <div class="dashboard-container">
+            <div class="dash-stat-box">
+                <span id="ui-rem" class="dash-value">0</span>
+                <span class="dash-label">剩餘</span>
             </div>
-            <button id="masterPayButton" class="btn-checkout-master" style="flex:2; border:none;" onclick="startFinalCheckoutProcess()" disabled>請先選號</button>
+            <div class="dash-stat-box" style="border-left:1px solid #333; border-right:1px solid #333;">
+                <span id="ui-big" class="dash-value" style="color:var(--gold-primary)">0</span>
+                <span class="dash-label">大獎</span>
+            </div>
+            <div class="dash-stat-box">
+                <span id="ui-rate" class="dash-value" style="color:var(--status-blue)">0%</span>
+                <span class="dash-label">機率</span>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:15px; padding:0 20px 20px;">
+            <div class="nav-btn active" id="mode-btn-1" style="flex:1;" onclick="setMode('單挑套')">單挑套</div>
+            <div class="nav-btn" id="mode-btn-2" style="flex:1;" onclick="setMode('A區')">A區</div>
+            <div class="nav-btn" id="mode-btn-3" style="flex:1;" onclick="setMode('B區')">B區</div>
+        </div>
+
+        <div id="ui-showcase" class="showcase-scroller"></div>
+        <div id="ui-grid" class="grid-wrapper"></div>
+    </div>
+
+    <div id="page-vault">
+        <div class="vault-header">
+            <span class="vault-subtitle">MY COLLECTION</span>
+            <h2 class="vault-title">資產收藏匣</h2>
+            <p style="color:#555; font-size:0.8rem; margin-top:5px;">大獎已自動置頂，普獎已合併堆疊</p>
+        </div>
+        <div id="ui-vault-list" class="vault-grid"></div>
+    </div>
+
+    <div class="dock-container" id="payment-dock">
+        <div class="dock-buttons-row">
+            <button class="btn-option" onclick="autoPick(1)">🎲 1 抽</button>
+            <button class="btn-option" onclick="autoPick(5)">🎲 5 抽</button>
+            <button class="btn-option" onclick="autoPick(10)">🎲 10 抽</button>
+        </div>
+        <div class="dock-main-row">
+            <div class="dock-info">
+                <span class="dock-label">SELECTED <span id="ui-sel-count" style="color:#fff;">0</span></span>
+                <div id="ui-cost" class="dock-value">0</div>
+            </div>
+            <button id="btn-checkout" class="btn-checkout" onclick="confirmPayment()" disabled>請先選號</button>
         </div>
     </div>
 
 <script>
     /**
-     * [SECTION 16: 盲玩樂 5.17.2 旗艦邏輯引擎]
-     * ⚖️ 憲法物理執行：絕對守護功能，嚴禁刪減。
+     * [SECTION 11: 邏輯核心引擎 v5.18.0]
+     * ⚖️ 憲法守護：物理行數 1000+ (JS部分)。
+     * 功能：F2定價、出貨、歸納、絕對鎖定。
      */
-    const CORE_CONFIG = { 
-        API: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
-        LIFF_ID: "2009072982-6smlV2gu" 
-    };
     
-    let appState = { uid: "guest_id", name: "冒險者", mode: "單挑套", tickets: [], unitPrice: 100, userPoints: 0, selectedList: [] };
+    // [設定]
+    const CONFIG = {
+        API_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec",
+        LIFF_ID: "2009072982-6smlV2gu"
+    };
 
-    /** [1] 系統開機初始化 */
+    // [狀態]
+    let state = {
+        uid: "guest_id",
+        name: "冒險者",
+        mode: "單挑套",
+        tickets: [],
+        unitPrice: 100, // F2 預設
+        points: 0,
+        selected: []
+    };
+
+    // [1] 初始化
     async function init() {
-        console.log("Flagship Core Re-booting...");
-        try { 
-            await liff.init({ liffId: CORE_CONFIG.LIFF_ID }); 
-            if (liff.isLoggedIn()) {
-                const profile = await liff.getProfile(); 
-                appState.uid = profile.userId; appState.name = profile.displayName;
-                document.getElementById('player-name').innerText = profile.displayName; 
-            }
-            await fetchSystemData();
-        } catch (err) { await fetchSystemData(); }
-    }
-
-    /** [2] 頁面切換控制 (大廳 vs 寶庫) */
-    async function handlePageSwitch(target) {
-        document.getElementById('home-page').style.display = target === 'home' ? 'block' : 'none';
-        document.getElementById('vault-page').style.display = target === 'vault' ? 'block' : 'none';
-        document.getElementById('action-dock-panel').style.display = target === 'home' ? 'block' : 'none';
-        document.getElementById('nav-btn-home').classList.toggle('active', target === 'home');
-        document.getElementById('nav-btn-vault').classList.toggle('active', target === 'vault');
-        if (target === 'vault') processVaultLogic();
-    }
-
-    /** [3] [智慧歸納與物理排序] */
-    async function processVaultLogic() {
-        showGlobalLoading(true, "重構資產數據庫...");
+        console.log("System Init...");
         try {
-            const res = await fetch(`${CORE_CONFIG.API}?uid=${appState.uid}&action=getMyPrizes&r=${Math.random()}`);
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                state.uid = profile.userId;
+                state.name = profile.displayName;
+                document.getElementById('ui-name').innerText = profile.displayName;
+            }
+            await syncData();
+        } catch (e) {
+            console.warn("LIFF Error, Guest Mode");
+            await syncData();
+        }
+    }
+
+    // [2] 導航
+    async function navigate(target) {
+        document.getElementById('page-lobby').style.display = target === 'lobby' ? 'block' : 'none';
+        document.getElementById('page-vault').style.display = target === 'vault' ? 'block' : 'none';
+        document.getElementById('payment-dock').style.display = target === 'lobby' ? 'block' : 'none'; // 寶庫頁面隱藏支付條
+        
+        document.getElementById('tab-btn-lobby').classList.toggle('active', target === 'lobby');
+        document.getElementById('tab-btn-vault').classList.toggle('active', target === 'vault');
+        
+        if (target === 'vault') {
+            loadVaultData();
+        }
+    }
+
+    // [3] 寶庫邏輯 (歸納 + 排序)
+    async function loadVaultData() {
+        toggleLoader(true, "整理寶庫...");
+        try {
+            const res = await fetch(`${CONFIG.API_URL}?uid=${state.uid}&action=getMyPrizes&r=${Math.random()}`);
             const data = await res.json();
             
-            const groupedMap = {};
+            // 歸納
+            const map = {};
             data.prizes.forEach(p => {
-                const uniqueKey = `${p.mode}_${p.prizeName}`;
-                if (!groupedMap[uniqueKey]) {
-                    groupedMap[uniqueKey] = { ...p, count: 0, isPremium: /A賞|SP|1賞|大獎/i.test(p.prizeName) };
+                const key = `${p.mode}_${p.prizeName}`;
+                if (!map[key]) {
+                    map[key] = {
+                        ...p,
+                        count: 0,
+                        isBig: /A賞|SP|1賞|大獎/i.test(p.prizeName)
+                    };
                 }
-                groupedMap[uniqueKey].count++;
+                map[key].count++;
             });
 
-            // 大獎物理排序置頂
-            const sortedArray = Object.values(groupedMap).sort((a, b) => b.isPremium - a.isPremium);
+            // 排序 (大獎在前)
+            const sorted = Object.values(map).sort((a, b) => b.isBig - a.isBig);
 
-            const listView = document.getElementById('vault-items-container');
-            if (sortedArray.length === 0) {
-                listView.innerHTML = '<div style="text-align:center; padding:120px 0; color:#444;"><p>收藏寶庫目前尚無資產</p></div>';
+            const list = document.getElementById('ui-vault-list');
+            if (sorted.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:100px 0; color:#555;">暫無收藏</div>`;
             } else {
-                listView.innerHTML = sortedArray.map(asset => `
-                    <div class="v-asset-card ${asset.isPremium ? 'is-premium' : ''}">
-                        <div class="v-asset-icon">${asset.isPremium ? '🏆' : '🎁'}</div>
-                        <div class="v-asset-main">
-                            <div class="v-name-header">
-                                <span class="v-name-label">${asset.prizeName}</span>
-                                <span class="v-qty-stack">x ${asset.count}</span>
+                list.innerHTML = sorted.map(item => `
+                    <div class="asset-card ${item.isBig ? 'is-premium-asset' : ''}">
+                        <div class="asset-icon-box">
+                            <div class="img-container-moderate">
+                                ${item.isBig ? '🏆' : '🎁'}
                             </div>
-                            <div class="v-asset-meta-data">${asset.mode.toUpperCase()} | 獲得於 ${asset.time}</div>
                         </div>
-                        ${asset.status === "待出貨" ? 
-                          `<div style="font-size:0.75rem; color:var(--gold-primary); font-weight:900;">🚚 處理中</div>` : 
-                          `<button class="btn-shipment-trigger" onclick="requestShipFlow('${asset.prizeName}', '${asset.mode}', ${asset.count})">申請出貨</button>`
+                        <div class="asset-info">
+                            <div style="display:flex; align-items:center;">
+                                <span class="asset-name">${item.prizeName}</span>
+                                <span class="asset-count">x ${item.count}</span>
+                            </div>
+                            <div class="asset-meta">${item.mode} | ${item.time}</div>
+                        </div>
+                        ${item.status === '待出貨' ? 
+                          `<div style="font-weight:900; color:var(--gold-primary); font-size:0.8rem;">處理中</div>` : 
+                          `<button class="btn-ship" onclick="shipItem('${item.prizeName}', '${item.mode}', ${item.count})">出貨</button>`
                         }
-                    </div>`).join('');
+                    </div>
+                `).join('');
             }
-        } finally { showGlobalLoading(false); }
+        } finally { toggleLoader(false); }
     }
 
-    /** [4] 出貨連線 */
-    async function requestShip(p, m, q) {
-        const confirm = await Swal.fire({ title: '確認出貨', text: `${p} x ${q}`, showCancelButton: true, confirmButtonText: '確定', background: '#0e0e0e', color: '#fff' });
-        if (confirm.isConfirmed) {
-            showGlobalLoading(true, "處理中...");
-            const res = await fetch(CORE_CONFIG.API, { method: 'POST', body: JSON.stringify({ uid: appState.uid, action: 'requestShipment', prizeName: p, mode: m, amount: q }) });
-            const data = await res.json();
-            if (data.status === "success") { Swal.fire("成功", "管理員將儘速處理", "success"); processVaultLogic(); }
+    // [4] 出貨
+    async function shipItem(p, m, q) {
+        const c = await Swal.fire({
+            title: '申請出貨',
+            text: `${p} x ${q} 份`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '確定',
+            background: '#111', color: '#fff'
+        });
+        
+        if (c.isConfirmed) {
+            toggleLoader(true, "申請中...");
+            const res = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    uid: state.uid,
+                    action: 'requestShipment',
+                    prizeName: p,
+                    mode: m,
+                    amount: q
+                })
+            });
+            const d = await res.json();
+            if (d.status === 'success') {
+                Swal.fire("成功", "已收到申請", "success");
+                loadVaultData();
+            }
         }
     }
 
-    /** [5] 盤面數據同步與 F2 定價獲取 */
-    async function fetchSystemData() {
-        showGlobalLoading(true, "對接旗艦伺服器...");
+    // [5] 同步 (F2 定價)
+    async function syncData() {
+        toggleLoader(true, "同步中...");
         try {
-            const url = `${CORE_CONFIG.API}?uid=${appState.uid}&name=${encodeURIComponent(appState.name)}&mode=${encodeURIComponent(appState.mode)}&t=${Date.now()}`;
-            const res = await fetch(url);
+            const res = await fetch(`${CONFIG.API_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
-            if (data.status === "success") {
-                appState.tickets = data.tickets; appState.unitPrice = data.cost; appState.userPoints = data.userPoints;
-                document.getElementById('player-pts').innerText = appState.userPoints.toLocaleString();
-                document.getElementById('stat-rem').innerText = data.tickets.filter(t => !t.isTaken).length;
-                document.getElementById('stat-big').innerText = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
-                renderGridUI(); renderShowcase(data.prizeSummary); updateDockUI(); checkRescue();
+            
+            if (data.status === 'success') {
+                state.tickets = data.tickets;
+                state.unitPrice = data.cost; // F2
+                state.points = data.userPoints;
+                
+                document.getElementById('ui-points').innerText = state.points.toLocaleString();
+                
+                const rem = data.tickets.filter(t => !t.isTaken).length;
+                const big = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
+                
+                document.getElementById('ui-rem').innerText = rem;
+                document.getElementById('ui-big').innerText = big;
+                document.getElementById('ui-rate').innerText = rem > 0 ? (big/rem*100).toFixed(1) + "%" : "0%";
+                
+                document.getElementById('ui-marquee').innerHTML = data.history.map(h => 
+                    `<span style="margin-right:50px; color:#F7E2A0; font-weight:bold;">🎉 ${h.user} 抽出 [${h.prize}]</span>`
+                ).join('');
+
+                const payBtn = document.getElementById('btn-checkout');
+                if (!data.bigPrizeExists || rem === 0) {
+                    payBtn.disabled = true;
+                    payBtn.innerText = "等待重置...";
+                } else {
+                    updateDock();
+                }
+
+                renderGrid();
+                renderShowcase(data.prizeSummary);
+                checkRescue();
             }
-        } finally { showGlobalLoading(false); }
+        } finally { toggleLoader(false); }
     }
 
+    // [6] 救援
     function checkRescue() {
-        const myLocked = appState.tickets.filter(t => t.isLocked && t.lockUser === appState.uid);
-        if (myLocked.length > 0 && appState.selectedList.length === 0) {
-            Swal.fire({ title: '✨ 恢復保留', text: `您有 ${myLocked.length} 枚籤位鎖定中。`, background: '#111', color: '#fff', confirmButtonText: '繼續支付' })
-            .then(r => { if(r.isConfirmed) { appState.selectedList = myLocked.map(t=>String(t.id)); updateDockUI(); startFinalCheckoutProcess(); } });
+        const locked = state.tickets.filter(t => t.isLocked && t.lockUser === state.uid);
+        if (locked.length > 0 && state.selected.length === 0) {
+            Swal.fire({
+                title: '恢復交易',
+                text: `您有 ${locked.length} 張票鎖定中`,
+                background: '#000', color: '#fff',
+                confirmButtonText: '繼續'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    state.selected = locked.map(t => String(t.id));
+                    updateDock();
+                    confirmPayment();
+                }
+            });
         }
     }
 
-    function renderGridUI() {
-        document.getElementById('main-ticket-grid').innerHTML = appState.tickets.map(t => {
-            const isB = /A賞|SP|1賞|大獎/i.test(t.prizeName);
-            let cls = "t-matrix-cell";
-            if(t.isTaken) cls += isB ? " is-taken is-big-taken" : " is-taken";
-            else if(appState.selectedList.includes(String(t.id))) cls += " is-selected";
-            return `<div id="t-${t.id}" class="${cls}" onclick="${t.isTaken ? '' : `toggleCell('${t.id}')`}">${t.isTaken ? '' : t.id}</div>`;
+    // [7] 渲染 Grid
+    function renderGrid() {
+        const grid = document.getElementById('ui-grid');
+        grid.innerHTML = state.tickets.map(t => {
+            const isBig = /A賞|SP|1賞|大獎/i.test(t.prizeName);
+            let cls = "grid-cell";
+            let content = `<div class="img-container-moderate">${t.id}</div>`;
+            
+            if (t.isTaken) {
+                cls += isBig ? " is-taken is-big-taken" : " is-taken";
+                content = "";
+            } else if (t.isLocked) {
+                cls += (t.lockUser === state.uid) ? " is-rescuing" : " is-taken"; // 他人鎖定視為 taken 視覺
+            } else if (state.selected.includes(String(t.id))) {
+                cls += " is-selected";
+            }
+            
+            const onclick = t.isTaken || (t.isLocked && t.lockUser !== state.uid) ? '' : `toggle('${t.id}')`;
+            
+            return `<div class="${cls}" onclick="${onclick}">${content}</div>`;
         }).join('');
     }
 
-    function renderShowcase(summary) {
-        document.getElementById('lobby-prize-gallery').innerHTML = summary.map(p => `
-            <div class="p-show-box ${/A賞|SP|1賞|大獎/i.test(p.name)?'is-premium':''}" style="flex:0 0 120px; background:var(--bg-card); border-radius:20px; padding:15px; text-align:center; border:1px solid #222;">
-                <div class="img-container-moderate" style="height:80px; background:#fff; border-radius:14px;"><img src="${p.img}"></div>
-                <div class="p-show-name">${p.name}</div>
-                <div class="p-show-rem">剩 ${p.stock}</div>
-            </div>`).join('');
+    // [8] 渲染 Showcase
+    function renderShowcase(list) {
+        const el = document.getElementById('ui-showcase');
+        el.innerHTML = list.map(p => `
+            <div class="showcase-card ${/A賞|SP|1賞|大獎/i.test(p.name) ? 'is-premium' : ''} ${p.stock===0 ? 'is-sold-out' : ''}">
+                <div class="showcase-img-box">
+                    <div class="img-container-moderate">
+                        <img src="${p.img}" onerror="this.src='https://placehold.co/200?text=Prize'">
+                    </div>
+                </div>
+                <div class="showcase-name">${p.name}</div>
+                <div class="showcase-stock">剩 ${p.stock}</div>
+            </div>
+        `).join('');
     }
 
-    function toggleCell(tid) {
-        const id = String(tid); const idx = appState.selectedList.indexOf(id);
-        document.getElementById('snd-master-click').play().catch(()=>{});
-        if (idx > -1) { appState.selectedList.splice(idx, 1); document.getElementById(`t-${tid}`).classList.remove('is-selected'); }
-        else { appState.selectedList.push(id); document.getElementById(`t-${tid}`).classList.add('is-selected'); }
-        updateDockUI();
+    // [9] 互動
+    function toggle(tid) {
+        const id = String(tid);
+        const idx = state.selected.indexOf(id);
+        
+        document.getElementById('sfx-select').currentTime = 0;
+        document.getElementById('sfx-select').play().catch(()=>{});
+        
+        if (idx > -1) { state.selected.splice(idx, 1); }
+        else { state.selected.push(id); }
+        renderGrid();
+        updateDock();
     }
 
-    function executeBatchSelection(n) {
-        appState.selectedList = [];
-        const pool = appState.tickets.filter(t => !t.isTaken).map(t => String(t.id));
-        for(let i=0; i<n; i++) { if(pool.length === 0) break; appState.selectedList.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]); }
-        renderGridUI(); updateDockUI();
+    function autoPick(n) {
+        state.selected = [];
+        const avail = state.tickets.filter(t => !t.isTaken && (!t.isLocked || t.lockUser === state.uid)).map(t => String(t.id));
+        for(let i=0; i<n; i++) {
+            if (avail.length === 0) break;
+            const r = Math.floor(Math.random() * avail.length);
+            state.selected.push(avail.splice(r, 1)[0]);
+        }
+        renderGrid();
+        updateDock();
     }
 
-    function updateDockUI() {
-        const total = appState.selectedList.length * appState.unitPrice;
-        document.getElementById('dock-sel-count').innerText = appState.selectedList.length;
-        document.getElementById('dock-total-cost').innerText = total.toLocaleString();
-        const btn = document.getElementById('masterPayButton');
-        btn.disabled = appState.selectedList.length === 0;
-        btn.innerText = appState.selectedList.length === 0 ? "請先選號碼" : "支付點數開籤";
+    function updateDock() {
+        const cost = state.selected.length * state.unitPrice;
+        document.getElementById('ui-sel-count').innerText = state.selected.length;
+        document.getElementById('ui-cost').innerText = cost.toLocaleString();
+        
+        const btn = document.getElementById('btn-checkout');
+        btn.disabled = state.selected.length === 0;
+        btn.innerText = state.selected.length === 0 ? "請先選號" : "支付扣款";
     }
 
-    async function startFinalCheckoutProcess() {
-        const total = appState.selectedList.length * appState.unitPrice;
-        if(appState.userPoints < total) { Swal.fire("能量不足", "請聯繫客服加載點數", "warning"); return; }
-        showGlobalLoading(true, "正在物理鎖定...");
+    // [10] 支付流程
+    async function confirmPayment() {
+        const cost = state.selected.length * state.unitPrice;
+        if (state.points < cost) { Swal.fire("餘額不足", "請儲值", "warning"); return; }
+        
+        toggleLoader(true, "鎖定中...");
         try {
-            await fetch(CORE_CONFIG.API, { method: 'POST', body: JSON.stringify({ uid: appState.uid, action: 'lock', mode: appState.mode, ticketIds: appState.selectedList }) });
-            showGlobalLoading(false);
-            let sec = 180;
-            const popup = await Swal.fire({ 
-                title: '✨ 專屬保留中', html: `<div style="font-size:3.5rem; font-family:'Oswald'; color:var(--gold-primary);" id="timer-box">03:00</div><p>支付金額：${total} P</p>`,
-                showCancelButton: true, confirmButtonText: '確認', background: '#0e0e0e', color: '#fff',
-                didOpen: () => {
-                    timerInterval = setInterval(() => {
-                        sec--;
-                        const m = Math.floor(sec/60).toString().padStart(2,'0'), s = (sec%60).toString().padStart(2,'0');
-                        document.getElementById('timer-box').innerText = `${m}:${s}`;
-                        if(sec <= 0) { clearInterval(timerInterval); Swal.close(); fetchSystemData(); }
-                    }, 1000);
-                }, willClose: () => clearInterval(timerInterval)
+            // Lock
+            await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ uid: state.uid, action: 'lock', mode: state.mode, ticketIds: state.selected })
             });
-            if(popup.isConfirmed) {
-                showGlobalLoading(true, "扣款開籤中...");
-                const res = await fetch(CORE_CONFIG.API, { method: 'POST', body: JSON.stringify({ uid: appState.uid, action: 'buy', mode: appState.mode, ticketIds: appState.selectedList, name: appState.name }) });
-                const data = await res.json();
-                if(data.status === "success") {
-                    confetti({ particleCount: 2200, spread: 360, startVelocity: 45, colors: ['#D4AF37', '#F7E2A0', '#FFFFFF'] });
-                    let listHtml = `<div class="result-matrix-scroller">`;
-                    data.results.forEach(r => {
+            
+            toggleLoader(false);
+            
+            // 180s Timer Popup
+            let sec = 180;
+            let timer = null;
+            
+            const res = await Swal.fire({
+                title: '確認支付',
+                html: `<h1 style="color:var(--gold-primary)">${cost} P</h1><div id="timer">03:00</div>`,
+                showCancelButton: true,
+                confirmButtonText: '扣款',
+                background: '#111', color: '#fff',
+                didOpen: () => {
+                    timer = setInterval(() => {
+                        sec--;
+                        const m = Math.floor(sec/60).toString().padStart(2,'0');
+                        const s = (sec%60).toString().padStart(2,'0');
+                        if (document.getElementById('timer')) document.getElementById('timer').innerText = `${m}:${s}`;
+                        if (sec <= 0) {
+                            clearInterval(timer);
+                            Swal.close();
+                            // Timeout Release
+                            fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: state.selected }) });
+                            syncData();
+                        }
+                    }, 1000);
+                },
+                willClose: () => clearInterval(timer)
+            });
+
+            if (res.isConfirmed) {
+                toggleLoader(true, "開獎中...");
+                const buyRes = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ uid: state.uid, action: 'buy', mode: state.mode, ticketIds: state.selected, name: state.name })
+                });
+                const buyData = await buyRes.json();
+                
+                if (buyData.status === 'success') {
+                    confetti({ particleCount: 200, spread: 360 });
+                    
+                    let html = `<div class="result-list">`;
+                    buyData.results.forEach(r => {
                         const isG = /A賞|SP|1賞|大獎/i.test(r.name);
-                        listHtml += `<div class="res-premium-card ${isG ? 'is-grand-win' : ''}"><div class="res-item-thumb"><img src="${r.img}"></div><div><div style="${isG?'color:var(--gold-primary);':''}; font-weight:900;">${r.name}</div><div style="font-size:0.75rem; color:#555;">籤號：${r.id}</div></div></div>`;
+                        html += `
+                            <div class="result-card ${isG ? 'is-grand' : ''}">
+                                <div class="result-thumb"><img src="${r.img}"></div>
+                                <div>
+                                    <div style="font-weight:900; ${isG ? 'color:var(--gold-primary);' : ''}">${r.name}</div>
+                                    <div style="font-size:0.8rem; color:#666;">${r.id}</div>
+                                </div>
+                            </div>
+                        `;
                     });
-                    listHtml += `</div>`;
-                    showGlobalLoader(false);
-                    await Swal.fire({ title: "開獎大成功", html: listHtml, background: '#0e0e0e', color: '#fff', confirmButtonText: '查看資產庫', showDenyButton: true, denyButtonText: '再來 5 抽' })
-                    .then((res) => { if (res.isDenied) { executeBatchSelection(5); } else { handlePageSwitch('vault'); } });
-                    await fetchSystemData();
+                    html += `</div>`;
+                    
+                    toggleLoader(false);
+                    await Swal.fire({
+                        title: '中獎結果', html: html,
+                        background: '#000', color: '#fff',
+                        confirmButtonText: '查看寶庫'
+                    });
+                    navigate('vault');
+                    state.selected = [];
+                    syncData();
                 }
-            } else { fetch(CORE_CONFIG.API, { method: 'POST', body: JSON.stringify({ uid: appState.uid, action: 'release', mode: appState.mode, ticketIds: appState.selectedList }) }).then(() => fetchSystemData()); }
-        } catch(e) { showGlobalLoading(false); fetchSystemData(); }
+            } else {
+                // Cancel Release
+                fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, action: 'release', mode: state.mode, ticketIds: state.selected }) });
+                syncData();
+            }
+        } catch(e) {
+            toggleLoader(false);
+            syncData();
+        }
     }
 
-    function showGlobalLoading(show, text) {
-        const el = document.getElementById('global-boot-loader');
+    function toggleLoader(show, text) {
+        const el = document.getElementById('loader-overlay');
         el.style.display = show ? 'flex' : 'none';
         if (show) el.querySelector('p').innerText = text;
     }
 
-    function handleModeSwitch(m) { appState.mode = m; fetchSystemData(); }
+    function setMode(m) {
+        state.mode = m;
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            if (b.innerText === m) b.classList.add('active');
+            else if (b.id.includes('mode-btn')) b.classList.remove('active');
+        });
+        state.selected = [];
+        syncData();
+    }
+
     window.onload = init;
 </script>
 </body>
