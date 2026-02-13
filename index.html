@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 3.8.0 旗艦營運版</title>
+    <title>盲玩樂 3.8.4 旗艦守護版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -77,6 +77,7 @@
             transition: 0.5s; 
         }
         
+        /* 地獄火模式文字特效 */
         .critical-mode .stat-val#stat-rem { 
             color: var(--red); 
             text-shadow: 0 0 15px var(--red); 
@@ -224,7 +225,7 @@
         
         .ticket.big-taken::after { content: '👑'; color: #fff; font-size: 1.5rem; }
 
-        /* 結果視窗排版守護 - 15抽捲軸邏輯 */
+        /* 結果視窗排版守護 - 重要：15抽捲軸邏輯 */
         .result-container { 
             max-height: 55vh; 
             overflow-y: auto; 
@@ -256,6 +257,7 @@
             margin-bottom: 8px; 
         }
         
+        /* 守護：智慧最後賞特殊發光樣式 */
         .lo-card { 
             background: linear-gradient(45deg, #ff00cc, #3333ff) !important; 
             border-color: #fff !important; 
@@ -377,6 +379,7 @@
     </div>
 
 <script>
+    // --- 核心系統 CONFIG ---
     const CONFIG = { 
         GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
@@ -384,6 +387,7 @@
     
     let state = { uid: "", name: "", mode: "單挑套", tickets: [], cost: 0, points: 0, selected: [] };
 
+    // LIFF 初始化與身份獲取
     async function init() {
         try { 
             await liff.init({ liffId: CONFIG.LIFF_ID }); 
@@ -396,13 +400,18 @@
         } catch (e) { document.getElementById('loader').innerText = "系統連線異常"; }
     }
 
+    // 資料同步邏輯 (對應 3.8.0+ GAS)
     async function sync() {
-        state.selected = []; updateCartUI(); document.getElementById('loader').style.display = 'flex';
+        state.selected = []; 
+        updateCartUI(); 
+        document.getElementById('loader').style.display = 'flex';
         try {
             const res = await fetch(`${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`);
             const data = await res.json();
             if(data.status === "success") {
-                state.tickets = data.tickets; state.cost = data.cost; state.points = data.userPoints;
+                state.tickets = data.tickets; 
+                state.cost = data.cost; 
+                state.points = data.userPoints;
                 document.getElementById('u-pts').innerText = state.points.toLocaleString();
                 
                 const rem = state.tickets.filter(t => !t.isTaken).length;
@@ -412,10 +421,12 @@
                 document.getElementById('stat-big').innerText = big;
                 document.getElementById('stat-rate').innerText = rem > 0 ? (big/rem*100).toFixed(1) + "%" : "0%";
                 
+                // 儀式感判定與看板視覺更新
                 const isCritical = (rem <= 10 && rem > 0);
                 document.body.classList.toggle('critical-mode', isCritical);
                 document.getElementById('lo-alert').style.display = isCritical ? 'block' : 'none';
                 
+                // 跑馬燈內容同步
                 document.getElementById('win-track').innerHTML = data.history.length > 0 ? 
                     data.history.map(h => `<span class="win-item">🎉 抽出【${h.prize}】(${h.time})</span>`).join('') : 
                     "大獎均在盤內，等待幸運兒！";
@@ -427,6 +438,7 @@
                 
                 renderGrid();
                 
+                // 獎項摘要渲染 (p-card)
                 document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
                     <div class="p-card">
                         <img src="${p.img}">
@@ -437,6 +449,7 @@
         } finally { document.getElementById('loader').style.display = 'none'; }
     }
 
+    // 籤位格網渲染
     function renderGrid() {
         document.getElementById('main-grid').innerHTML = state.tickets.map(t => {
             const isBig = /A賞|SP|1賞|大獎/i.test(t.prizeName);
@@ -446,13 +459,22 @@
         }).join('');
     }
 
+    // 選籤與震動互動
     function toggleSelect(tid) {
-        const idx = state.selected.indexOf(tid); const el = document.getElementById(`t-${tid}`);
-        if(idx > -1) { state.selected.splice(idx, 1); el.classList.remove('selected'); }
-        else { state.selected.push(tid); el.classList.add('selected'); if (window.navigator.vibrate) window.navigator.vibrate(15); }
+        const idx = state.selected.indexOf(tid); 
+        const el = document.getElementById(`t-${tid}`);
+        if(idx > -1) { 
+            state.selected.splice(idx, 1); 
+            el.classList.remove('selected'); 
+        } else { 
+            state.selected.push(tid); 
+            el.classList.add('selected'); 
+            if (window.navigator.vibrate) window.navigator.vibrate(15); 
+        }
         updateCartUI();
     }
 
+    // 下方浮動列更新
     function updateCartUI() {
         const bar = document.getElementById('cart-bar'); 
         bar.style.display = (state.selected.length > 0 && !document.getElementById('drawBtn').disabled) ? 'flex' : 'none';
@@ -460,32 +482,39 @@
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
 
+    // --- 核心改動：3.8.4 全量買斷同步開獎展示 ---
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
         if(state.points < total) { Swal.fire({ title: "餘額不足", background: '#161b22', color: '#fff' }); return; }
         const confirm = await Swal.fire({ title: '確認開籤？', text: `消耗 ${total} P`, showCancelButton: true, confirmButtonColor: '#ff3e3e', background: '#161b22', color: '#fff' });
         
         if(confirm.isConfirmed) {
-            document.getElementById('drawBtn').disabled = true; document.getElementById('loader').style.display = 'flex';
+            document.getElementById('drawBtn').disabled = true; 
+            document.getElementById('loader').style.display = 'flex';
             try {
-                const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, mode: state.mode, ticketIds: state.selected }) });
+                const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ uid: state.uid, name: state.name, mode: state.mode, ticketIds: state.selected }) });
                 const result = await res.json();
+                
                 if(result.status === "success") {
-                    const big = result.results.filter(r => /A賞|SP|1賞|大獎/i.test(r.name));
-                    const norm = result.results.filter(r => !(/A賞|SP|1賞|大獎/i.test(r.name)));
-                    confetti({ particleCount: result.isLastOne ? 1000 : 500, spread: 150, origin: { y: 0.6 }, zIndex: 10000 });
+                    // 同步展示紙花
+                    confetti({ particleCount: result.isLastOne ? 1200 : 500, spread: 150, origin: { y: 0.6 }, zIndex: 10000 });
                     
                     let resHtml = `<div class="result-container">`;
                     
-                    // 智慧最後賞渲染 - 守護邏輯
+                    // 1. 智慧最後賞特殊展示 (排第一)
                     if(result.isLastOne && result.lastOneInfo) {
-                        resHtml += `<div class="big-prize-card lo-card"><div style="color:#fff; font-weight:900; font-size:1.4rem;">👑 ${result.lastOneInfo.name}</div><img src="${result.lastOneInfo.img}"><p style="margin:5px 0; font-size:0.85rem; font-weight:bold;">最後一抽終極大獎獲取！</p></div>`;
+                        resHtml += `<div class="big-prize-card lo-card"><div style="color:#fff; font-weight:900; font-size:1.4rem;">👑 ${result.lastOneInfo.name}</div><img src="${result.lastOneInfo.img}"><p style="margin:5px 0; font-size:0.85rem; font-weight:bold;">恭喜獲得終極大獎！</p></div>`;
                     }
                     
-                    big.forEach(p => { 
-                        resHtml += `<div class="big-prize-card"><div style="color:var(--gold); font-weight:900; font-size:1rem; margin-bottom:8px;">✨ 獲得大獎 ✨</div><img src="${p.img}"><div style="font-weight:900; color:#fff; font-size:0.9rem; margin-top:8px;">${p.name}</div></div>`; 
+                    // 2. 所有大獎清單展示 (排第二)
+                    result.results.forEach(p => { 
+                        if(/A賞|SP|1賞|大獎/i.test(p.name)) {
+                            resHtml += `<div class="big-prize-card"><div style="color:var(--gold); font-weight:900; font-size:1rem; margin-bottom:8px;">✨ 獲得大獎 ✨</div><img src="${p.img}"><div style="font-weight:900; color:#fff; font-size:0.9rem; margin-top:8px;">${p.name}</div></div>`; 
+                        }
                     });
                     
+                    // 3. 普獎網格展示 (排第三，三欄佈局)
+                    const norm = result.results.filter(p => !(/A賞|SP|1賞|大獎/i.test(p.name)));
                     if(norm.length > 0) {
                         resHtml += `<div class="normal-prizes-grid">`;
                         norm.forEach(p => { resHtml += `<div class="norm-item"><img src="${p.img}"><div class="norm-name">${p.name}</div></div>`; });
@@ -494,7 +523,15 @@
                     resHtml += `</div>`;
                     
                     document.getElementById('loader').style.display = 'none';
-                    await Swal.fire({ title: result.isLastOne ? '🎊 終極大賞 🎊' : '開籤結果', html: resHtml, background: '#161b22', color: '#fff', width: '95%', confirmButtonText: '收下獎項', confirmButtonColor: '#ffcc00' });
+                    await Swal.fire({ 
+                        title: result.isLastOne ? '🎊 終極大賞 🎊' : '開籤結果', 
+                        html: resHtml, 
+                        background: '#161b22', 
+                        color: '#fff', 
+                        width: '95%', 
+                        confirmButtonText: '收下獎項', 
+                        confirmButtonColor: '#ffcc00' 
+                    });
                     await sync();
                 } else { 
                     document.getElementById('loader').style.display = 'none';
@@ -505,6 +542,7 @@
         } else { updateCartUI(); }
     }
     
+    // 切換分區分頁
     function changeMode(m) { 
         state.mode = m; 
         document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === m)); 
