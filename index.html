@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>盲玩樂 3.8.8 旗艦守護版</title>
+    <title>盲玩樂 3.8.9 診斷修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -361,7 +361,7 @@
 <body>
     <div id="loader">
         <div style="border: 5px solid #222; border-top: 5px solid var(--cyan); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top:20px; color:var(--cyan); font-weight:900; letter-spacing: 2px;">SYNCING DATABASE...</p>
+        <p id="loader-text" style="margin-top:20px; color:var(--cyan); font-weight:900; letter-spacing: 2px;">初始化系統...</p>
     </div>
     
     <div class="header">
@@ -394,14 +394,13 @@
 
 <script>
     /* =========================================
-       8. JavaScript 核心邏輯 (基準守護)
+       8. JavaScript 核心邏輯 (基準守護 + 報錯診斷)
        ========================================= */
     const CONFIG = { 
         GAS_URL: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
     };
     
-    // 狀態管理物件 (物理增長：加入詳盡欄位)
     let state = { 
         uid: "debug_user", 
         name: "測試玩家", 
@@ -412,9 +411,9 @@
         selected: [] 
     };
 
-    // LIFF 初始化
     async function init() {
         document.getElementById('loader').style.display = 'flex';
+        document.getElementById('loader-text').innerText = "連接 LIFF...";
         try { 
             await liff.init({ liffId: CONFIG.LIFF_ID }); 
             if (!liff.isLoggedIn()) { liff.login(); return; }
@@ -424,22 +423,24 @@
             document.getElementById('u-name').innerText = p.displayName; 
             await sync();
         } catch (e) { 
-            console.error("LIFF Init Error:", e);
-            document.getElementById('loader-text').innerText = "連線異常，請重啟 LINE"; 
-            await sync(); // 嘗試離線連線
+            console.error("LIFF Error:", e);
+            // 允許 debug 模式即使 LIFF 失敗也嘗試讀取
+            await sync(); 
         }
     }
 
-    // 數據同步：與 3.8.6 GAS 物理對應
     async function sync() {
         state.selected = []; 
         updateCartUI(); 
         document.getElementById('loader').style.display = 'flex';
+        document.getElementById('loader-text').innerText = "同步資料庫...";
+        
         try {
             const fetchUrl = `${CONFIG.GAS_URL}?uid=${state.uid}&name=${encodeURIComponent(state.name)}&mode=${encodeURIComponent(state.mode)}&t=${Date.now()}`;
             const res = await fetch(fetchUrl);
             const data = await res.json();
             
+            // --- 診斷修復核心：錯誤攔截與回報 ---
             if(data.status === "success") {
                 state.tickets = data.tickets; 
                 state.cost = data.cost || 100; 
@@ -454,43 +455,48 @@
                 document.getElementById('stat-big').innerText = big;
                 document.getElementById('stat-rate').innerText = rem > 0 ? (big/rem*100).toFixed(1) + "%" : "0%";
                 
-                // 視覺狀態判定：觸發地獄火
                 const isCritical = (rem <= 10 && rem > 0);
                 document.body.classList.toggle('critical-mode', isCritical);
                 document.getElementById('lo-alert').style.display = isCritical ? 'block' : 'none';
                 
-                // 跑馬燈渲染 (守護 3.7.10 邏輯)
                 document.getElementById('win-track').innerHTML = data.history.length > 0 ? 
                     data.history.map(h => `<span class="win-item">🎉 ${h.user} 抽出【${h.prize}】(${h.time})</span>`).join('') : 
-                    "盤內大獎豐富，幸運兒就是你！";
+                    "目前尚未有大獎開出，敬請把握機會！";
 
                 const db = document.getElementById('drawBtn');
                 if (!data.bigPrizeExists || rem === 0) {
                     db.disabled = true; db.innerText = "重置中 (1min)"; db.style.background = "#333";
-                    setTimeout(sync, 60000); // 1分鐘自動重刷
+                    setTimeout(sync, 60000); 
                 } else {
                     db.disabled = false; db.innerText = "確認開籤"; db.style.background = "linear-gradient(45deg,#ff3e3e,#b32d2d)";
                 }
 
                 renderGrid();
                 
-                // 獎項摘要渲染 (P-Card)
                 document.getElementById('prize-gallery').innerHTML = data.prizeSummary.map(p => `
                     <div class="p-card">
                         <img src="${p.img}">
                         <div style="font-size:10px; margin-top:5px; font-weight:900; color:#fff;">${p.name}</div>
                         <div style="color:var(--red); font-size:10px; font-weight:900;">剩 ${p.stock}</div>
                     </div>`).join('');
+            } else {
+                // 如果後端回傳 error (如：找不到分頁)，這裡會接住並報錯
+                throw new Error(data.message || "資料庫讀取失敗");
             }
         } catch (error) {
             console.error("Sync Error:", error);
-            Swal.fire({ title: "連線失敗", text: "請確認網路狀態與 GAS 權限設定。", icon: "error", background: '#161b22', color: '#fff' });
+            Swal.fire({ 
+                title: "連線異常", 
+                html: `無法讀取資料。<br>請檢查試算表分頁名稱是否正確：<br><b>單挑套, A區, B區, 使用者, 總表</b><br><br>錯誤訊息：${error.message}`, 
+                icon: "error", 
+                background: '#161b22', 
+                color: '#fff' 
+            });
         } finally { 
             document.getElementById('loader').style.display = 'none'; 
         }
     }
 
-    // 籤位網格渲染 (鎖定守護)
     function renderGrid() {
         const grid = document.getElementById('main-grid');
         grid.innerHTML = state.tickets.map(t => {
@@ -506,7 +512,6 @@
         }).join('');
     }
 
-    // 選籤邏輯 (含物理震動)
     function toggleSelect(tid) {
         const tidStr = String(tid);
         const idx = state.selected.indexOf(tidStr); 
@@ -518,7 +523,6 @@
         } else { 
             state.selected.push(tidStr); 
             el.classList.add('selected'); 
-            // 守護：震動相容性檢查
             if (window.navigator && window.navigator.vibrate) {
                 window.navigator.vibrate(20);
             }
@@ -534,11 +538,11 @@
         document.getElementById('total-cost').innerText = (state.selected.length * state.cost).toLocaleString();
     }
 
-    // --- 核心優化：3.8.8 全量同步開獎展示 ---
+    // 買斷制同步開獎
     async function handleCheckout() {
         const total = state.selected.length * state.cost;
         if(state.points < total) { 
-            Swal.fire({ title: "餘額不足", text: "您的積分不足以支付本次開籤。", icon: "warning", background: '#161b22', color: '#fff' }); 
+            Swal.fire({ title: "餘額不足", text: "請聯繫管理員儲值", icon: "warning", background: '#161b22', color: '#fff' }); 
             return; 
         }
         
@@ -568,12 +572,10 @@
                 const result = await res.json();
                 
                 if(result.status === "success") {
-                    // 紙花特效鎖定
                     confetti({ particleCount: result.isLastOne ? 1500 : 700, spread: 160, origin: { y: 0.6 }, zIndex: 10000 });
                     
                     let resHtml = `<div class="result-container">`;
                     
-                    // 1. 最後賞優先渲染 (lo-card 樣式鎖定)
                     if(result.isLastOne && result.lastOneInfo) {
                         resHtml += `
                             <div class="big-prize-card lo-card">
@@ -584,7 +586,6 @@
                             </div>`;
                     }
                     
-                    // 2. 篩選所有大獎一次性渲染 (大獎卡片樣式鎖定)
                     const bigPrizes = result.results.filter(p => /A賞|SP|1賞|大獎/i.test(p.name));
                     bigPrizes.forEach(p => { 
                         resHtml += `
@@ -595,7 +596,6 @@
                             </div>`; 
                     });
                     
-                    // 3. 普獎網格化渲染 (三欄式佈局鎖定)
                     const normPrizes = result.results.filter(p => !(/A賞|SP|1賞|大獎/i.test(p.name)));
                     if(normPrizes.length > 0) {
                         resHtml += `<div class="normal-prizes-grid">`;
@@ -625,9 +625,8 @@
                     throw new Error(result.message);
                 }
             } catch (e) { 
-                console.error("Checkout Error:", e);
                 document.getElementById('loader').style.display = 'none'; 
-                Swal.fire({ title: "交易失敗", text: e.message || "伺服器同步失敗，請稍後再試。", icon: "error", background: '#161b22', color: '#fff' });
+                Swal.fire({ title: "交易失敗", text: e.message, icon: "error", background: '#161b22', color: '#fff' });
                 await sync(); 
             }
         } else { 
@@ -635,7 +634,6 @@
         }
     }
     
-    // 切換分區分頁 (鎖定守護)
     function changeMode(m) { 
         if (state.mode === m) return;
         state.mode = m; 
