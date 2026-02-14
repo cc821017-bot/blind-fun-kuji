@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.15.6 旗艦商務介面終極版</title>
+    <title>盲玩樂 5.16.0 旗艦商務增強版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,7 +49,43 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 2: SweetAlert 極限修復 (v5.15.6 UI Padding Fix)]
+           [SECTION 2: v5.16.0 視覺增強特效 (Visual Enhancements)]
+           ========================================================================== */
+        
+        /* 1. 庫存緊張脈衝 (Inventory Pulse) */
+        .pulse-urgent {
+            color: var(--status-red) !important;
+            animation: textPulse 0.8s infinite alternate;
+            text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+        @keyframes textPulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* 2. 大獎聽牌警報 (Jackpot Alert Banner) */
+        #jackpot-alert-banner {
+            display: none; /* 預設隱藏 */
+            background: linear-gradient(90deg, #b38806, #f9d423, #b38806);
+            color: #000;
+            font-weight: 900;
+            text-align: center;
+            padding: 12px;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(249, 212, 35, 0.6);
+            animation: bgFlash 1.5s infinite;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #fff;
+        }
+        @keyframes bgFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+            100% { filter: brightness(1); }
+        }
+
+        /* ==========================================================================
+           [SECTION 3: SweetAlert 極限修復 (Inherited from v5.15.5)]
            ========================================================================== */
         .swal2-container { 
             z-index: 2147483647 !important; 
@@ -71,19 +107,17 @@
             flex-direction: column;
         }
 
-        /* 資訊捲動區：[v5.15.6] 增加底部 padding 防止文字被切斷 */
         .swal-scroll-wrap {
             flex: 1;
             max-height: 35vh !important; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
-            margin-bottom: 15px; /* 增加與按鈕的距離 */
-            padding: 5px 5px 25px 5px; /* 底部增加 25px 緩衝 */
+            margin-bottom: 15px;
+            padding: 5px 5px 25px 5px; /* 底部緩衝 */
             border-top: 1px solid rgba(255,255,255,0.1);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* 固定操作區 */
         .swal-fixed-actions {
             display: flex;
             gap: 15px;
@@ -98,7 +132,7 @@
         }
 
         /* ==========================================================================
-           [SECTION 3: 圖片階級系統]
+           [SECTION 4: 圖片階級系統]
            ========================================================================== */
         .img-container-moderate {
             width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
@@ -140,7 +174,7 @@
         }
 
         /* ==========================================================================
-           [SECTION 4: UI 元件]
+           [SECTION 5: UI 元件]
            ========================================================================== */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; position: sticky; top: 0; z-index: 1000; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .u-info-section { display: flex; flex-direction: column; }
@@ -219,7 +253,7 @@
         .pay-master-flex { display: flex; align-items: center; gap: 20px; }
         .price-summary-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .lbl-selected-count { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-        .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1.2; padding-bottom: 5px; } /* [v5.15.6] 增加 line-height 防止切斷 */
+        .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1.2; padding-bottom: 5px; } 
         .btn-checkout-master { flex: 2; border: none; padding: 24px; border-radius: 25px; background: linear-gradient(90deg, #D4AF37, #F7E2A0); color: #000; font-weight: 900; font-size: 1.55rem; box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45); letter-spacing: 1px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
         .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
@@ -260,6 +294,7 @@
     </div>
 
     <div id="home-page">
+        <div id="jackpot-alert-banner">🔥 決勝時刻：大獎聽牌中 🔥</div>
         <div class="auto-monitor-tag" style="text-align:center; padding:10px; font-size:0.75rem; color:#666;">🤖 智慧營運監控：大獎全數出貨滿 5 分鐘後將自動物理重置</div>
         <div class="win-history-ribbon"><div class="win-track" id="winner-scroller">正在連線至最新中獎情資中心...</div></div>
         
@@ -323,7 +358,7 @@
     };
 
     async function init() {
-        console.log("Flagship 5.15.6 System Booting...");
+        console.log("Flagship 5.16.0 System Booting...");
         
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
@@ -484,7 +519,22 @@
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
                 const currentBig = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
-                document.getElementById('stat-rem').innerText = currentRem;
+                // [v5.16.0] 庫存脈衝 & 聽牌橫幅控制
+                const remEl = document.getElementById('stat-rem');
+                remEl.innerText = currentRem;
+                if (currentRem < 10 && currentRem > 0) {
+                    remEl.classList.add('pulse-urgent');
+                } else {
+                    remEl.classList.remove('pulse-urgent');
+                }
+
+                const alertBanner = document.getElementById('jackpot-alert-banner');
+                if (currentBig > 0 && currentRem < 20) {
+                    alertBanner.style.display = 'block';
+                } else {
+                    alertBanner.style.display = 'none';
+                }
+
                 document.getElementById('stat-big').innerText = currentBig;
                 document.getElementById('stat-rate').innerText = currentRem > 0 ? (currentBig/currentRem*100).toFixed(1) + "%" : "0%";
                 
@@ -512,10 +562,8 @@
     function checkPendingRescueProcedure() {
         const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
         if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
-            // [Fix v5.15.4] 確保彈窗前也回到頂部
             window.scrollTo(0, 0);
             
-            // [v5.15.5] 修復：將按鈕移出 scroll-wrap
             Swal.fire({
                 title: '✨ 恢復保留程序',
                 html: `
@@ -528,10 +576,9 @@
                     </div>
                 `,
                 background: '#111', color: '#fff',
-                showConfirmButton: false, // 隱藏預設按鈕，使用自定義按鈕
+                showConfirmButton: false,
                 allowOutsideClick: false, background: '#0e0e0e',
                 didOpen: () => {
-                    // 綁定自定義按鈕事件
                     document.getElementById('btn-timer-ext').onclick = () => {
                         Swal.close();
                         appRuntimeState.selectedList = myLockedTickets.map(t => String(t.id));
@@ -656,7 +703,6 @@
             return; 
         }
         
-        // [Fix v5.15.4] 核心修正：強制滾動至頂部
         window.scrollTo(0, 0);
 
         showGlobalLoading(true, "正在執行物理鎖定程序...");
@@ -682,7 +728,6 @@
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
-            // [v5.15.5] 重大修復：將功能按鈕移出 scroll-wrap，確保永遠可見
             const checkoutSwal = await Swal.fire({ 
                 title: '✨ 專屬保留中', 
                 html: `
@@ -716,6 +761,9 @@
                     document.getElementById('btn-timer-rel').onclick = () => Swal.clickCancel();
 
                     timerInterval = setInterval(() => {
+                        // [v5.16.0] 觸覺回饋
+                        if (navigator.vibrate) navigator.vibrate(40);
+
                         lockSecondsRemaining--;
                         const m = Math.floor(lockSecondsRemaining / 60).toString().padStart(2,'0');
                         const s = (lockSecondsRemaining % 60).toString().padStart(2,'0');
