@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.15.4 旗艦商務極限優化版</title>
+    <title>盲玩樂 5.15.5 旗艦商務介面修復版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,15 +49,13 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 2: SweetAlert 極限修復 (v5.15.4 視口鎖定)]
+           [SECTION 2: SweetAlert 極限修復 (v5.15.5 分離式佈局)]
            ========================================================================== */
-        /* 1. 層級核彈：確保高於一切 */
         .swal2-container { 
             z-index: 2147483647 !important; 
-            height: 100dvh !important; /* [5.15.4 Fix] 使用動態視口高度，解決手機網址列問題 */
+            height: 100dvh !important; 
         }
         
-        /* 2. 彈窗佈局鎖定 */
         .swal2-popup {
             max-height: 90dvh !important; 
             display: flex !important;
@@ -66,17 +64,17 @@
         }
         
         .swal2-html-container {
-            overflow: hidden !important; 
+            overflow: visible !important; /* [5.15.5] 解鎖容器，讓按鈕可見 */
             margin: 0 !important;
             flex: 1 1 auto;
             display: flex;
             flex-direction: column;
         }
 
-        /* 3. 自定義捲動區 */
+        /* 資訊捲動區：僅包含文字資訊 */
         .swal-scroll-wrap {
             flex: 1;
-            max-height: 40vh !important; 
+            max-height: 35vh !important; /* 縮小高度，留空間給按鈕 */
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
             margin-bottom: 10px;
@@ -85,7 +83,15 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* 4. 按鈕區固定 */
+        /* [5.15.5 新增] 固定操作區：確保按鈕永遠可見，不隨資訊捲動 */
+        .swal-fixed-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            padding-bottom: 5px;
+            flex-shrink: 0; /* 禁止被壓縮 */
+        }
+
         .swal2-actions {
             flex-shrink: 0; 
             margin-top: 10px !important;
@@ -317,7 +323,7 @@
     };
 
     async function init() {
-        console.log("Flagship 5.15.4 System Booting...");
+        console.log("Flagship 5.15.5 System Booting...");
         
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
@@ -509,6 +515,7 @@
             // [Fix v5.15.4] 確保彈窗前也回到頂部
             window.scrollTo(0, 0);
             
+            // [v5.15.5] 修復：將按鈕移出 scroll-wrap
             Swal.fire({
                 title: '✨ 恢復保留程序',
                 html: `
@@ -642,7 +649,7 @@
             return; 
         }
         
-        // [Fix v5.15.4] 核心修正：強制滾動至頂部，確保彈窗可見
+        // [Fix v5.15.4] 核心修正：強制滾動至頂部
         window.scrollTo(0, 0);
 
         showGlobalLoading(true, "正在執行物理鎖定程序...");
@@ -668,6 +675,7 @@
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
+            // [v5.15.5] 重大修復：將功能按鈕移出 scroll-wrap，確保永遠可見
             const checkoutSwal = await Swal.fire({ 
                 title: '✨ 專屬保留中', 
                 html: `
@@ -681,10 +689,10 @@
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">鎖定數量</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
                             <div style="display:flex; justify-content:space-between; font-size:1.4rem; font-weight:900;"><span>總計支出</span><span class="gold-text">${totalCost.toLocaleString()} P</span></div>
                         </div>
-                        <div style="display:flex; gap:15px;">
-                            <button id="btn-timer-ext" style="flex:1; padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer;">⏳ 延長時效</button>
-                            <button id="btn-timer-rel" style="flex:1; padding:16px; border-radius:14px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900; cursor:pointer;">✕ 放棄交易</button>
-                        </div>
+                    </div>
+                    <div class="swal-fixed-actions">
+                        <button id="btn-timer-ext" style="flex:1; padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer;">⏳ 延長時效</button>
+                        <button id="btn-timer-rel" style="flex:1; padding:16px; border-radius:14px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900; cursor:pointer;">✕ 放棄交易</button>
                     </div>
                 `,
                 showConfirmButton: true, confirmButtonText: '✅ 確定扣款開籤', 
