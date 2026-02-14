@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.14.0 旗艦商務最終版</title>
+    <title>盲玩樂 5.14.1 旗艦商務補完版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,8 +13,8 @@
     
     <style>
         /* ==========================================================================
-           [SECTION 2: 視覺核心變數規範 (Luxury V5)]
-           嚴格遵循基準點 5.0.0 配色方案。
+           [SECTION 2: 視覺核心變數規範 (Luxury V5.1)]
+           嚴格遵循基準點 5.0.0 配色方案，並擴充懸浮島陰影變數。
            ========================================================================== */
         :root { 
             /* 背景與主題基調 */
@@ -40,6 +40,9 @@
             --border-radius-lg: 32px;
             --border-radius-md: 20px;
             --glass-bg: rgba(20, 20, 20, 0.98);
+
+            /* [5.14.1 新增] 懸浮島陰影變數 */
+            --dock-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
         }
         
         /* [全局排版基礎設定] */
@@ -48,8 +51,8 @@
             background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
             color: var(--text-primary);
             margin: 0; 
-            /* [物理修正] 增加底部間距 350px，確保內容完全捲動至「絕對固定支付列」上方 */
-            padding-bottom: 350px; 
+            /* [物理修正] 增加底部間距至 200px，確保內容不被懸浮島遮擋 */
+            padding-bottom: 200px; 
             overflow-x: hidden; 
             -webkit-tap-highlight-color: transparent;
             scroll-behavior: smooth;
@@ -60,8 +63,8 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 3: 圖片比例優化系統 (Golden Ratio Fix)]
-           [重要優化]：解決圖片巨大的問題，確保比例適中精緻。
+           [SECTION 3: 圖片階級優化系統 (Visual Hierarchy System)]
+           [5.14.1 重大更新]：建立圖片大小階級，區分大賞與普獎。
            ========================================================================== */
         .img-container-moderate {
             width: 100%;
@@ -69,21 +72,37 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: visible; /* 允許大獎光暈溢出 */
             position: relative;
         }
 
+        /* 基礎圖片樣式 */
         .img-container-moderate img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            /* 強制物理限制：圖片不允許超過容器之 75%，保證呼吸空間 */
+            width: auto;
+            height: auto;
             max-width: 75%;
             max-height: 75%;
-            margin: auto;
+            object-fit: contain;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: block;
-            /* 銳利化處理 */
-            image-rendering: -webkit-optimize-contrast;
+            margin: auto;
+        }
+
+        /* [大獎極巨化] A賞/SP/大獎 專用 */
+        .prize-thumb-grand .img-container-moderate img {
+            max-width: 105% !important; /* 突破容器限制 */
+            max-height: 105% !important;
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6)); /* 金色光暈 */
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        /* [小賞壓制化] 普獎專用 */
+        .prize-thumb-normal .img-container-moderate img {
+            max-width: 55% !important; /* 縮小 */
+            max-height: 55% !important;
+            opacity: 0.85;
+            filter: grayscale(0.2); /* 輕微灰階讓大獎更跳 */
         }
 
         /* ==========================================================================
@@ -119,7 +138,7 @@
 
         /* ==========================================================================
            [SECTION 5: 我的寶庫 - 智慧歸納大獎置頂介面]
-           [修正點]：大獎置頂、金流邊框、普獎 x 數量合併。
+           [5.14.1] 支援圖片顯示
            ========================================================================== */
         #vault-page { display: none; padding: 0 20px; animation: slideUpUI 0.5s ease-out; }
         @keyframes slideUpUI { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -147,7 +166,10 @@
         @keyframes borderAuraFlow { 0% { border-color: #D4AF37; } 100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212, 175, 55, 0.4); } }
         .v-asset-card.is-premium::before { content: 'PREMIUM ASSET'; position: absolute; top: 0; right: 0; background: var(--gold-gradient); color: #000; font-size: 0.6rem; padding: 4px 15px; font-weight: 900; border-radius: 0 0 0 15px; }
 
-        .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; border: 1px solid rgba(255,255,255,0.08); }
+        /* [5.14.1] 寶庫圖示修正 */
+        .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+        .v-asset-icon img { width: 100%; height: 100%; object-fit: cover; }
+        
         .v-asset-main { flex: 1; }
         .v-name-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .v-prize-name { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 0.5px; }
@@ -220,22 +242,31 @@
         .t-cell.is-big-taken::before { content: '👑'; position: absolute; font-size: 1.5rem; top: 4px; left: 4px; z-index: 999; filter: drop-shadow(0 3px 5px #000); }
 
         /* ==========================================================================
-           [SECTION 7: UX 究極優化] 底部支付操作中樞 (絕對鎖定位置)
-           [解決問題]：解決按鈕被底部手勢條遮擋、UI 切除、單手操作不便問題。
+           [SECTION 7: UX 究極優化 - 懸浮島支付 (Floating Dock)]
+           [5.14.1] 改為懸浮島樣式，徹底解決遮擋與操作問題。
            ========================================================================== */
         .fixed-dock-action-hub { 
             position: fixed !important; 
-            bottom: 0 !important; 
-            left: 0; right: 0; width: 100%; z-index: 9999;
-            background: rgba(10, 10, 10, 0.98);
-            backdrop-filter: blur(35px);
-            -webkit-backdrop-filter: blur(35px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            /* [全螢幕手機適配] 包含 iPhone 安全區域 */
-            padding: 20px 25px calc(25px + env(safe-area-inset-bottom)); 
-            border-radius: 45px 45px 0 0;
-            box-shadow: 0 -30px 70px rgba(0,0,0,1);
+            bottom: 25px !important; /* 懸浮距離 */
+            left: 15px; right: 15px; width: auto; /* 左右留白 */
+            z-index: 9999;
+            background: rgba(20, 20, 20, 0.92); /* 透過度 */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 35px; /* 膠囊形狀 */
+            padding: 20px; 
+            box-shadow: var(--dock-shadow);
+            animation: floatDock 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-sizing: border-box;
+        }
+        @keyframes floatDock { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* iPhone Home Bar 避讓 */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .fixed-dock-action-hub {
+                bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+            }
         }
         
         .dock-tool-row { display: flex; gap: 15px; margin-bottom: 22px; }
@@ -246,21 +277,40 @@
         }
         .btn-pick-tool:active { transform: scale(0.95); background: #333; }
 
-        /* [支付中樞佈局] 水平商務排列：左數據、右按鍵 */
-        .pay-master-flex { display: flex; align-items: center; gap: 30px; padding: 0 5px; }
+        /* [支付中樞佈局] 水平商務排列 */
+        .pay-master-flex { display: flex; align-items: center; gap: 20px; }
         .price-summary-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .lbl-selected-count { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
         .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1; }
         
         .btn-checkout-master { 
-            flex: 2; border: none; padding: 24px; border-radius: 22px;
-            background: var(--gold-gradient); color: #000; font-weight: 900; font-size: 1.55rem;
+            flex: 2; border: none; padding: 24px; border-radius: 25px;
+            background: linear-gradient(90deg, #D4AF37, #F7E2A0); color: #000; font-weight: 900; font-size: 1.55rem;
             box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45); 
             letter-spacing: 1px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
         }
         .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
         .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
+
+        /* [5.14.1 倒數計時強化] */
+        .countdown-pulse {
+            font-family: 'Oswald'; 
+            font-size: 5.5rem !important; 
+            font-weight: 700; 
+            background: linear-gradient(180deg, #ff4d4d, #c0392b);
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            animation: heartBeat 1s infinite;
+            text-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+            margin: 10px 0;
+            text-align: center;
+        }
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
 
         /* [高級連線載入介面] */
         #boot-loader { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
@@ -296,7 +346,7 @@
     </div>
 
     <div id="home-page">
-        <div class="auto-monitor-tag">🤖 智慧營運監控：大獎全數出貨滿 5 分鐘後將自動物理重置</div>
+        <div class="auto-monitor-tag" style="text-align:center; padding:10px; font-size:0.75rem; color:#666;">🤖 智慧營運監控：大獎全數出貨滿 5 分鐘後將自動物理重置</div>
         <div class="win-history-ribbon"><div class="win-track" id="winner-scroller">正在連線至最新中獎情資中心...</div></div>
         
         <div class="stats-hub">
@@ -343,12 +393,10 @@
 
 <script>
     /**
-     * [SECTION 16: 盲玩樂 5.14.0 核心邏輯引擎]
+     * [SECTION 16: 盲玩樂 5.14.1 核心邏輯引擎]
      * ⚖️ 憲法守護執行：
      * - 物理行數衝破 2200。
-     * - 絕對鎖定底端支付導航。
-     * - 資產「置頂大獎 + 合併普獎」智慧演算法實作。
-     * - 物理限制圖片比例，解決巨大化。
+     * - 實裝懸浮島、圖片極巨化、心跳倒數。
      */
     
     // [⚠️ 核心 API 連線配置] 
@@ -373,7 +421,7 @@
      * [1] 系統開機初始化程序
      */
     async function init() {
-        console.log("Flagship 5.14.0 System Booting...");
+        console.log("Flagship 5.14.1 System Booting...");
         
         // 斷網防護計時器
         const bootSafetyTimer = setTimeout(() => {
@@ -401,7 +449,6 @@
 
     /**
      * [2] 分頁切換控制邏輯
-     * 負責主頁與寶庫間的動態顯隱與數據預加載。
      */
     async function handleNavigationSwitch(page) {
         const homeUI = document.getElementById('home-page');
@@ -422,8 +469,7 @@
     }
 
     /**
-     * [3] [商務實作] 我的寶庫 - 智慧歸納排序演算法
-     * 處理：重複普獎歸併 (Group) + 大獎物理置頂 (Sort) + 申請出貨 (Ship)
+     * [3] [商務實作] 我的寶庫 - 智慧歸納 + 圖片顯示
      */
     async function processAndRenderVaultCollection() {
         showGlobalLoading(true, "正在整理全球藏品數據...");
@@ -443,15 +489,14 @@
                         totalCount: 0,
                         lastSeenTime: p.time,
                         deliveryStatus: p.status || "在庫",
-                        // 物理判別是否為大獎
-                        isPriorityBig: /A賞|SP|1賞|大獎/i.test(p.prizeName)
+                        isPriorityBig: /A賞|SP|1賞|大獎/i.test(p.prizeName),
+                        img: p.img // 接收後端圖片
                     };
                 }
                 groupedVault[uniqueKey].totalCount++;
             });
 
             // 邏輯第二步：物理排序演算法 (Sorting Priority)
-            // A獎/大獎必須永遠排在數組首位，給予最高曝光
             const finalSortedCollection = Object.values(groupedVault).sort((a, b) => {
                 return b.isPriorityBig - a.isPriorityBig;
             });
@@ -467,12 +512,14 @@
                 listView.innerHTML = finalSortedCollection.map(asset => {
                     const processingFlag = asset.deliveryStatus === "待出貨";
                     const bigPrizeClass = asset.isPriorityBig ? 'is-premium' : '';
-                    const emojiIcon = asset.isPriorityBig ? '🏆' : '🎁';
+                    
+                    // [改修] 使用 img 標籤取代 emoji
+                    const iconContent = `<img src="${asset.img}" onerror="this.src='https://placehold.co/100?text=Prize'">`;
                     
                     return `
                         <div class="v-asset-card ${bigPrizeClass}">
                             <div class="v-asset-icon">
-                                ${emojiIcon}
+                                ${iconContent}
                             </div>
                             <div class="v-asset-main">
                                 <div class="v-name-header">
@@ -621,7 +668,7 @@
             let displayId = t.id;
             
             if (t.isTaken) {
-                clsList += isBigP ? " is-taken is-premium-taken" : " is-taken";
+                clsList += isBigP ? " is-taken is-big-taken" : " is-taken";
                 displayId = ""; 
             } else if (t.isLocked) {
                 clsList += (t.lockUser === appRuntimeState.uid) ? " is-rescuing" : " is-locked";
@@ -636,22 +683,28 @@
     }
 
     /**
-     * [8] [視覺補完] 獎項庫存展示 (比例優化版)
+     * [8] [視覺補完] 獎項庫存展示 (視覺階級版)
      */
     function renderLobbySummaries(summary) {
         const gallery = document.getElementById('lobby-prize-gallery');
         if (!gallery || !summary) return;
         
-        gallery.innerHTML = summary.map(p => `
+        gallery.innerHTML = summary.map(p => {
+            // 判斷是否為大獎，決定 CSS Class
+            const isGrand = /A賞|SP|1賞|大獎/i.test(p.name);
+            const sizeClass = isGrand ? 'prize-thumb-grand' : 'prize-thumb-normal';
+            
+            return `
             <div class="p-show-card ${p.stock===0?'is-empty':''}">
-                <div class="p-show-thumb">
+                <div class="p-show-thumb ${sizeClass}">
                     <div class="img-container-moderate">
                         <img src="${p.img}" onerror="this.src='https://placehold.co/200?text=Prize'">
                     </div>
                 </div>
                 <div class="p-show-label">${p.name}</div>
                 <div class="p-show-stock">${p.stock > 0 ? `剩 ${p.stock}` : '已完抽'}</div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     /**
@@ -698,8 +751,7 @@
     }
 
     /**
-     * [11] [重要修正] 更新絕對底座支付列 UI
-     * ⚖️ 憲法對接：水平佈局，解決切除問題。
+     * [11] [重要修正] 更新懸浮島支付列 UI
      */
     function refreshActionDockState() {
         const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
@@ -717,7 +769,7 @@
     }
 
     /**
-     * [12] [核心流程] 物理交易保護結帳程序
+     * [12] [核心流程] 物理交易保護結帳程序 (心跳倒數版)
      */
     async function startFinalCheckoutProcess() {
         const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
@@ -742,19 +794,20 @@
                 return;
             }
             
-            // B. 第二階段：180s 保護視窗
+            // B. 第二階段：180s 保護視窗 (強化版)
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
             const checkoutSwal = await Swal.fire({ 
                 title: '✨ 專屬保留中', 
                 html: `
-                    <div style="margin: 20px 0;">
-                        <div style="font-family:'Oswald'; font-size:4.5rem; font-weight:700; background:var(--gold-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="timer">03:00</div>
-                        <div style="color:#aaa; font-size:0.85rem; margin-top:10px; font-weight:700; letter-spacing:1px;">TRANSACTION SECURED</div>
+                    <div style="margin: 10px 0 20px;">
+                        <div style="color:#aaa; font-size:0.85rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;">PAYMENT SECURED WINDOW</div>
+                        <div class="countdown-pulse" id="timer">03:00</div>
+                        <div style="color:#888; font-size:0.9rem;">請在時間內完成付款，否則將釋放籤位</div>
                     </div>
                     <div style="background:rgba(255,255,255,0.04); padding:20px; border-radius:20px; margin-bottom:25px; border:1px solid rgba(255,255,255,0.05);">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">支付數量</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">鎖定數量</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
                         <div style="display:flex; justify-content:space-between; font-size:1.4rem; font-weight:900;"><span>總計支出</span><span class="gold-text">${totalCost.toLocaleString()} P</span></div>
                     </div>
                     <div style="display:flex; gap:15px;">
@@ -781,6 +834,7 @@
                         const s = (lockSecondsRemaining % 60).toString().padStart(2,'0');
                         const el = document.getElementById('timer');
                         if (el) el.innerText = `${m}:${s}`;
+                        
                         if (lockSecondsRemaining <= 0) {
                             clearInterval(timerInterval);
                             Swal.close();
