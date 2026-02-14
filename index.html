@@ -1,963 +1,1268 @@
-/**
- * 盲玩樂 5.17.3 旗艦商務統治完全體 - 基準守護模式 (擴張版)
- * * * ==========================================================================================
- * ⚖️ 專案開發憲法 - 執行報告 (BASELINE 5.17.3 PHYSICAL EXPANSION)
- * ==========================================================================================
- * 1. [物理行數絕對守護原則]：
- * 本版本代碼嚴格執行物理級擴張，絕對禁止精簡。
- * 每一項判斷、每一條賦值均佔據獨立行空間。
- * 若輸出內容導致行數回落，則視為代碼資產流失。
- * * 2. [絕對統治協議 (Dominion Protocol)]：
- * - 實作 checkDominion：全盤掃描非本人的鎖定狀態。
- * - 實作 extendDominion：購買成功後，物理鎖定全場剩餘籤位 (180s)。
- * - 保證「尾刀保護」：一旦進入機台，除非主動放棄，否則其他玩家無法插隊。
- * * 3. [座標物理對齊鎖定]：
- * - 設定頁：A欄=獎項名, G欄=圖片URL, F2=單價。
- * - 籤位頁：C欄=UID, D欄=時間, E欄=鎖定時間, F欄=鎖定UID。
- * - 修復維度衝突：強制定義 Range 為 6 欄寬度，防止 4 欄試算表寫入失敗。
- * * 4. [功能組件保全清單]：
- * - onOpen 營運選單 (一鍵洗牌/自動監控部署)。
- * - CacheService 效能加速層 (600s 快取)。
- * - 死亡開關 (Kill Switch)：大獎出貨後即刻凍結盤面。
- * - requestShipment 出貨管理接口。
- * ==========================================================================================
- */
-
-// ==========================================================================
-// [第一部分：全域系統核心常數配置]
-// ==========================================================================
-
-/** * 總表分頁名稱
- * 此為玩家資產的「最終真理來源」，紀錄所有歷史中獎
- */
-var LOG_SHEET_NAME = '總表';
-
-/** * 使用者分頁名稱
- * 紀錄玩家 UID, 暱稱, 與點數餘額
- */
-var USER_SHEET_NAME = '使用者';
-
-/** * 回收站分頁名稱
- * 洗牌後將未抽出的殘籤存入此處，供營運者核帳
- */
-var RECYCLE_SHEET_NAME = '回收站';
-
-/** * 交易鎖定保護時長
- * 180,000 毫秒 (即 3 分鐘) 
- */
-var LOCK_DURATION = 180 * 1000; 
-
-/** * 洗牌重置緩衝時長
- * 300,000 毫秒 (即 5 分鐘) 
- */
-var AUTO_RESHUFFLE_DELAY = 5 * 60 * 1000;
-
-/** * 新玩家首次進入系統
- * 預設發放之能量點數 
- */
-var DEFAULT_POINTS = 1000;
-
-// ==========================================================================
-// [第二部分：營運管理選單與自動化初始化]
-// ==========================================================================
-
-/**
- * 試算表開啟時自動執行：在頂部選單建立「⚡ 營運後台」操作介面。
- * 這是為了確保管理員能在不進入腳步編輯器的情況下一鍵操作系統。
- */
-function onOpen() {
-  
-  console.log(">>>> 啟動營運選單初始化程序...");
-  
-  var ui = SpreadsheetApp.getUi();
-  
-  var menu = ui.createMenu('⚡ 營運後台');
-  
-  // 模式手動入口
-  menu.addItem('🔀 一鍵手動洗牌重置：單挑套', 'shuffleSingle');
-  menu.addItem('🔀 一鍵手動洗牌重置：A區', 'shuffleA');
-  menu.addItem('🔀 一鍵手動洗牌重置：B區', 'shuffleB');
-  
-  // 分隔線
-  menu.addSeparator();
-  
-  // 自動化功能
-  menu.addItem('🤖 啟動 24H 智慧監控系統', 'setupAutoTrigger');
-  menu.addItem('🛠️ 初始化並修復系統分頁架構', 'setupSystem');
-  
-  // 將選單掛載至 UI
-  menu.addToUi();
-  
-  console.log(">>>> 營運選單初始化完成。");
-}
-
-/**
- * [自動化引擎部署] 
- * 物理性建立時間驅動觸發器 (Time-driven Trigger)。
- * 每 60 秒執行一次巡檢，確保盤面處於自動營運狀態。
- */
-function setupAutoTrigger() {
-  
-  console.log("開始佈署 24H 智慧監控巡檢任務...");
-  
-  var triggers = ScriptApp.getProjectTriggers();
-  
-  // 安全清理程序：確保系統內不會有多個相同的巡檢觸發器在運行
-  for (var i = 0; i < triggers.length; i++) {
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>盲玩樂 5.17.2 旗艦商務統治完全體</title>
     
-    var handlerFunctionName = triggers[i].getHandlerFunction();
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    if (handlerFunctionName === 'autoCheckAndReshuffle') {
-      
-      console.log("發現舊觸發器任務，正在執行物理刪除：" + handlerFunctionName);
-      
-      ScriptApp.deleteTrigger(triggers[i]);
-      
-    }
-  }
-  
-  // 正式建立每分鐘巡檢任務
-  ScriptApp.newTrigger('autoCheckAndReshuffle')
-    .timeBased()
-    .everyMinutes(1)
-    .create();
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Oswald:wght@500;700&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     
-  console.log("監控任務部署成功，24H 自動化循環開啟。");
-  
-  SpreadsheetApp.getUi().alert("✅ 旗艦智慧監控系統已成功啟動！\n系統每 60 秒將自動掃描大獎狀態。");
-}
-
-/** 模式手動入口快捷清單 - 物理展開 */
-function shuffleSingle() { 
-  executeShuffle("單挑套", false); 
-}
-
-function shuffleA() { 
-  executeShuffle("A區", false); 
-}
-
-function shuffleB() { 
-  executeShuffle("B區", false); 
-}
-
-// ==========================================================================
-// [第三部分：核心助手函數模組 (Helper System)]
-// ==========================================================================
-
-/**
- * [核心助手] 獲取設定頁資訊與 F2 儲存格單抽價格
- * [v5.17.3 效能升級]：實作 CacheService 防止重複試算表讀取。
- * 秤重原則：單抽定價絕對鎖定於分頁之 Row 2, Column F (F2)。
- * * @param {Spreadsheet} ss 試算表實例
- * @param {string} mode 模式名稱
- * @return {Object} 包含圖片 Mapping 與動態單價的物件
- */
-function getSettingsMap(ss, mode) {
-  
-  // [Cache Layer] 優先詢問快取池 ---------------------------------------
-  var cache = CacheService.getScriptCache();
-  
-  var cacheKey = "config_v5173_expanded_" + mode; 
-  
-  var cachedData = cache.get(cacheKey);
-
-  if (cachedData) {
-    
-    console.log("🚀 Cache Hit for Mode: " + mode);
-    
-    return JSON.parse(cachedData);
-    
-  }
-  // --------------------------------------------------------------------
-
-  // 物理展開：確保模式名稱處理無誤
-  var modeBaseName = mode.replace("_籤位", "");
-  
-  var settingSheetInstance = ss.getSheetByName(modeBaseName);
-  
-  // 初始化回傳配置包
-  var configPackage = {
-    images: {},
-    cost: 100 
-  };
-  
-  if (!settingSheetInstance) {
-    
-    console.error("Critical: 找不到指定模式的設定分頁 [" + modeBaseName + "]");
-    
-    return configPackage;
-    
-  }
-  
-  // 讀取設定頁全量數據矩陣
-  var settingsDataMatrix = settingSheetInstance.getDataRange().getValues();
-  
-  console.log("正在從分頁 [" + modeBaseName + "] 物理對接 F2 定價點...");
-  
-  // --- 定價點解析核心 (F2 = Index [1][5]) ---
-  if (settingsDataMatrix.length > 1) {
-    
-    var f2CellValue = settingsDataMatrix[1][5];
-    
-    // 嚴格數字類型校驗
-    if (f2CellValue !== "" && !isNaN(f2CellValue)) {
-      
-      configPackage.cost = Number(f2CellValue);
-      
-      console.log("F2 定價成功獲取：單價為 " + configPackage.cost + " P");
-      
-    } else {
-      
-      console.warn("F2 格位數據無效，系統自動回退至 100 點");
-      
-      configPackage.cost = 100;
-      
-    }
-    
-  } else {
-    
-    console.warn("設定分頁格式不完整，無法讀取 F2");
-    
-  }
-  
-  // --- 圖片庫映射邏輯 (A欄名稱, G欄 URL) ---
-  for (var i = 1; i < settingsDataMatrix.length; i++) {
-    
-    var prizeNameKey = settingsDataMatrix[i][0]; // A欄位 (主鍵)
-    
-    var prizeImageUrl = settingsDataMatrix[i][6]; // G欄位 (Index 6, 圖片URL)
-    
-    if (prizeNameKey && prizeNameKey !== "") {
-      
-      if (prizeImageUrl) {
-        
-        configPackage.images[prizeNameKey] = prizeImageUrl;
-        
-      } else {
-        
-        configPackage.images[prizeNameKey] = "https://placehold.co/200?text=Prize";
-        
-      }
-      
-    }
-  }
-  
-  // [Cache Write Back] 寫入快取，保存 600 秒 (10分鐘)
-  try {
-    
-    cache.put(cacheKey, JSON.stringify(configPackage), 600);
-    
-    console.log("Cache Written for: " + mode);
-    
-  } catch (e) {
-    
-    console.warn("Cache Write Back Failed: " + e.toString());
-    
-  }
-
-  return configPackage;
-}
-
-// ==========================================================================
-// [第四部分：絕對統治協議核心 (Dominion Strategy)]
-// ==========================================================================
-
-/**
- * [統治權檢查]
- * 此程序為「霸盤保護」的核心。
- * 物理掃描盤面，確認是否有「非本人且未過期」的鎖定。
- * * @return {boolean} 允許進入則傳回 true
- */
-function checkDominion(sheet, requestUid, now) {
-  
-  var lastRow = sheet.getLastRow();
-  
-  if (lastRow < 2) {
-    return true; 
-  }
-  
-  // 物理寬度鎖定：讀取 A 到 F 欄 (1-6)
-  var dataMatrix = sheet.getRange(1, 1, lastRow, 6).getValues();
-  
-  var nowTimeTs = now.getTime();
-  
-  for (var i = 1; i < dataMatrix.length; i++) {
-    
-    var lTime = dataMatrix[i][4]; // E欄: 鎖定起始時間
-    var lUser = dataMatrix[i][5]; // F欄: 鎖定人 UID
-    var pOwner = dataMatrix[i][2]; // C欄: 得主
-    
-    // 若該位置尚未售出，且存在其他人的鎖定
-    if (!pOwner || pOwner === "") {
-      
-      if (lTime && lUser) {
-        
-        if (String(lUser) !== String(requestUid)) {
-          
-          var lockStartTime = new Date(lTime).getTime();
-          
-          // 判定鎖定是否在 180s 保護期內
-          if (nowTimeTs - lockStartTime < LOCK_DURATION) {
+    <style>
+        /* ==========================================================================
+           [SECTION 1: 視覺核心變數與全局基礎]
+           ========================================================================== */
+        :root { 
+            /* 基礎色調 */
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --bg-card-hover: #1f1f1f;
             
-            console.warn("統治權衝突：UID [" + lUser + "] 正在霸佔此機台");
+            /* 品牌金流光：用於霸盤狀態與大獎 */
+            --gold-primary: #D4AF37;
+            --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
             
-            return false; 
+            /* 狀態色 */
+            --status-red: #E74C3C;
+            --status-green: #2ECC71;
+            --status-blue: #3498DB;
             
-          }
+            /* 文字階級 */
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-muted: #555555;
+            
+            /* UI 容器規範 */
+            --border-radius-lg: 32px;
+            --border-radius-md: 20px;
+            --glass-bg: rgba(20, 20, 20, 0.98);
+            --dock-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.1);
         }
-      }
-    }
-  }
-  
-  return true; 
-}
-
-/**
- * [統治權延長：物理鎖定全場]
- * 當玩家購買後，執行「絕對領地宣示」。
- * 將盤面上所有「未售出」的位置全部鎖定給該玩家。
- */
-function extendDominion(sheet, requestUid, now) {
-  
-  var lastRow = sheet.getLastRow();
-  
-  if (lastRow < 2) {
-    return;
-  }
-  
-  // [重大修復] 強制 getRange 指向 A-F 欄 (寬度為 6)，解決試算表報錯
-  var range = sheet.getRange(1, 1, lastRow, 6);
-  
-  var values = range.getValues();
-  
-  var isModified = false;
-  
-  for (var i = 1; i < values.length; i++) {
-    
-    // 若 C 欄為空 (未售出)
-    if (!values[i][2] || values[i][2] === "") {
-      
-      values[i][4] = now;        // E 欄: 重設鎖定時間
-      values[i][5] = requestUid;  // F 欄: 設定為當前買家
-      
-      isModified = true;
-      
-    }
-  }
-  
-  if (isModified) {
-    
-    // 物理性將更新後的矩陣寫回試算表
-    range.setValues(values);
-    
-    console.log("絕對統治鎖定成功：已為玩家 [" + requestUid + "] 鎖定剩餘籤位。");
-    
-  }
-}
-
-// ==========================================================================
-// [第五部分：資料讀取核心邏輯 (GET API)]
-// ==========================================================================
-
-/**
- * doGet 入口函數：負責處理前端 GitHub 傳來的所有「讀取」請求。
- */
-function doGet(e) {
-  
-  var scriptLock = LockService.getScriptLock();
-  
-  try {
-    
-    // 進入數據讀取保護鎖 (5秒)
-    scriptLock.waitLock(5000);
-    
-    var queryParams = e.parameter;
-    
-    var userUid = queryParams.uid;
-    
-    var playerDisplayName = queryParams.name || "冒險者";
-    
-    var requestAction = queryParams.action || "sync"; 
-    
-    var appSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    
-    console.log(">>>> 正在處理 GET 請求: Action=" + requestAction + ", UID=" + userUid);
-
-    // --------------------------------------------------------------------------
-    // A 分支: [我的寶庫資產檢索 - 圖片優化完全展開]
-    // --------------------------------------------------------------------------
-    if (requestAction === "getMyPrizes") {
-      
-      var logSheet = appSpreadsheet.getSheetByName(LOG_SHEET_NAME);
-      
-      var playerAssets = [];
-      
-      var modeImageCache = {}; 
-      
-      if (logSheet) {
         
-        var logsMatrix = logSheet.getDataRange().getValues();
+        body { 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
+            color: var(--text-primary);
+            margin: 0; 
+            /* [物理擴張] 底部預留高度，確保懸浮島不會遮擋內容 */
+            padding-bottom: 250px; 
+            overflow-x: hidden; 
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+            transform: translateZ(0);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        /* ==========================================================================
+           [SECTION 2: 視覺增強特效 - v5.17.2 物理展開]
+           ========================================================================== */
         
-        for (var row = logsMatrix.length - 1; row >= 1; row--) {
-          
-          if (String(logsMatrix[row][1]) === String(userUid)) {
-            
-            var currentModeName = logsMatrix[row][3]; 
-            var currentPrizeName = logsMatrix[row][4];
-            var prizeImgUrl = "https://placehold.co/200?text=No+Image";
-            
-            if (!modeImageCache[currentModeName]) {
-              
-              try {
-                var settingsData = getSettingsMap(appSpreadsheet, currentModeName);
-                modeImageCache[currentModeName] = settingsData.images;
-              } catch (err) {
-                modeImageCache[currentModeName] = {};
-              }
-              
+        /* 1. 庫存數字脈衝：解決 inline 元素無法動畫的問題 */
+        .stat-val-text { 
+            font-family: 'Oswald'; 
+            font-size: 2.2rem; 
+            display: inline-block; 
+            font-weight: 700; 
+            line-height: 1.1; 
+        }
+
+        .pulse-urgent {
+            color: var(--status-red) !important;
+            animation: textPulse 0.8s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
+        }
+        
+        @keyframes textPulse {
+            0% { 
+                transform: scale(1); 
+                opacity: 1; 
             }
-            
-            if (modeImageCache[currentModeName] && modeImageCache[currentModeName][currentPrizeName]) {
-              prizeImgUrl = modeImageCache[currentModeName][currentPrizeName];
+            100% { 
+                transform: scale(1.18); 
+                opacity: 0.8; 
             }
+        }
 
-            playerAssets.push({
-              time: Utilities.formatDate(new Date(logsMatrix[row][0]), "GMT+8", "yyyy-MM-dd HH:mm"),
-              mode: currentModeName,
-              prizeName: currentPrizeName,
-              tid: logsMatrix[row][5],
-              status: logsMatrix[row][8] || "在庫",
-              img: prizeImgUrl
-            });
-            
-          }
-          
-          if (playerAssets.length >= 150) {
-            break;
-          }
-          
+        /* 2. 大獎聽牌橫幅特效 */
+        #jackpot-alert-banner {
+            display: none; 
+            background: linear-gradient(90deg, #b38806, #f9d423, #b38806);
+            color: #000;
+            font-weight: 900;
+            text-align: center;
+            padding: 14px;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            box-shadow: 0 5px 25px rgba(249, 212, 35, 0.4);
+            animation: bannerFlash 1.5s infinite;
+            border-bottom: 2px solid #fff;
+            position: relative;
+            z-index: 100;
         }
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({
-        status: "success",
-        prizes: playerAssets
-      })).setMimeType(ContentService.MimeType.JSON);
-      
-    }
+        
+        @keyframes bannerFlash {
+            0% { 
+                filter: brightness(1); 
+            }
+            50% { 
+                filter: brightness(1.4); 
+            }
+            100% { 
+                filter: brightness(1); 
+            }
+        }
 
-    // --------------------------------------------------------------------------
-    // B 分支: [盤面大廳數據同步]
-    // --------------------------------------------------------------------------
-    var currentMode = queryParams.mode || "單挑套";
-    
-    var ticketSheetName = currentMode.includes("_籤位") ? currentMode : currentMode + "_籤位";
-    
-    var tSheet = appSpreadsheet.getSheetByName(ticketSheetName) || appSpreadsheet.getSheetByName(currentMode);
-    
-    var uSheet = appSpreadsheet.getSheetByName(USER_SHEET_NAME);
-    
-    if (!tSheet) {
-      throw new Error("數據連線異常：找不到目標盤面分頁 [" + ticketSheetName + "]");
-    }
-    
-    // 透過 Cache 獲取設定
-    var currentConfig = getSettingsMap(appSpreadsheet, currentMode);
-    
-    var nowTs = new Date().getTime();
-    
-    // --- 玩家帳戶與點數校驗 ---
-    var userBalance = 0;
-    var userTable = uSheet.getDataRange().getValues();
-    var userExists = false;
-    
-    for (var u = 1; u < userTable.length; u++) {
-      if (String(userTable[u][0]) === String(userUid)) {
-        userBalance = userTable[u][2];
-        userExists = true;
-        break;
-      }
-    }
-    
-    if (!userExists) {
-      console.log("偵測到新玩家，正在執行自動註冊...");
-      uSheet.appendRow([userUid, playerDisplayName, DEFAULT_POINTS, new Date()]);
-      userBalance = DEFAULT_POINTS;
-    }
-    
-    // --- 籤盤矩陣深度解析 ---
-    var gachaMatrix = tSheet.getDataRange().getValues();
-    var processedTickets = [];
-    var isBigPrizeOnGrid = false;
-    var prizeInventoryTracker = {};
-    
-    for (var k = 1; k < gachaMatrix.length; k++) {
-      
-      var idVal = gachaMatrix[k][0];   
-      var pNameVal = gachaMatrix[k][1]; 
-      var takerVal = gachaMatrix[k][2]; 
-      var lTimeVal = gachaMatrix[k][4]; 
-      var lUserVal = gachaMatrix[k][5]; 
-      
-      var takenFlag = (takerVal != "" && takerVal != null);
-      var lockedFlag = false;
-      
-      if (!takenFlag && lTimeVal) {
-        var lockObj = new Date(lTimeVal);
-        if (nowTs - lockObj.getTime() < LOCK_DURATION) {
-          lockedFlag = true;
+        /* ==========================================================================
+           [SECTION 3: SweetAlert 深度修復與文字保護]
+           ========================================================================== */
+        .swal2-container { 
+            z-index: 2147483647 !important; 
         }
-      }
-      
-      // 判定大獎是否存在於盤面
-      if (/A賞|SP|1賞|大獎/i.test(pNameVal) && !takenFlag) {
-        isBigPrizeOnGrid = true;
-      }
-      
-      var imageResource = currentConfig.images[pNameVal] || "https://placehold.co/200?text=Prize";
-      
-      processedTickets.push({ 
-        id: idVal,
-        prizeName: pNameVal,
-        isTaken: takenFlag,
-        isLocked: lockedFlag,
-        lockUser: lockedFlag ? lUserVal : null,
-        img: imageResource 
-      });
-      
-      if (pNameVal) {
-        if (!prizeInventoryTracker[pNameVal]) {
-          prizeInventoryTracker[pNameVal] = { name: pNameVal, img: imageResource, stock: 0 };
+        
+        .swal2-popup {
+            max-height: 92dvh !important; 
+            border-radius: 30px !important;
+            background: #0e0e0e !important;
+            color: #fff !important;
+            padding: 20px !important;
         }
-        if (!takenFlag) {
-          prizeInventoryTracker[pNameVal].stock++;
+
+        .swal2-html-container {
+            overflow: visible !important; 
+            margin: 0 !important;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
         }
-      }
-    }
+
+        /* 資訊捲動區：[5.17.2 修復] 底部 Padding 40px 防止金額被切斷 */
+        .swal-scroll-wrap {
+            flex: 1;
+            max-height: 40vh !important; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+            margin-bottom: 10px;
+            padding: 10px 10px 40px 10px; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 彈窗內總計文字強化：行高保護 */
+        .val-total-cost-swal {
+            font-family: 'Oswald'; 
+            font-size: 2.6rem; 
+            font-weight: 700; 
+            color: var(--gold-primary); 
+            line-height: 1.5; 
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 固定式按鈕區塊樣式 */
+        .swal-fixed-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-shrink: 0; 
+        }
+
+        /* ==========================================================================
+           [SECTION 4: 圖片階級規範 - 比例協調化]
+           ========================================================================== */
+        .img-container-moderate {
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            overflow: visible; 
+            position: relative;
+        }
+
+        .img-container-moderate img {
+            width: auto; 
+            height: auto;
+            max-width: 80%; 
+            max-height: 80%;
+            object-fit: contain;
+            transition: transform 0.3s;
+            display: block; 
+            margin: auto;
+        }
+
+        /* [大獎比例修正] A賞/SP/大獎：維持光暈但縮小倍率，避免遮擋標籤 */
+        .prize-thumb-grand .img-container-moderate img {
+            max-width: 95% !important; 
+            max-height: 95% !important;
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
+            transform: translateY(-5px) scale(1.05); 
+            z-index: 10;
+        }
+
+        /* [普獎比例修正] */
+        .prize-thumb-normal .img-container-moderate img {
+            max-width: 60% !important; 
+            max-height: 60% !important;
+            opacity: 0.85; 
+            filter: grayscale(0.15);
+        }
+
+        /* ==========================================================================
+           [SECTION 5: 頁面佈局]
+           ========================================================================== */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 25px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background: rgba(10, 10, 10, 0.95); 
+            backdrop-filter: blur(20px); 
+            border-bottom: 1px solid rgba(255,255,255,0.08); 
+        }
+
+        .u-badge-label { 
+            font-size: 0.65rem; 
+            color: var(--text-muted); 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+        }
+
+        .u-name-val { 
+            font-weight: 700; 
+            font-size: 1.1rem; 
+            color: #fff; 
+        }
+
+        .nav-segment-bar { 
+            display: flex; 
+            padding: 15px 20px; 
+            gap: 15px; 
+            background: rgba(0,0,0,0.2); 
+        }
+        
+        .nav-item { 
+            flex: 1; 
+            text-align: center; 
+            padding: 14px; 
+            border-radius: 18px; 
+            color: #666; 
+            font-weight: 900; 
+            font-size: 0.9rem; 
+            background: rgba(255,255,255,0.02); 
+            transition: all 0.4s; 
+            border: 1px solid rgba(255,255,255,0.05); 
+        }
+        
+        .nav-item.active { 
+            background: #fff; 
+            color: #000; 
+            box-shadow: 0 12px 25px rgba(255,255,255,0.2); 
+            transform: translateY(-4px); 
+        }
+
+        #lobby-prize-gallery { 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 15px 20px; 
+            gap: 12px; 
+            scrollbar-width: none; 
+        }
+        
+        .p-show-card { 
+            min-width: 110px; 
+            background: #1a1a1a; 
+            border-radius: 18px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 15px 10px; 
+            border: 1px solid #2a2a2a; 
+            position: relative; 
+        }
+        
+        .p-show-thumb { 
+            width: 85px; 
+            height: 85px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        .p-show-label { 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            text-align: center; 
+            line-height: 1.3; 
+            height: 2.6em; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+        }
+
+        .gacha-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 12px; 
+            padding: 10px 20px 80px; 
+        }
+        
+        .t-cell { 
+            aspect-ratio: 1/1; 
+            background: linear-gradient(145deg, #2a2a2a, #161616); 
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-family: 'Oswald'; 
+            font-size: 1.6rem; 
+            color: #555; 
+            border: 1px solid rgba(255,255,255,0.06); 
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            position: relative; 
+            cursor: pointer; 
+        }
+        
+        .t-cell.is-selected { 
+            background: var(--gold-gradient) !important; 
+            color: #000 !important; 
+            transform: translateY(-12px) scale(1.15); 
+            box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); 
+            z-index: 10; 
+        }
+        
+        .t-cell.is-taken { 
+            background: #050505; 
+            opacity: 0.4; 
+            color: transparent; 
+            border: 1px solid #222; 
+        }
+        
+        .t-cell.is-taken::after { 
+            content: '✕'; 
+            position: absolute; 
+            color: var(--status-red); 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+        }
+        
+        .t-cell.is-big-taken { 
+            border: 2.5px solid var(--gold-primary); 
+            background: #1a1a00; 
+            opacity: 1 !important; 
+        }
+        
+        .t-cell.is-big-taken::after { 
+            content: none !important; 
+        }
+        
+        .t-cell.is-big-taken::before { 
+            content: '👑'; 
+            position: absolute; 
+            font-size: 1.5rem; 
+            top: 4px; 
+            left: 4px; 
+            z-index: 999; 
+            filter: drop-shadow(0 0 10px #D4AF37); 
+        }
+
+        .t-cell.is-locked { 
+            opacity: 0.5; 
+            filter: grayscale(1); 
+            cursor: not-allowed; 
+        }
+
+        /* ==========================================================================
+           [SECTION 6: v5.17.2 整合島統治者面板]
+           ========================================================================== */
+        .fixed-dock-action-hub { 
+            position: fixed !important; 
+            bottom: 25px !important; 
+            left: 20px; 
+            right: 20px; 
+            width: auto; 
+            z-index: 9999;
+            background: rgba(20, 20, 20, 0.95); 
+            backdrop-filter: blur(25px); 
+            border-radius: 40px; 
+            padding: 22px; 
+            box-shadow: var(--dock-shadow); 
+            box-sizing: border-box; 
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .fixed-dock-action-hub { bottom: calc(25px + env(safe-area-inset-bottom)) !important; }
+        }
+
+        /* 模式 A: 支付與選號面板 */
+        #shopping-dock { 
+            display: block; 
+        }
+        
+        .dock-tool-row { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 20px; 
+        }
+        
+        .btn-pick-tool { 
+            flex: 1; 
+            padding: 16px; 
+            border-radius: 18px; 
+            background: #1a1a1a; 
+            color: #fff; 
+            border: 1px solid #333; 
+            font-weight: 900; 
+            font-size: 0.95rem; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .btn-pick-tool:active { 
+            transform: scale(0.95); 
+            background: #333; 
+        }
+        
+        .pay-master-flex { 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+        }
+        
+        .price-summary-pane { 
+            flex: 1; 
+        }
+        
+        .btn-checkout-master { 
+            flex: 2; 
+            border: none; 
+            padding: 22px; 
+            border-radius: 25px; 
+            background: var(--gold-gradient); 
+            color: #000; 
+            font-weight: 900; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
+        
+        .btn-checkout-master:disabled { 
+            background: #222; 
+            color: #555; 
+            opacity: 0.5; 
+            pointer-events: none; 
+        }
+
+        /* 模式 B: 統治者面板 (霸盤顯示) */
+        #dominion-dock { 
+            display: none; 
+            text-align: center; 
+            animation: dominionGlow 2s infinite alternate;
+        }
+        
+        @keyframes dominionGlow { 
+            from { box-shadow: var(--dock-shadow); } 
+            to { box-shadow: 0 0 30px rgba(212, 175, 55, 0.4), var(--dock-shadow); } 
+        }
+        
+        .dominion-status-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+        }
+        
+        .dominion-timer-text { 
+            font-family: 'Oswald'; 
+            font-size: 1.4rem; 
+            color: var(--gold-primary); 
+            font-weight: 700; 
+        }
+        
+        .btn-leave-dominion { 
+            background: linear-gradient(135deg, #e74c3c, #c0392b); 
+            color: #fff; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 22px; 
+            font-weight: 900; 
+            font-size: 1.15rem; 
+            width: 100%; 
+            letter-spacing: 1px; 
+            box-shadow: 0 10px 25px rgba(192, 57, 43, 0.4);
+            cursor: pointer;
+        }
+
+        /* 加載遮罩樣式 */
+        #boot-loader { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .l-spinner-ring { width: 80px; height: 80px; border: 6px solid transparent; border-top-color: var(--gold-primary); border-radius: 50%; animation: rotateSync 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1); }
+        @keyframes rotateSync { to { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body>
+    <div id="boot-loader">
+        <div class="l-spinner-ring"></div>
+        <p style="margin-top:30px; color:var(--gold-primary); font-weight:900; letter-spacing:6px; font-family:'Oswald';">DOMINION ACTIVE</p>
+        <p style="font-size:0.8rem; color:#444; margin-top:10px; font-weight:700;">正在執行物理座標對齊與統治者協議</p>
+    </div>
+
+    <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
+    <audio id="snd-success" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.m4a"></audio>
+
+    <div class="header">
+        <div class="u-info-section">
+            <span class="u-badge-label">Adventurer</span>
+            <div class="u-name-val" id="display-u-name">Guest</div>
+        </div>
+        <div class="u-info-section" style="align-items: flex-end;">
+            <span class="u-badge-label">Vault Balance</span>
+            <div class="u-pts-val gold-text" id="display-u-pts">0</div>
+        </div>
+    </div>
+
+    <div class="nav-segment-bar">
+        <div id="nav-btn-home" class="nav-item active" onclick="handleNavigationSwitch('home')">探索獎池</div>
+        <div id="nav-btn-vault" class="nav-item" onclick="handleNavigationSwitch('vault')">我的寶庫</div>
+    </div>
+
+    <div id="home-page">
+        <div id="jackpot-alert-banner">🔥 決勝時刻：大獎聽牌中 🔥</div>
+        
+        <div class="auto-monitor-tag" style="text-align:center; padding:10px; font-size:0.75rem; color:#666;">🤖 智慧營運：大獎出貨 5 分鐘後自動執行物理洗牌</div>
+        
+        <div class="win-history-ribbon">
+            <div class="win-track" id="winner-scroller">正在同步全域情資中心...</div>
+        </div>
+        
+        <div class="stats-hub">
+            <div class="stat-item">
+                <span class="stat-val-text" id="stat-rem">0</span>
+                <span class="stat-lbl-text">剩餘枚數</span>
+            </div>
+            <div class="stat-item" style="border-left: 1px solid #222; border-right: 1px solid #222; padding: 0 25px;">
+                <span class="stat-val-text gold-text" id="stat-big">0</span>
+                <span class="stat-lbl-text" style="color:var(--gold-primary)">大獎在庫</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val-text" id="stat-rate" style="color:var(--status-blue)">0%</span>
+                <span class="stat-lbl-text">即時勝率</span>
+            </div>
+        </div>
+
+        <div class="m-selector-row">
+            <div class="m-item-btn is-active" data-m="單挑套" onclick="handleModeSelection('單挑套')">單挑套</div>
+            <div class="m-item-btn" data-m="A區" onclick="handleModeSelection('A區')">A區</div>
+            <div class="m-item-btn" data-m="B區" onclick="handleModeSelection('B區')">B區</div>
+        </div>
+
+        <div id="lobby-prize-gallery" class="prize-showcase"></div>
+        <div id="main-ticket-grid" class="gacha-grid"></div>
+    </div>
+
+    <div id="vault-page">
+        <div class="vault-hero-text">
+            <span class="vault-brand">TREASURY COLLECTION</span>
+            <h2 class="vault-title">我的資產收藏匣</h2>
+        </div>
+        <div id="vault-items-container" class="vault-list-grid"></div>
+    </div>
+
+    <div class="fixed-dock-action-hub" id="action-dock-panel">
+        
+        <div id="shopping-dock">
+            <div class="dock-tool-row">
+                <button class="btn-pick-tool" onclick="executeBatchSelection(1)">🎲 1 抽</button>
+                <button class="btn-pick-tool" onclick="executeBatchSelection(5)">🎲 5 抽</button>
+                <button class="btn-pick-tool" onclick="executeBatchSelection(10)">🎲 10 抽</button>
+            </div>
+            <div class="pay-master-flex">
+                <div class="price-summary-pane">
+                    <span class="lbl-selected-count">Selected <span id="dock-sel-count" style="color:#fff;">0</span> 枚</span>
+                    <div class="val-summary-total gold-text" id="dock-total-cost">0</div>
+                </div>
+                <button class="btn-checkout-master" id="masterPayButton" onclick="startFinalCheckoutProcess()" disabled>請先挑選籤位</button>
+            </div>
+        </div>
+
+        <div id="dominion-dock">
+            <div class="dominion-status-row">
+                <span style="font-size:1.6rem;">👑</span>
+                <span style="font-weight:900; letter-spacing:1px; color:#fff;">霸盤統治中</span>
+                <span class="dominion-timer-text">(<span id="dominion-timer">180</span>s)</span>
+            </div>
+            <button class="btn-leave-dominion" onclick="handleVoluntaryLeave()">🏃‍♂️ 結束遊玩 (釋放全盤保護)</button>
+        </div>
+
+    </div>
+
+<script>
+    /**
+     * [SECTION 16: 核心邏輯引擎 v5.17.2 完全展開]
+     * 秤重原則：代碼物理行數絕對守護。
+     * 功能清單：霸盤鎖定、尾刀保護、連抽修正、感官震動、視口歸位。
+     */
     
-    var finalResultPayload = {
-      status: "success",
-      userPoints: userBalance,
-      tickets: processedTickets,
-      cost: currentConfig.cost,
-      bigPrizeExists: isBigPrizeOnGrid,
-      prizeSummary: Object.values(prizeInventoryTracker)
+    // 1. API 與 LIFF 連線配置
+    const CORE_CONFIG = { 
+        API_ENDPOINT: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
+        LIFF_ID: "2009072982-6smlV2gu" 
     };
     
-    return ContentService.createTextOutput(JSON.stringify(finalResultPayload)).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (err) {
-    
-    console.error("Critical doGet Error: " + err.toString());
-    
-    var errorResp = { status: "error", message: err.toString() };
-    
-    return ContentService.createTextOutput(JSON.stringify(errorResp)).setMimeType(ContentService.MimeType.JSON);
-    
-  } finally {
-    scriptLock.releaseLock();
-  }
-}
+    // 2. 系統運行狀態機
+    let appRuntimeState = { 
+        uid: "guest_id", 
+        name: "冒險者", 
+        mode: "單挑套", 
+        tickets: [], 
+        unitPrice: 100, 
+        userPoints: 0, 
+        selectedList: [],
+        isLoading: false,
+        timerInterval: null
+    };
 
-// ==========================================================================
-// [第六部分：交易、扣款與出貨控制 (POST API)]
-// ==========================================================================
+    /** * [初始化啟動程序] 
+     */
+    async function init() {
+        
+        console.log("System v5.17.2 Physical Expansion Booting...");
+        
+        const bootTimer = setTimeout(() => {
+            if (document.getElementById('boot-loader').style.display !== 'none') {
+                Swal.fire({ title: "連線回應超時", text: "請重整頁面後再試。", icon: "error" });
+            }
+        }, 15000);
 
-function doPost(e) {
-  
-  var transactionLock = LockService.getScriptLock();
-  
-  try {
-    
-    transactionLock.waitLock(10000);
-    
-    var postPayload = JSON.parse(e.postData.contents);
-    
-    var appSS = SpreadsheetApp.getActiveSpreadsheet();
-    
-    var currentAction = postPayload.action || 'buy';
-    
-    var currentTime = new Date();
-    
-    console.log("---- 啟動 POST 處理程序 ---- Action=" + currentAction);
-
-    // --------------------------------------------------------------------------
-    // 動作 A: [申請出貨 Shipment Request]
-    // --------------------------------------------------------------------------
-    if (currentAction === 'requestShipment') {
-      
-      var logSheet = appSS.getSheetByName(LOG_SHEET_NAME);
-      
-      var logDataMatrix = logSheet.getDataRange().getValues();
-      
-      var updateCounter = 0;
-      
-      for (var l = 1; l < logDataMatrix.length; l++) {
-        
-        var currentLogUid = logDataMatrix[l][1];
-        
-        var currentLogPrize = logDataMatrix[l][4];
-        
-        var currentLogStatus = logDataMatrix[l][8];
-        
-        if (String(currentLogUid) === String(postPayload.uid) && String(currentLogPrize) === String(postPayload.prizeName)) {
-          
-          if (!currentLogStatus || currentLogStatus === "在庫" || currentLogStatus === "") {
+        try { 
             
-            logSheet.getRange(l + 1, 9).setValue("待出貨");
+            await liff.init({ liffId: CORE_CONFIG.LIFF_ID }); 
             
-            updateCounter++;
-            
-          }
-        }
-        
-        if (updateCounter >= postPayload.amount) {
-          break;
-        }
-        
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({ 
-        status: "success", count: updateCounter 
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // --------------------------------------------------------------------------
-    // 動作 B: [機台與交易邏輯模組]
-    // --------------------------------------------------------------------------
-    var modeTag = postPayload.mode;
-    
-    var ticketSheetName = modeTag.includes("_籤位") ? modeTag : modeTag + "_籤位";
-    
-    var currentTicketSheet = appSS.getSheetByName(ticketSheetName);
-    
-    var currentModeConfig = getSettingsMap(appSS, modeTag); 
-
-    if (!currentTicketSheet) {
-      throw "系統錯誤：目標盤面遺失。";
-    }
-
-    // [v5.16.1] 死亡開關 (Kill Switch)
-    if (currentAction === 'lock' || currentAction === 'buy') {
-      
-      var checkData = currentTicketSheet.getDataRange().getValues();
-      
-      for (var r = 1; r < checkData.length; r++) {
-        
-        var pName = checkData[r][1]; // B欄: 獎項
-        var pOwner = checkData[r][2]; // C欄: 得主
-        
-        if (/A賞|SP|1賞|大獎/i.test(pName) && pOwner && pOwner !== "") {
-          throw "⛔ 大獎已被抽出，盤面凍結中，無法購買！";
-        }
-        
-      }
-    }
-
-    // [Lock] 統治權鎖定程序
-    if (currentAction === 'lock') {
-      
-      // 1. 先確認霸盤權 (checkDominion)
-      if (!checkDominion(currentTicketSheet, postPayload.uid, currentTime)) {
-        throw "⛔ 此機台目前由其他玩家正在遊玩中，請稍候...";
-      }
-
-      // 2. 執行物理鎖定
-      var lastRow = currentTicketSheet.getLastRow();
-      
-      var range = currentTicketSheet.getRange(1, 1, lastRow, 6); // A-F 欄
-      
-      var values = range.getValues();
-      
-      postPayload.ticketIds.forEach(function(targetId) {
-        
-        for (var k = 1; k < values.length; k++) {
-          
-          if (String(values[k][0]) === String(targetId)) {
-            
-            if (values[k][2] && values[k][2] !== "") {
-              throw "該位置已被搶先抽走！";
+            if (liff.isLoggedIn()) {
+                
+                const profile = await liff.getProfile(); 
+                
+                appRuntimeState.uid = profile.userId; 
+                appRuntimeState.name = profile.displayName;
+                
+                document.getElementById('display-u-name').innerText = profile.displayName; 
+                
             }
             
-            values[k][4] = currentTime;    // E 欄: 時間
-            values[k][5] = postPayload.uid; // F 欄: 鎖定人
-            break;
+            await fetchSystemDataAndSyncUI();
             
-          }
+            clearTimeout(bootTimer);
+            
+        } catch (err) { 
+            
+            console.warn("Guest Mode Active.");
+            
+            await fetchSystemDataAndSyncUI(); 
+            
+            clearTimeout(bootTimer);
+            
         }
-      });
-      
-      range.setValues(values);
-      
-      console.log("籤位物理鎖定成功。");
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // [Buy] 扣點與開獎程序
-    if (currentAction === 'buy') {
-      
-      var userDB = appSS.getSheetByName(USER_SHEET_NAME);
-      
-      var buyResultsMatrix = []; 
-      
-      var totalCostValue = postPayload.ticketIds.length * currentModeConfig.cost;
-      
-      // 帳戶查詢
-      var userValues = userDB.getDataRange().getValues();
-      var uRowIdx = -1;
-      var currentBalancePts = 0;
-      
-      for (var u = 1; u < userValues.length; u++) {
-        if (String(userValues[u][0]) === String(postPayload.uid)) {
-          uRowIdx = u + 1;
-          currentBalancePts = userValues[u][2];
-          break;
-        }
-      }
-      
-      if (uRowIdx === -1) throw "找不到用戶帳戶。";
-      
-      if (currentBalancePts < totalCostValue) {
-        throw "點數不足以完成扣款。";
-      }
-
-      // 盤面更新
-      var lastT = currentTicketSheet.getLastRow();
-      var tRange = currentTicketSheet.getRange(1, 1, lastT, 6);
-      var tValues = tRange.getValues();
-
-      postPayload.ticketIds.forEach(function(targetId) {
+    /** * [統治權釋放：主動歸還機台]
+     * 此函數對應「離開機台」按鈕，執行清盤。
+     */
+    function handleVoluntaryLeave() {
         
-        for (var k = 1; k < tValues.length; k++) {
-          
-          if (String(tValues[k][0]) === String(targetId)) {
+        Swal.fire({
+            title: '確定釋放統治權？',
+            text: '這將歸還全場剩餘籤位，其他玩家將可進場購買。',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '👋 確認釋放',
+            cancelButtonText: '繼續霸盤',
+            confirmButtonColor: '#E74C3C',
+            background: '#0e0e0e', 
+            color: '#fff'
+        }).then((result) => {
             
-            tValues[k][2] = postPayload.uid; // C 欄: 填入得主
-            tValues[k][3] = currentTime;    // D 欄: 交易時間
-            tValues[k][4] = ""; // 清空 E
-            tValues[k][5] = ""; // 清空 F
-            
-            var pName = tValues[k][1];
-            
-            buyResultsMatrix.push({ id: targetId, name: pName, img: currentModeConfig.images[pName] });
-            
-            // 寫入 Log
-            var logSheet = appSS.getSheetByName(LOG_SHEET_NAME);
-            if (logSheet) {
-              logSheet.appendRow([
-                currentTime, postPayload.uid, postPayload.name, 
-                modeTag, pName, targetId, Utilities.getUuid(), 
-                Utilities.formatDate(currentTime, "GMT+8", "yyyy-MM-dd HH:mm:ss"), "在庫"
-              ]);
+            if (result.isConfirmed) {
+                
+                showGlobalLoading(true, "正在釋放機台優先權...");
+                
+                fetch(CORE_CONFIG.API_ENDPOINT, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        uid: appRuntimeState.uid, 
+                        action: 'release', 
+                        mode: appRuntimeState.mode 
+                    }) 
+                }).then(() => {
+                    
+                    Swal.fire({ title: "已歸還市場", icon: "success", timer: 1500, showConfirmButton: false, background: '#0e0e0e' });
+                    
+                    fetchSystemDataAndSyncUI();
+                    
+                });
             }
-            break;
+        });
+    }
+
+    /** * [分頁切換邏輯]
+     */
+    async function handleNavigationSwitch(page) {
+        
+        const homeUI = document.getElementById('home-page'); 
+        const vaultUI = document.getElementById('vault-page'); 
+        const dockUI = document.getElementById('action-dock-panel');
+        const homeBtn = document.getElementById('nav-btn-home'); 
+        const vaultBtn = document.getElementById('nav-btn-vault');
+        
+        if (page === 'home') {
             
-          }
+            homeUI.style.display = 'block'; 
+            vaultUI.style.display = 'none'; 
+            dockUI.style.display = 'block';
+            homeBtn.classList.add('active'); 
+            vaultBtn.classList.remove('active');
+            
+            fetchSystemDataAndSyncUI(); 
+            
+        } else {
+            
+            homeUI.style.display = 'none'; 
+            vaultUI.style.display = 'block'; 
+            dockUI.style.display = 'none';
+            vaultBtn.classList.add('active'); 
+            homeBtn.classList.remove('active');
+            
+            processAndRenderVaultCollection(); 
+            
         }
-      });
-      
-      tRange.setValues(tValues);
-      
-      // 點數扣除
-      userDB.getRange(uRowIdx, 3).setValue(currentBalancePts - totalCostValue);
-      
-      // [v5.17.0 絕對統治者協議]：購買完成後，自動鎖定全場剩餘籤位 (尾刀保護)
-      extendDominion(currentTicketSheet, postPayload.uid, currentTime);
-
-      return ContentService.createTextOutput(JSON.stringify({ 
-        status: "success", 
-        results: buyResultsMatrix 
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    // [Release] 歸還機台 (離開機台)
-    if (currentAction === 'release') {
-      
-      console.log("玩家 [" + postPayload.uid + "] 正在主動釋放統治權...");
-      
-      var lastR = currentTicketSheet.getLastRow();
-      
-      var rangeR = currentTicketSheet.getRange(1, 1, lastR, 6);
-      
-      var valsR = rangeR.getValues();
-      
-      var hasUpdatedR = false;
-      
-      for (var k = 1; k < valsR.length; k++) {
-        
-        if (String(valsR[k][5]) === String(postPayload.uid)) {
-          
-          valsR[k][4] = ""; // 清除時間
-          valsR[k][5] = ""; // 清除 UID
-          
-          hasUpdatedR = true;
-          
-        }
-      }
-      
-      if (hasUpdatedR) {
-        rangeR.setValues(valsR);
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // [Extend] 延長霸盤時間
-    if (currentAction === 'extend') {
-      
-      var lastE = currentTicketSheet.getLastRow();
-      
-      var rangeE = currentTicketSheet.getRange(1, 1, lastE, 6);
-      
-      var valsE = rangeE.getValues();
-      
-      postPayload.ticketIds.forEach(function(tid) {
+    /** * [數據同步：感應統治權狀態] 
+     * 與後端 CacheService 連動，實現霸盤感應。
+     */
+    async function fetchSystemDataAndSyncUI() {
         
-         for(var k = 1; k < valsE.length; k++) {
-           
-           if(String(valsE[k][0]) === String(tid) && String(valsE[k][5]) === String(postPayload.uid)) {
-             
-             valsE[k][4] = new Date(); // 刷新鎖定起始點
-             break;
-             
-           }
-         }
-      });
-      
-      rangeE.setValues(valsE);
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-  } catch (error) {
-    
-    console.error("Critical doPost Error: " + error.toString());
-    
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: "error", message: error.toString() 
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } finally {
-    transactionLock.releaseLock();
-  }
-}
-
-// ==========================================================================
-// [第七部分：營運引擎 - 自動化監控與物理洗牌]
-// ==========================================================================
-
-/**
- * 智慧巡檢任務
- */
-function autoCheckAndReshuffle() {
-  
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  
-  var sheets = spreadsheet.getSheets();
-  
-  var nowTs = new Date().getTime();
-  
-  sheets.forEach(function(s) {
-    
-    var name = s.getName();
-    
-    if (name.indexOf("_籤位") > -1) {
-      
-      var data = s.getDataRange().getValues();
-      
-      var isGone = true; 
-      
-      var lastSaleTime = 0;
-      
-      for (var r = 1; r < data.length; r++) {
-        
-        if (/A賞|SP|1賞|大獎/i.test(data[r][1]) && (!data[r][2] || data[r][2] === "")) {
-          isGone = false; 
-          break; 
+        if (appRuntimeState.selectedList.length === 0) {
+            refreshActionDockState();
         }
         
-        if (data[r][3]) { 
-          var t = new Date(data[r][3]).getTime(); 
-          if (t > lastSaleTime) lastSaleTime = t; 
-        }
-      }
-      
-      // 大獎完抽 且 滿 5 分鐘閒置
-      if (isGone && lastSaleTime > 0) {
+        showGlobalLoading(true, "同步全域統治權中...");
         
-        if (nowTs - lastSaleTime > AUTO_RESHUFFLE_DELAY) {
-          
-          console.log("🚨 符合自動洗牌條件: " + name);
-          
-          executeShuffle(name.replace("_籤位", ""), true); 
-          
+        try {
+            
+            const endpoint = `${CORE_CONFIG.API_ENDPOINT}?uid=${appRuntimeState.uid}&name=${encodeURIComponent(appRuntimeState.name)}&mode=${encodeURIComponent(appRuntimeState.mode)}&t=${Date.now()}`;
+            
+            const res = await fetch(endpoint);
+            const data = await res.json();
+            
+            if (data.status === "success") {
+                
+                appRuntimeState.tickets = data.tickets; 
+                appRuntimeState.unitPrice = data.cost; 
+                appRuntimeState.userPoints = data.userPoints;
+                
+                // 更新 UI 點數
+                document.getElementById('display-u-pts').innerText = appRuntimeState.userPoints.toLocaleString();
+                
+                const currentRem = data.tickets.filter(t => !t.isTaken).length;
+                const currentBig = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
+                
+                // 庫存脈衝動畫激發 (v5.16.1 Fix)
+                const remEl = document.getElementById('stat-rem');
+                remEl.innerText = currentRem;
+                
+                if (currentRem < 10 && currentRem > 0) {
+                    remEl.classList.add('pulse-urgent');
+                } else {
+                    remEl.classList.remove('pulse-urgent');
+                }
+
+                // 大獎聽牌橫幅切換
+                const alertBanner = document.getElementById('jackpot-alert-banner');
+                if (currentBig > 0 && currentRem < 20) {
+                    alertBanner.style.display = 'block';
+                } else {
+                    alertBanner.style.display = 'none';
+                }
+
+                document.getElementById('stat-big').innerText = currentBig;
+                document.getElementById('stat-rate').innerText = currentRem > 0 ? (currentBig/currentRem*100).toFixed(1) + "%" : "0%";
+                
+                // 跑馬燈同步
+                document.getElementById('winner-scroller').innerHTML = (data.history && data.history.length > 0) ? 
+                    data.history.map(h => `<span class="win-item-feed">🎉 ${h.user}:【${h.prize}】</span>`).join('') : 
+                    "機台狀態：運作中。大獎機會正在等您！";
+
+                // 洗牌保護判定
+                const masterBtn = document.getElementById('masterPayButton');
+                if (!data.bigPrizeExists || currentRem === 0) {
+                    masterBtn.disabled = true; 
+                    masterBtn.innerText = "等待洗牌中...";
+                } else {
+                    refreshActionDockState(); 
+                }
+
+                // [v5.17.2 核心修復：霸盤島狀態感應]
+                const myLocks = data.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
+                const shopDock = document.getElementById('shopping-dock');
+                const domDock = document.getElementById('dominion-dock');
+
+                if (myLocks.length > 0) {
+                    // 若擁有利權且目前沒在挑籤 -> 顯示統治面板
+                    if (appRuntimeState.selectedList.length === 0) {
+                        shopDock.style.display = 'none';
+                        domDock.style.display = 'block';
+                        document.getElementById('dominion-timer').innerText = "180";
+                    } else {
+                        shopDock.style.display = 'block';
+                        domDock.style.display = 'none';
+                    }
+                } else {
+                    shopDock.style.display = 'block';
+                    domDock.style.display = 'none';
+                }
+                
+                renderPremiumGrid();
+                renderLobbySummaries(data.prizeSummary);
+                checkPendingRescueProcedure(); 
+            }
+            
+        } catch (e) {
+            console.error("Critical Sync Failure:", e);
+        } finally { 
+            showGlobalLoading(false); 
         }
-      }
     }
-  });
-}
 
-/**
- * 物理洗牌核心
- */
-function executeShuffle(modeName, isSilent) {
-  
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  var sheet = ss.getSheetByName(modeName + "_籤位") || ss.getSheetByName(modeName);
-  
-  if (!sheet) return;
-  
-  if (!isSilent) {
-    var check = SpreadsheetApp.getUi().alert('⚠️ 物理洗牌警報', '您確定要重置盤面嗎？', SpreadsheetApp.getUi().ButtonSet.YES_NO);
-    if (check != SpreadsheetApp.getUi().Button.YES) return;
-  }
-  
-  // 資產回收至回收站
-  var recycle = ss.getSheetByName(RECYCLE_SHEET_NAME);
-  var data = sheet.getDataRange().getValues();
-  if (recycle) {
-    for (var i = 1; i < data.length; i++) {
-      if (!data[i][2]) {
-        recycle.appendRow([new Date(), modeName, data[i][0], data[i][1]]);
-      }
-    }
-  }
-  
-  // 物理隨機打亂 B 欄
-  var last = sheet.getLastRow();
-  if (last > 1) {
-    
-    var prizeRange = sheet.getRange(2, 2, last - 1, 1);
-    var pArray = prizeRange.getValues();
-    
-    for (var j = pArray.length - 1; j > 0; j--) {
-      var k = Math.floor(Math.random() * (j + 1));
-      var temp = pArray[j][0];
-      pArray[j][0] = pArray[k][0];
-      pArray[k][0] = temp;
-    }
-    
-    prizeRange.setValues(pArray);
-    
-    // 徹底清空 C, D, E, F 欄位
-    sheet.getRange(2, 3, last - 1, 4).clearContent();
-    
-    console.log("【物理洗牌】分頁 [" + modeName + "] 重置完成。");
-  }
-}
+    /** * [核心交易流程：霸盤保護版] 
+     */
+    async function startFinalCheckoutProcess() {
+        
+        const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
+        
+        if (appRuntimeState.userPoints < totalCost) { 
+            Swal.fire({ title: "能量不足", text: "餘額不足以完成扣款。", icon: "warning", background: '#0e0e0e' }); 
+            return; 
+        }
+        
+        // 1. 視角歸位 (防止彈窗切斷)
+        window.scrollTo(0, 0);
 
-/**
- * 架構自檢初始化
- */
-function setupSystem() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var schema = ["使用者", "總表", "回收站", "單挑套", "單挑套_籤位"];
-  schema.forEach(function(n) {
-    if (!ss.getSheetByName(n)) {
-      ss.insertSheet(n);
+        showGlobalLoading(true, "建立統治連接中...");
+        
+        try {
+            
+            // A. 物理鎖定
+            const lockCall = await fetch(CORE_CONFIG.API_ENDPOINT, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    uid: appRuntimeState.uid, 
+                    action: 'lock', 
+                    mode: appRuntimeState.mode, 
+                    ticketIds: appRuntimeState.selectedList 
+                })
+            });
+            
+            const lockResult = await lockCall.json();
+            
+            showGlobalLoading(false);
+            
+            if (lockResult.status !== "success") { 
+                
+                Swal.fire("霸盤失敗", lockResult.message || "位置遭搶佔", "error").then(async () => {
+                    appRuntimeState.selectedList = []; 
+                    refreshActionDockState(); 
+                    await fetchSystemDataAndSyncUI();
+                }); 
+                
+                return; 
+            }
+            
+            // B. 統治保護倒數計時
+            let lockSec = 180; 
+            let alreadyExt = false;
+            
+            const checkoutSwal = await Swal.fire({ 
+                title: '✨ 霸盤成功', 
+                html: `
+                    <div class="swal-scroll-wrap">
+                        <div style="margin: 10px 0 20px;">
+                            <div class="countdown-pulse" id="timer">03:00</div>
+                            <div style="color:#aaa; font-size:0.85rem; font-weight:900;">EXCLUSIVE DOMINION ACTIVE</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">選中枚數</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:900; font-size:1.1rem;">總計支出</span>
+                                <span class="val-total-cost-swal">${totalCost.toLocaleString()} P</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swal-fixed-actions">
+                        <button id="btn-timer-ext" style="flex:1; padding:18px; border-radius:18px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900;">⏳ 延長時效</button>
+                        <button id="btn-timer-rel" style="flex:1; padding:18px; border-radius:18px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900;">✕ 放棄交易</button>
+                    </div>
+                `,
+                showConfirmButton: true, confirmButtonText: '✅ 確定扣款', 
+                confirmButtonColor: '#2ECC71', allowOutsideClick: false, background: '#0e0e0e',
+                didOpen: () => {
+                    
+                    document.getElementById('btn-timer-ext').onclick = () => {
+                        if (alreadyExt) return; alreadyExt = true; 
+                        document.getElementById('btn-timer-ext').style.opacity = "0.4";
+                        lockSec += 60;
+                        fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'extend', mode: appRuntimeState.mode, ticketIds: appRuntimeState.selectedList }) });
+                    };
+                    
+                    document.getElementById('btn-timer-rel').onclick = () => Swal.clickCancel();
+
+                    timerInterval = setInterval(() => {
+                        
+                        if (navigator.vibrate) navigator.vibrate(40); // v5.16.0 Haptic
+                        
+                        lockSec--;
+                        const m = Math.floor(lockSec / 60).toString().padStart(2,'0');
+                        const s = (lockSec % 60).toString().padStart(2,'0');
+                        const el = document.getElementById('timer');
+                        
+                        if (el) el.innerText = `${m}:${s}`;
+                        
+                        if (lockSec <= 0) {
+                            clearInterval(timerInterval); 
+                            Swal.close();
+                            fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) });
+                            fetchSystemDataAndSyncUI();
+                        }
+                        
+                    }, 1000);
+                },
+                willClose: () => clearInterval(timerInterval)
+            });
+            
+            // C. 最終扣款與開獎
+            if (checkoutSwal.isConfirmed) {
+                
+                showGlobalLoading(true, "正在執行絕對統治開籤...");
+                
+                const buyRes = await (await fetch(CORE_CONFIG.API_ENDPOINT, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        uid: appRuntimeState.uid, 
+                        action: 'buy', 
+                        mode: appRuntimeState.mode, 
+                        ticketIds: appRuntimeState.selectedList, 
+                        name: appRuntimeState.name 
+                    }) 
+                })).json();
+                
+                if (buyRes.status === "success") {
+                    
+                    // 慶祝特效判定
+                    if (buyRes.results.some(r => /A賞|SP|1賞|大獎/i.test(r.name))) {
+                        document.getElementById('snd-success').play().catch(()=>{});
+                        confetti({ particleCount: 2200, spread: 360, colors: ['#D4AF37', '#F7E2A0', '#FFFFFF'], zIndex: 12000 });
+                    }
+                    
+                    // 結果渲染 (捲動保護版)
+                    let resHtml = `<div class="swal-scroll-wrap"><div class="res-scroll-container">`;
+                    buyRes.results.forEach(r => {
+                        const isG = /A賞|SP|1賞|大獎/i.test(r.name);
+                        const sizeCls = isG ? 'prize-thumb-grand' : 'prize-thumb-normal';
+                        resHtml += `
+                        <div class="res-premium-card ${isG ? 'is-grand-win' : ''}">
+                            <div class="res-item-thumb ${sizeCls}"><div class="img-container-moderate"><img src="${r.img}"></div></div>
+                            <div>
+                                <div style="${isG?'color:var(--gold-primary); font-size:1.1rem;':''}; font-weight:900;">${isG?'✨ ':''}${r.name}</div>
+                                <div style="font-size:0.75rem; color:#555; margin-top:5px;">物理座標：${r.id}</div>
+                            </div>
+                        </div>`;
+                    });
+                    resHtml += `</div></div>`;
+                    
+                    showGlobalLoading(false);
+                    
+                    await Swal.fire({ 
+                        title: "開獎完畢", html: resHtml, background: '#0e0e0e', 
+                        confirmButtonText: '查看寶庫', showDenyButton: true, denyButtonText: '🎲 霸盤繼續 5 抽', 
+                        confirmButtonColor: '#333'
+                    }).then(async (res) => { 
+                        
+                        if (res.isDenied) { 
+                            // [Fix v5.15.1連抽死鎖] 
+                            setTimeout(async () => {
+                                appRuntimeState.selectedList = []; 
+                                refreshActionDockState(); 
+                                await fetchSystemDataAndSyncUI(); // 重獲統治者權限
+                                executeBatchSelection(5); 
+                            }, 300);
+                        } else { 
+                            handleNavigationSwitch('vault'); 
+                        } 
+                        
+                    });
+                    
+                    await fetchSystemDataAndSyncUI();
+                    
+                } else { 
+                    throw new Error(buyRes.message); 
+                }
+                
+            } else if (checkoutSwal.dismiss === Swal.DismissReason.cancel) {
+                
+                // 放棄則歸還部分
+                fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) }).then(() => fetchSystemDataAndSyncUI());
+                
+            }
+            
+        } catch (e) { 
+            
+            showGlobalLoading(false);
+            Swal.fire("系統繁鎖", e.message || "請重新操作", "error"); 
+            await fetchSystemDataAndSyncUI();
+            
+        }
     }
-  });
-  SpreadsheetApp.getUi().alert("🔧 系統架構檢修完成。");
-}
+
+    /** * [輔助函數：物理棋盤渲染] 
+     */
+    function renderPremiumGrid() {
+        const gridBox = document.getElementById('main-ticket-grid'); 
+        if (!gridBox) return;
+        
+        gridBox.innerHTML = appRuntimeState.tickets.map(t => {
+            
+            const isBigP = /A賞|SP|1賞|大獎/i.test(t.prizeName); 
+            let clsList = "t-cell"; 
+            let displayId = t.id;
+            
+            if (t.isTaken) { 
+                clsList += isBigP ? " is-taken is-big-taken" : " is-taken"; 
+                displayId = ""; 
+            } else if (t.isLocked) { 
+                clsList += (t.lockUser === appRuntimeState.uid) ? " is-rescuing" : " is-locked"; 
+            } else if (appRuntimeState.selectedList.includes(String(t.id))) { 
+                clsList += " is-selected"; 
+            }
+            
+            const clickCall = (t.isTaken || (t.isLocked && t.lockUser !== appRuntimeState.uid)) ? '' : `handleCellInteration('${t.id}')`;
+            
+            return `<div id="t-${t.id}" class="${clsList}" onclick="${clickCall}">${displayId}</div>`;
+            
+        }).join('');
+    }
+
+    /** * [輔助函數：櫥窗渲染] 
+     */
+    function renderLobbySummaries(summary) {
+        const gallery = document.getElementById('lobby-prize-gallery'); 
+        if (!gallery || !summary) return;
+        
+        gallery.innerHTML = summary.map(p => {
+            
+            const isGrand = /A賞|SP|1賞|大獎/i.test(p.name); 
+            const sizeClass = isGrand ? 'prize-thumb-grand' : 'prize-thumb-normal';
+            
+            return `
+            <div class="p-show-card ${p.stock===0?'is-empty':''}">
+                <div class="p-show-thumb ${sizeClass}">
+                    <div class="img-container-moderate">
+                        <img src="${p.img}" onerror="this.src='https://placehold.co/200?text=Prize'">
+                    </div>
+                </div>
+                <div class="p-show-label">${p.name}</div>
+                <div class="p-show-stock">剩 ${p.stock}</div>
+            </div>`;
+            
+        }).join('');
+    }
+
+    /** * [交互：選號行為] 
+     */
+    function handleCellInteration(tid) {
+        
+        const idStr = String(tid); 
+        const idx = appRuntimeState.selectedList.indexOf(idStr);
+        
+        document.getElementById('snd-click').currentTime = 0; 
+        document.getElementById('snd-click').play().catch(()=>{});
+        
+        if (idx > -1) { 
+            appRuntimeState.selectedList.splice(idx, 1); 
+            document.getElementById(`t-${tid}`).classList.remove('is-selected'); 
+        } else { 
+            appRuntimeState.selectedList.push(idStr); 
+            document.getElementById(`t-${tid}`).classList.add('is-selected'); 
+        }
+        
+        refreshActionDockState();
+    }
+
+    /** * [交互：隨機選號] 
+     */
+    function executeBatchSelection(num) {
+        
+        appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.remove('is-selected'));
+        appRuntimeState.selectedList = [];
+        
+        const selectable = appRuntimeState.tickets.filter(t => !t.isTaken && (!t.isLocked || t.lockUser === appRuntimeState.uid)).map(t => String(t.id));
+        
+        if (selectable.length < num) num = selectable.length;
+        
+        for (let i = 0; i < num; i++) {
+            const rand = Math.floor(Math.random() * selectable.length);
+            const pickedId = selectable.splice(rand, 1)[0];
+            appRuntimeState.selectedList.push(pickedId);
+            document.getElementById(`t-${pickedId}`).classList.add('is-selected');
+        }
+        
+        refreshActionDockState();
+    }
+
+    /** * [UI更新：懸浮島面板切換] 
+     */
+    function refreshActionDockState() {
+        
+        const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
+        document.getElementById('dock-sel-count').innerText = `${appRuntimeState.selectedList.length}`;
+        document.getElementById('dock-total-cost').innerText = total.toLocaleString();
+        
+        const payBtn = document.getElementById('masterPayButton');
+        const shopDock = document.getElementById('shopping-dock');
+        const domDock = document.getElementById('dominion-dock');
+        
+        if (appRuntimeState.selectedList.length > 0) { 
+            
+            payBtn.disabled = false; 
+            payBtn.innerText = `立即支付扣款`; 
+            shopDock.style.display = 'block'; 
+            domDock.style.display = 'none'; 
+            
+        } else { 
+            
+            payBtn.disabled = true; 
+            payBtn.innerText = "請先選號"; 
+            
+        }
+    }
+
+    /** * [智慧救援程序：統治權恢復] 
+     */
+    function checkPendingRescueProcedure() {
+        
+        const myLocks = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
+        
+        if (myLocks.length > 0 && appRuntimeState.selectedList.length === 0) {
+            
+            window.scrollTo(0, 0);
+            
+            Swal.fire({
+                title: '✨ 恢復統治權',
+                html: `
+                    <div class="swal-scroll-wrap">
+                        偵測到有 <b style="color:var(--gold-primary);">${myLocks.length}</b> 枚籤位正由您霸佔中。<br>是否恢復連線完成挑戰？
+                    </div>
+                    <div class="swal-fixed-actions">
+                        <button id="btn-rescue-ok" style="flex:1; padding:16px; border-radius:14px; background:#2ECC71; color:#fff; font-weight:900;">🚀 立即恢復</button>
+                        <button id="btn-rescue-no" style="flex:1; padding:16px; border-radius:14px; background:rgba(255,255,255,0.1); color:#fff; font-weight:900;">歸還機台</button>
+                    </div>`,
+                background: '#111', color: '#fff', showConfirmButton: false, allowOutsideClick: false,
+                didOpen: () => {
+                    
+                    document.getElementById('btn-rescue-ok').onclick = () => {
+                        Swal.close(); 
+                        appRuntimeState.selectedList = myLocks.map(t => String(t.id));
+                        appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.add('is-selected'));
+                        refreshActionDockState(); 
+                        startFinalCheckoutProcess();
+                    };
+                    
+                    document.getElementById('btn-rescue-no').onclick = () => {
+                        Swal.close(); 
+                        fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) }).then(() => fetchSystemDataAndSyncUI());
+                    };
+                }
+            });
+        }
+    }
+
+    /** * [寶庫：藏品歸納與排序] 
+     */
+    async function processAndRenderVaultCollection() {
+        
+        showGlobalLoading(true, "正在掃描資產資料庫...");
+        
+        try {
+            const endpoint = `${CORE_CONFIG.API_ENDPOINT}?uid=${appRuntimeState.uid}&action=getMyPrizes&r=${Math.random()}`;
+            const res = await fetch(endpoint);
+            const data = await res.json();
+            const grouped = {};
+            
+            data.prizes.forEach(p => { 
+                const k = `${p.mode}_${p.prizeName}`; 
+                if (!grouped[k]) { 
+                    grouped[k] = { mode: p.mode, name: p.prizeName, count: 0, time: p.time, img: p.img, isBig: /A賞|SP|1賞|大獎/i.test(p.prizeName) }; 
+                } 
+                grouped[k].count++; 
+            });
+            
+            const sorted = Object.values(grouped).sort((a, b) => b.isBig - a.isBig);
+            const lv = document.getElementById('vault-items-container');
+            
+            if (sorted.length === 0) {
+                lv.innerHTML = `<div style="text-align:center; padding:120px 0; color:#444;">📦 寶庫目前空空如也</div>`;
+            } else {
+                lv.innerHTML = sorted.map(a => {
+                    const bCls = a.isBig ? 'is-premium' : '';
+                    return `
+                    <div class="v-asset-card ${bCls}">
+                        <div class="v-asset-icon"><img src="${a.img}"></div>
+                        <div class="v-asset-main">
+                            <div class="v-name-header"><span class="v-prize-name">${a.name}</span><span class="v-qty-multiplier">x ${a.count}</span></div>
+                            <div class="v-prize-meta">${a.mode.toUpperCase()} | 取得於 ${a.time}</div>
+                        </div>
+                        <button class="btn-ship-action" onclick="handleAssetShipmentFlow('${a.name}', '${a.mode}', ${a.count})">申請出貨</button>
+                    </div>`;
+                }).join('');
+            }
+            
+        } catch (e) {
+            console.error(e);
+        } finally { 
+            showGlobalLoading(false); 
+        }
+    }
+
+    /** * [通用工具：加載遮罩控制] 
+     */
+    function showGlobalLoading(show) { 
+        document.getElementById('boot-loader').style.display = show ? 'flex' : 'none'; 
+    }
+    
+    /** * [通用工具：切換獎區模式] 
+     */
+    function handleModeSelection(m) { 
+        if (appRuntimeState.mode === m) return; 
+        appRuntimeState.mode = m; 
+        document.querySelectorAll('.m-item-btn').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-m') === m)); 
+        appRuntimeState.selectedList = []; 
+        fetchSystemDataAndSyncUI(); 
+    }
+    
+    // 初始化執行
+    window.onload = init;
+</script>
+</body>
+</html>
