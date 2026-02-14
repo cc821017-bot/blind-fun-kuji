@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.14.1 旗艦商務補完版</title>
+    <title>盲玩樂 5.14.2 旗艦商務補完版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -41,7 +41,7 @@
             --border-radius-md: 20px;
             --glass-bg: rgba(20, 20, 20, 0.98);
 
-            /* [5.14.1 新增] 懸浮島陰影變數 */
+            /* 懸浮島陰影變數 */
             --dock-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
         }
         
@@ -64,7 +64,7 @@
 
         /* ==========================================================================
            [SECTION 3: 圖片階級優化系統 (Visual Hierarchy System)]
-           [5.14.1 重大更新]：建立圖片大小階級，區分大賞與普獎。
+           [5.14.2 重大更新]：強化開獎彈窗的圖片階級控制。
            ========================================================================== */
         .img-container-moderate {
             width: 100%;
@@ -89,20 +89,24 @@
         }
 
         /* [大獎極巨化] A賞/SP/大獎 專用 */
-        .prize-thumb-grand .img-container-moderate img {
-            max-width: 105% !important; /* 突破容器限制 */
-            max-height: 105% !important;
-            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6)); /* 金色光暈 */
-            transform: scale(1.15);
+        /* 適用範圍：大廳櫥窗 + 開獎結果彈窗 */
+        .prize-thumb-grand .img-container-moderate img,
+        .res-item-thumb.prize-thumb-grand img {
+            max-width: 120% !important; /* [5.14.2] 再次加大 */
+            max-height: 120% !important;
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8)); /* 強烈金光 */
+            transform: scale(1.2);
             z-index: 10;
         }
 
         /* [小賞壓制化] 普獎專用 */
-        .prize-thumb-normal .img-container-moderate img {
-            max-width: 55% !important; /* 縮小 */
-            max-height: 55% !important;
-            opacity: 0.85;
-            filter: grayscale(0.2); /* 輕微灰階讓大獎更跳 */
+        /* 適用範圍：大廳櫥窗 + 開獎結果彈窗 */
+        .prize-thumb-normal .img-container-moderate img,
+        .res-item-thumb.prize-thumb-normal img {
+            max-width: 50% !important; /* [5.14.2] 再次縮小 */
+            max-height: 50% !important;
+            opacity: 0.8;
+            filter: grayscale(0.3); /* 壓制色彩 */
         }
 
         /* ==========================================================================
@@ -122,7 +126,7 @@
         .u-name-val { font-weight: 700; font-size: 1.1rem; color: #fff; }
         .u-pts-val { font-family: 'Oswald'; font-size: 1.9rem; font-weight: 700; letter-spacing: 0.5px; }
 
-        /* [5.4.0 導航切換列] */
+        /* 導航切換列 */
         .nav-segment-bar { display: flex; padding: 15px 20px; gap: 15px; background: rgba(0,0,0,0.2); }
         .nav-item { 
             flex: 1; text-align: center; padding: 14px; border-radius: 18px; 
@@ -137,8 +141,7 @@
         }
 
         /* ==========================================================================
-           [SECTION 5: 我的寶庫 - 智慧歸納大獎置頂介面]
-           [5.14.1] 支援圖片顯示
+           [SECTION 5: 我的寶庫]
            ========================================================================== */
         #vault-page { display: none; padding: 0 20px; animation: slideUpUI 0.5s ease-out; }
         @keyframes slideUpUI { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -157,7 +160,7 @@
             position: relative; overflow: hidden;
         }
         
-        /* [大獎置頂邊框特效：金光脈衝] */
+        /* 大獎置頂邊框特效 */
         .v-asset-card.is-premium { 
             border: 2px solid var(--gold-primary); 
             box-shadow: 0 0 35px rgba(212, 175, 55, 0.2); 
@@ -166,7 +169,6 @@
         @keyframes borderAuraFlow { 0% { border-color: #D4AF37; } 100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212, 175, 55, 0.4); } }
         .v-asset-card.is-premium::before { content: 'PREMIUM ASSET'; position: absolute; top: 0; right: 0; background: var(--gold-gradient); color: #000; font-size: 0.6rem; padding: 4px 15px; font-weight: 900; border-radius: 0 0 0 15px; }
 
-        /* [5.14.1] 寶庫圖示修正 */
         .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
         .v-asset-icon img { width: 100%; height: 100%; object-fit: cover; }
         
@@ -174,11 +176,9 @@
         .v-name-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .v-prize-name { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 0.5px; }
         
-        /* [智慧歸納] 數量倍率顯示 */
         .v-qty-multiplier { font-family: 'Oswald'; font-size: 1.5rem; color: var(--gold-primary); font-weight: 700; text-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .v-prize-meta { font-size: 0.75rem; color: #444; font-weight: 700; letter-spacing: 0.5px; }
         
-        /* [商務出貨按鈕] */
         .btn-ship-action { 
             background: var(--gold-gradient); color: #000; border: none; padding: 12px 22px; 
             border-radius: 14px; font-weight: 900; font-size: 0.85rem; transition: 0.3s;
@@ -234,27 +234,42 @@
             background: var(--gold-gradient) !important; color: #000 !important; border: none;
             transform: translateY(-12px) scale(1.15); box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); z-index: 10;
         }
+        
+        /* [5.14.2 修正] 普獎被拿走：保持紅X
+        */
         .t-cell.is-taken { background: #050505; opacity: 0.4; color: transparent; border-color: #222; }
         .t-cell.is-taken::after { content: '✕'; position: absolute; color: var(--status-red); font-size: 3.5rem; font-weight: 900; }
         
-        /* 皇冠優先級守護 (z-index 999) */
-        .t-cell.is-big-taken { border: 2.5px solid var(--gold-primary); background: #1a1a00; }
-        .t-cell.is-big-taken::before { content: '👑'; position: absolute; font-size: 1.5rem; top: 4px; left: 4px; z-index: 999; filter: drop-shadow(0 3px 5px #000); }
+        /* [5.14.2 修正] 大獎被拿走：移除紅X，保持亮度，顯示皇冠 
+           opacity: 1 !important 強制不透明
+        */
+        .t-cell.is-big-taken { 
+            border: 2.5px solid var(--gold-primary); 
+            background: #1a1a00; 
+            opacity: 1 !important; 
+        }
+        .t-cell.is-big-taken::after { 
+            content: none !important; /* 核心修正：移除紅X */ 
+        }
+        .t-cell.is-big-taken::before { 
+            content: '👑'; position: absolute; font-size: 1.5rem; 
+            top: 4px; left: 4px; z-index: 999; 
+            filter: drop-shadow(0 0 10px #D4AF37);
+        }
 
         /* ==========================================================================
-           [SECTION 7: UX 究極優化 - 懸浮島支付 (Floating Dock)]
-           [5.14.1] 改為懸浮島樣式，徹底解決遮擋與操作問題。
+           [SECTION 7: UX 究極優化 - 懸浮島支付]
            ========================================================================== */
         .fixed-dock-action-hub { 
             position: fixed !important; 
-            bottom: 25px !important; /* 懸浮距離 */
-            left: 15px; right: 15px; width: auto; /* 左右留白 */
+            bottom: 25px !important; 
+            left: 15px; right: 15px; width: auto; 
             z-index: 9999;
-            background: rgba(20, 20, 20, 0.92); /* 透過度 */
+            background: rgba(20, 20, 20, 0.92); 
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 35px; /* 膠囊形狀 */
+            border-radius: 35px; 
             padding: 20px; 
             box-shadow: var(--dock-shadow);
             animation: floatDock 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -262,7 +277,6 @@
         }
         @keyframes floatDock { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* iPhone Home Bar 避讓 */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .fixed-dock-action-hub {
                 bottom: calc(20px + env(safe-area-inset-bottom)) !important;
@@ -277,7 +291,6 @@
         }
         .btn-pick-tool:active { transform: scale(0.95); background: #333; }
 
-        /* [支付中樞佈局] 水平商務排列 */
         .pay-master-flex { display: flex; align-items: center; gap: 20px; }
         .price-summary-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .lbl-selected-count { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
@@ -293,7 +306,7 @@
         .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
         .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
 
-        /* [5.14.1 倒數計時強化] */
+        /* [倒數計時強化] */
         .countdown-pulse {
             font-family: 'Oswald'; 
             font-size: 5.5rem !important; 
@@ -393,10 +406,10 @@
 
 <script>
     /**
-     * [SECTION 16: 盲玩樂 5.14.1 核心邏輯引擎]
+     * [SECTION 16: 盲玩樂 5.14.2 核心邏輯引擎]
      * ⚖️ 憲法守護執行：
-     * - 物理行數衝破 2200。
-     * - 實裝懸浮島、圖片極巨化、心跳倒數。
+     * - 修正開獎結果圖片大小階級。
+     * - 修正 grid 皇冠與紅X衝突問題。
      */
     
     // [⚠️ 核心 API 連線配置] 
@@ -411,19 +424,15 @@
         name: "冒險者", 
         mode: "單挑套", 
         tickets: [], 
-        unitPrice: 100, // 由後端 F2 儲存格動態同步
+        unitPrice: 100, 
         userPoints: 0, 
         selectedList: [],
         isLoading: false
     };
 
-    /**
-     * [1] 系統開機初始化程序
-     */
+    /** [1] 系統開機初始化 */
     async function init() {
-        console.log("Flagship 5.14.1 System Booting...");
-        
-        // 斷網防護計時器
+        console.log("Flagship 5.14.2 System Booting...");
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
                 Swal.fire({ title: "連線回應超時", text: "伺服器無回應，請確認網址正確並重啟頁面。", icon: "error" });
@@ -447,9 +456,7 @@
         }
     }
 
-    /**
-     * [2] 分頁切換控制邏輯
-     */
+    /** [2] 分頁切換 */
     async function handleNavigationSwitch(page) {
         const homeUI = document.getElementById('home-page');
         const vaultUI = document.getElementById('vault-page');
@@ -464,13 +471,11 @@
         } else {
             homeUI.style.display = 'none'; vaultUI.style.display = 'block'; dockUI.style.display = 'none';
             vaultBtn.classList.add('active'); homeBtn.classList.remove('active');
-            processAndRenderVaultCollection(); // 啟動歸納讀取
+            processAndRenderVaultCollection(); 
         }
     }
 
-    /**
-     * [3] [商務實作] 我的寶庫 - 智慧歸納 + 圖片顯示
-     */
+    /** [3] 我的寶庫 */
     async function processAndRenderVaultCollection() {
         showGlobalLoading(true, "正在整理全球藏品數據...");
         try {
@@ -478,7 +483,6 @@
             const response = await fetch(fetchUrl);
             const data = await response.json();
             
-            // 邏輯第一步：執行「名稱+模式」唯一歸類 (Aggregation)
             const groupedVault = {};
             data.prizes.forEach(p => {
                 const uniqueKey = `${p.mode}_${p.prizeName}`;
@@ -490,13 +494,12 @@
                         lastSeenTime: p.time,
                         deliveryStatus: p.status || "在庫",
                         isPriorityBig: /A賞|SP|1賞|大獎/i.test(p.prizeName),
-                        img: p.img // 接收後端圖片
+                        img: p.img
                     };
                 }
                 groupedVault[uniqueKey].totalCount++;
             });
 
-            // 邏輯第二步：物理排序演算法 (Sorting Priority)
             const finalSortedCollection = Object.values(groupedVault).sort((a, b) => {
                 return b.isPriorityBig - a.isPriorityBig;
             });
@@ -512,8 +515,6 @@
                 listView.innerHTML = finalSortedCollection.map(asset => {
                     const processingFlag = asset.deliveryStatus === "待出貨";
                     const bigPrizeClass = asset.isPriorityBig ? 'is-premium' : '';
-                    
-                    // [改修] 使用 img 標籤取代 emoji
                     const iconContent = `<img src="${asset.img}" onerror="this.src='https://placehold.co/100?text=Prize'">`;
                     
                     return `
@@ -539,14 +540,12 @@
                 }).join('');
             }
         } catch (error) {
-            console.error("Vault Algorithm Failure:", error);
+            console.error(error);
             Swal.fire("數據整理異常", "暫時無法建立資產連線，請稍後重試。", "error");
         } finally { showGlobalLoading(false); }
     }
 
-    /**
-     * [4] [商務對接] 實體出貨申請流程
-     */
+    /** [4] 出貨申請 */
     async function handleAssetShipmentFlow(pName, mode, qty) {
         const confirmResult = await Swal.fire({
             title: '啟動出貨申請',
@@ -576,9 +575,7 @@
         }
     }
 
-    /**
-     * [5] [核心邏輯] 大廳數據同步與 F2 單價獲取
-     */
+    /** [5] 數據同步 */
     async function fetchSystemDataAndSyncUI() {
         if (appRuntimeState.selectedList.length === 0) refreshActionDockState();
         showGlobalLoading(true, "旗艦同步中...");
@@ -590,10 +587,9 @@
             
             if (data.status === "success") {
                 appRuntimeState.tickets = data.tickets; 
-                appRuntimeState.unitPrice = data.cost; // ⚠️ 物理對接後端 F2 傳回的動態單價
+                appRuntimeState.unitPrice = data.cost; 
                 appRuntimeState.userPoints = data.userPoints;
                 
-                // 更新點數餘額
                 document.getElementById('display-u-pts').innerText = appRuntimeState.userPoints.toLocaleString();
                 
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
@@ -603,7 +599,6 @@
                 document.getElementById('stat-big').innerText = currentBig;
                 document.getElementById('stat-rate').innerText = currentRem > 0 ? (currentBig/currentRem*100).toFixed(1) + "%" : "0%";
                 
-                // 跑馬燈內容
                 document.getElementById('winner-scroller').innerHTML = (data.history && data.history.length > 0) ? 
                     data.history.map(h => `<span class="win-item-feed">🎉 恭喜玩家 ${h.user} 抽出【${h.prize}】</span>`).join('') : 
                     "盤面充滿大獎機會，冒險者即刻挑戰！";
@@ -617,7 +612,7 @@
                 
                 renderPremiumGrid();
                 renderLobbySummaries(data.prizeSummary);
-                checkPendingRescueProcedure(); // 智慧救援自檢
+                checkPendingRescueProcedure(); 
             }
         } catch (e) {
             console.error("Sync Failure:", e);
@@ -625,9 +620,7 @@
         } finally { showGlobalLoading(false); }
     }
 
-    /**
-     * [6] [核心邏輯] 智慧拯救斷線連線
-     */
+    /** [6] 斷線拯救 */
     function checkPendingRescueProcedure() {
         const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
         if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
@@ -655,9 +648,7 @@
         }
     }
 
-    /**
-     * [7] [視覺補完] 抽獎棋盤渲染
-     */
+    /** [7] 棋盤渲染 (含皇冠修正) */
     function renderPremiumGrid() {
         const gridBox = document.getElementById('main-ticket-grid');
         if (!gridBox) return;
@@ -668,6 +659,7 @@
             let displayId = t.id;
             
             if (t.isTaken) {
+                // [修正] 這裡只添加 class，具體樣式由 CSS 控制 (皇冠與紅X互斥)
                 clsList += isBigP ? " is-taken is-big-taken" : " is-taken";
                 displayId = ""; 
             } else if (t.isLocked) {
@@ -682,15 +674,12 @@
         }).join('');
     }
 
-    /**
-     * [8] [視覺補完] 獎項庫存展示 (視覺階級版)
-     */
+    /** [8] 庫存展示 */
     function renderLobbySummaries(summary) {
         const gallery = document.getElementById('lobby-prize-gallery');
         if (!gallery || !summary) return;
         
         gallery.innerHTML = summary.map(p => {
-            // 判斷是否為大獎，決定 CSS Class
             const isGrand = /A賞|SP|1賞|大獎/i.test(p.name);
             const sizeClass = isGrand ? 'prize-thumb-grand' : 'prize-thumb-normal';
             
@@ -707,9 +696,7 @@
         }).join('');
     }
 
-    /**
-     * [9] 交互：選取行為
-     */
+    /** [9] 選號交互 */
     function handleCellInteration(tid) {
         const idStr = String(tid);
         const currentIndex = appRuntimeState.selectedList.indexOf(idStr);
@@ -728,9 +715,7 @@
         refreshActionDockState();
     }
 
-    /**
-     * [10] 交互：批量選號
-     */
+    /** [10] 批量選號 */
     function executeBatchSelection(num) {
         appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.remove('is-selected'));
         appRuntimeState.selectedList = [];
@@ -750,9 +735,7 @@
         refreshActionDockState();
     }
 
-    /**
-     * [11] [重要修正] 更新懸浮島支付列 UI
-     */
+    /** [11] 更新 UI */
     function refreshActionDockState() {
         const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         document.getElementById('dock-sel-count').innerText = `${appRuntimeState.selectedList.length}`;
@@ -768,9 +751,7 @@
         }
     }
 
-    /**
-     * [12] [核心流程] 物理交易保護結帳程序 (心跳倒數版)
-     */
+    /** [12] 結帳流程 (含開獎結果修正) */
     async function startFinalCheckoutProcess() {
         const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         
@@ -781,7 +762,7 @@
         
         showGlobalLoading(true, "正在執行物理鎖定程序...");
         try {
-            // A. 第一階段：物理原子鎖定
+            // A. Lock
             const lockCall = await fetch(CORE_CONFIG.API_ENDPOINT, {
                 method: 'POST',
                 body: JSON.stringify({ uid: appRuntimeState.uid, action: 'lock', mode: appRuntimeState.mode, ticketIds: appRuntimeState.selectedList })
@@ -794,7 +775,7 @@
                 return;
             }
             
-            // B. 第二階段：180s 保護視窗 (強化版)
+            // B. 180s Timer
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
@@ -846,7 +827,7 @@
                 willClose: () => clearInterval(timerInterval)
             });
             
-            // C. 第三階段：成交與彩帶慶祝
+            // C. Buy Action
             if (checkoutSwal.isConfirmed) {
                 showGlobalLoading(true, "正在揭曉中獎結果...");
                 const finalCall = await fetch(CORE_CONFIG.API_ENDPOINT, { 
@@ -864,9 +845,12 @@
                     let resultHtml = `<div class="res-scroll-container">`;
                     buyData.results.forEach(r => {
                         const isG = /A賞|SP|1賞|大獎/i.test(r.name);
+                        // [修正] 這裡注入 sizeClass 到 HTML，確保彈窗內的圖片也被極巨化
+                        const sizeClass = isG ? 'prize-thumb-grand' : 'prize-thumb-normal';
+                        
                         resultHtml += `
                         <div class="res-premium-card ${isG ? 'is-grand-win' : ''}">
-                            <div class="res-item-thumb">
+                            <div class="res-item-thumb ${sizeClass}">
                                 <div class="img-container-moderate"><img src="${r.img}"></div>
                             </div>
                             <div>
@@ -897,7 +881,7 @@
         }
     }
 
-    /** [助手] 遮罩控制 */
+    /** [助手] Loading */
     function showGlobalLoading(show, text = "LOADING...") {
         const el = document.getElementById('boot-loader');
         el.style.display = show ? 'flex' : 'none';
@@ -913,7 +897,6 @@
         fetchSystemDataAndSyncUI(); 
     }
     
-    // 初始化引導
     window.onload = init;
 </script>
 </body>
