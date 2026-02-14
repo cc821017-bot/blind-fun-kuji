@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.15.3 旗艦商務極限修復版</title>
+    <title>盲玩樂 5.15.4 旗艦商務極限優化版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,33 +49,34 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 2: SweetAlert 極限修復 (v5.15.3 Anti-Freeze)]
+           [SECTION 2: SweetAlert 極限修復 (v5.15.4 視口鎖定)]
            ========================================================================== */
         /* 1. 層級核彈：確保高於一切 */
         .swal2-container { 
-            z-index: 2147483647 !important; /* Max Int */
+            z-index: 2147483647 !important; 
+            height: 100dvh !important; /* [5.15.4 Fix] 使用動態視口高度，解決手機網址列問題 */
         }
         
-        /* 2. 彈窗佈局鎖定：防止內容撐開導致按鈕消失 */
+        /* 2. 彈窗佈局鎖定 */
         .swal2-popup {
-            max-height: 90vh !important; /* 絕對不超過螢幕 90% */
+            max-height: 90dvh !important; 
             display: flex !important;
             flex-direction: column !important;
             padding: 15px !important;
         }
         
         .swal2-html-container {
-            overflow: hidden !important; /* 禁止預設容器捲動 */
+            overflow: hidden !important; 
             margin: 0 !important;
             flex: 1 1 auto;
             display: flex;
             flex-direction: column;
         }
 
-        /* 3. 自定義捲動區：高度嚴格限制 */
+        /* 3. 自定義捲動區 */
         .swal-scroll-wrap {
             flex: 1;
-            max-height: 40vh !important; /* 縮小至 40%，留空間給按鈕 */
+            max-height: 40vh !important; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
             margin-bottom: 10px;
@@ -86,7 +87,7 @@
 
         /* 4. 按鈕區固定 */
         .swal2-actions {
-            flex-shrink: 0; /* 禁止壓縮按鈕區 */
+            flex-shrink: 0; 
             margin-top: 10px !important;
         }
 
@@ -316,7 +317,8 @@
     };
 
     async function init() {
-        console.log("Flagship 5.15.3 System Booting...");
+        console.log("Flagship 5.15.4 System Booting...");
+        
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
                 Swal.fire({ title: "連線回應超時", text: "伺服器無回應，請確認網址正確並重啟頁面。", icon: "error" });
@@ -504,7 +506,9 @@
     function checkPendingRescueProcedure() {
         const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
         if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
-            // [UI Fix] 使用 swal-scroll-wrap 包裹內容
+            // [Fix v5.15.4] 確保彈窗前也回到頂部
+            window.scrollTo(0, 0);
+            
             Swal.fire({
                 title: '✨ 恢復保留程序',
                 html: `
@@ -638,6 +642,9 @@
             return; 
         }
         
+        // [Fix v5.15.4] 核心修正：強制滾動至頂部，確保彈窗可見
+        window.scrollTo(0, 0);
+
         showGlobalLoading(true, "正在執行物理鎖定程序...");
         try {
             // A. Lock
@@ -648,7 +655,6 @@
             const lockResult = await lockCall.json();
             showGlobalLoading(false);
             
-            // [Fix] 搶位失敗處理：清空選擇 + 強制刷新
             if (lockResult.status !== "success") { 
                 Swal.fire("位置遭搶占", "部分籤位剛被其他玩家鎖定。", "error").then(async () => {
                     appRuntimeState.selectedList = [];
@@ -664,7 +670,6 @@
             
             const checkoutSwal = await Swal.fire({ 
                 title: '✨ 專屬保留中', 
-                // [UI Fix] 使用 swal-scroll-wrap 包裹內容
                 html: `
                     <div class="swal-scroll-wrap">
                         <div style="margin: 10px 0 20px;">
@@ -747,14 +752,12 @@
                     resultHtml += `</div></div>`;
                     
                     showGlobalLoading(false);
-                    // [Modal Chaining] 使用 .then 連鎖，避免同時開啟兩個 Modal
                     await Swal.fire({ 
                         title: "開獎完畢", html: resultHtml, background: '#0e0e0e', color: '#fff',
                         confirmButtonText: '進入寶庫查看',
                         showDenyButton: true, denyButtonText: '🎲 隨機 5 抽', confirmButtonColor: '#333'
                     }).then(async (res) => { 
                         if (res.isDenied) { 
-                            // [Fix] 加入 300ms 冷卻，防止 Modal 卡死
                             setTimeout(async () => {
                                 appRuntimeState.selectedList = [];
                                 refreshActionDockState();
