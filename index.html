@@ -13,32 +13,28 @@
     
     <style>
         /* ==========================================================================
-           [SECTION 1: 視覺核心變數與全局基礎]
+           [SECTION 1: 視覺核心變數規範]
            ========================================================================== */
         :root { 
-            /* 基礎色調 */
             --bg-dark: #0a0a0a;
             --bg-card: #141414;
             --bg-card-hover: #1f1f1f;
             
-            /* 品牌金流光：用於霸盤狀態與大獎 */
             --gold-primary: #D4AF37;
             --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
             
-            /* 狀態色 */
             --status-red: #E74C3C;
             --status-green: #2ECC71;
             --status-blue: #3498DB;
             
-            /* 文字階級 */
             --text-primary: #FFFFFF;
             --text-secondary: #A0A0A0;
             --text-muted: #555555;
             
-            /* UI 容器規範 */
             --border-radius-lg: 32px;
             --border-radius-md: 20px;
             --glass-bg: rgba(20, 20, 20, 0.98);
+            
             --dock-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.1);
         }
         
@@ -47,7 +43,7 @@
             background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
             color: var(--text-primary);
             margin: 0; 
-            /* [物理擴張] 底部預留高度，確保懸浮島不會遮擋內容 */
+            /* [物理擴張] 增加底部間距至 250px，確保整合島不會擋住內容 */
             padding-bottom: 250px; 
             overflow-x: hidden; 
             -webkit-tap-highlight-color: transparent;
@@ -61,25 +57,25 @@
         }
 
         /* ==========================================================================
-           [SECTION 2: 視覺增強特效 - v5.17.2 物理展開]
+           [SECTION 2: 視覺增強特效系統 (v5.17.2 New)]
            ========================================================================== */
         
-        /* 1. 庫存數字脈衝：解決 inline 元素無法動畫的問題 */
+        /* 1. 庫存數字脈衝：修正屬性確保縮放動畫生效 */
         .stat-val-text { 
             font-family: 'Oswald'; 
             font-size: 2.2rem; 
-            display: inline-block; 
+            display: inline-block; /* 必須為 inline-block */
             font-weight: 700; 
             line-height: 1.1; 
         }
 
         .pulse-urgent {
             color: var(--status-red) !important;
-            animation: textPulse 0.8s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            animation: textPulseEffect 0.8s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
             text-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
         }
         
-        @keyframes textPulse {
+        @keyframes textPulseEffect {
             0% { 
                 transform: scale(1); 
                 opacity: 1; 
@@ -90,7 +86,7 @@
             }
         }
 
-        /* 2. 大獎聽牌橫幅特效 */
+        /* 2. 大獎聽牌橫幅 */
         #jackpot-alert-banner {
             display: none; 
             background: linear-gradient(90deg, #b38806, #f9d423, #b38806);
@@ -101,26 +97,20 @@
             font-size: 1.1rem;
             letter-spacing: 3px;
             box-shadow: 0 5px 25px rgba(249, 212, 35, 0.4);
-            animation: bannerFlash 1.5s infinite;
+            animation: jackpotFlash 1.5s infinite;
             border-bottom: 2px solid #fff;
             position: relative;
             z-index: 100;
         }
         
-        @keyframes bannerFlash {
-            0% { 
-                filter: brightness(1); 
-            }
-            50% { 
-                filter: brightness(1.4); 
-            }
-            100% { 
-                filter: brightness(1); 
-            }
+        @keyframes jackpotFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.4); }
+            100% { filter: brightness(1); }
         }
 
         /* ==========================================================================
-           [SECTION 3: SweetAlert 深度修復與文字保護]
+           [SECTION 3: SweetAlert 深度修復 (防文字切斷方案)]
            ========================================================================== */
         .swal2-container { 
             z-index: 2147483647 !important; 
@@ -132,6 +122,8 @@
             background: #0e0e0e !important;
             color: #fff !important;
             padding: 20px !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
 
         .swal2-html-container {
@@ -142,30 +134,29 @@
             flex-direction: column;
         }
 
-        /* 資訊捲動區：[5.17.2 修復] 底部 Padding 40px 防止金額被切斷 */
+        /* 捲動容器：[v5.17.2 Fix] 底部增加至 45px 保護文字不被切斷 */
         .swal-scroll-wrap {
             flex: 1;
             max-height: 40vh !important; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
             margin-bottom: 10px;
-            padding: 10px 10px 40px 10px; 
+            padding: 10px 10px 45px 10px; 
             border-top: 1px solid rgba(255,255,255,0.1);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* 彈窗內總計文字強化：行高保護 */
+        /* 支付金額樣式強化 */
         .val-total-cost-swal {
             font-family: 'Oswald'; 
             font-size: 2.6rem; 
             font-weight: 700; 
             color: var(--gold-primary); 
-            line-height: 1.5; 
+            line-height: 1.5; /* 保護文字下緣 (descenders) */
             display: block;
             margin-top: 5px;
         }
 
-        /* 固定式按鈕區塊樣式 */
         .swal-fixed-actions {
             display: flex;
             gap: 15px;
@@ -174,30 +165,22 @@
         }
 
         /* ==========================================================================
-           [SECTION 4: 圖片階級規範 - 比例協調化]
+           [SECTION 4: 圖片階級系統 - 協調化比例]
            ========================================================================== */
         .img-container-moderate {
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            overflow: visible; 
-            position: relative;
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            overflow: visible; position: relative;
         }
 
         .img-container-moderate img {
-            width: auto; 
-            height: auto;
-            max-width: 80%; 
-            max-height: 80%;
+            width: auto; height: auto;
+            max-width: 80%; max-height: 80%;
             object-fit: contain;
             transition: transform 0.3s;
-            display: block; 
-            margin: auto;
+            display: block; margin: auto;
         }
 
-        /* [大獎比例修正] A賞/SP/大獎：維持光暈但縮小倍率，避免遮擋標籤 */
+        /* 大獎：維持光暈但比例調整為 105%，避免擋字 */
         .prize-thumb-grand .img-container-moderate img {
             max-width: 95% !important; 
             max-height: 95% !important;
@@ -206,16 +189,27 @@
             z-index: 10;
         }
 
-        /* [普獎比例修正] */
+        /* 普獎：壓制比例至 60% */
         .prize-thumb-normal .img-container-moderate img {
             max-width: 60% !important; 
             max-height: 60% !important;
-            opacity: 0.85; 
-            filter: grayscale(0.15);
+            opacity: 0.85; filter: grayscale(0.15);
+        }
+        
+        .res-item-thumb.prize-thumb-grand img {
+            max-width: 70px !important;
+            max-height: 70px !important;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.8));
+        }
+
+        .res-item-thumb.prize-thumb-normal img {
+            max-width: 45px !important;
+            max-height: 45px !important;
+            opacity: 0.7;
         }
 
         /* ==========================================================================
-           [SECTION 5: 頁面佈局]
+           [SECTION 5: 核心佈局與元件]
            ========================================================================== */
         .header { 
             display: flex; 
@@ -230,26 +224,7 @@
             border-bottom: 1px solid rgba(255,255,255,0.08); 
         }
 
-        .u-badge-label { 
-            font-size: 0.65rem; 
-            color: var(--text-muted); 
-            font-weight: 900; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
-        }
-
-        .u-name-val { 
-            font-weight: 700; 
-            font-size: 1.1rem; 
-            color: #fff; 
-        }
-
-        .nav-segment-bar { 
-            display: flex; 
-            padding: 15px 20px; 
-            gap: 15px; 
-            background: rgba(0,0,0,0.2); 
-        }
+        .nav-segment-bar { display: flex; padding: 15px 20px; gap: 15px; background: rgba(0,0,0,0.2); }
         
         .nav-item { 
             flex: 1; 
@@ -364,9 +339,7 @@
             opacity: 1 !important; 
         }
         
-        .t-cell.is-big-taken::after { 
-            content: none !important; 
-        }
+        .t-cell.is-big-taken::after { content: none !important; }
         
         .t-cell.is-big-taken::before { 
             content: '👑'; 
@@ -385,14 +358,12 @@
         }
 
         /* ==========================================================================
-           [SECTION 6: v5.17.2 整合島統治者面板]
+           [SECTION 6: v5.17.2 整合型霸盤懸浮島]
            ========================================================================== */
         .fixed-dock-action-hub { 
             position: fixed !important; 
             bottom: 25px !important; 
-            left: 20px; 
-            right: 20px; 
-            width: auto; 
+            left: 20px; right: 20px; width: auto; 
             z-index: 9999;
             background: rgba(20, 20, 20, 0.95); 
             backdrop-filter: blur(25px); 
@@ -408,7 +379,7 @@
             .fixed-dock-action-hub { bottom: calc(25px + env(safe-area-inset-bottom)) !important; }
         }
 
-        /* 模式 A: 支付與選號面板 */
+        /* 模式 A: 購買模式面板 */
         #shopping-dock { 
             display: block; 
         }
@@ -466,16 +437,16 @@
             pointer-events: none; 
         }
 
-        /* 模式 B: 統治者面板 (霸盤顯示) */
+        /* 模式 B: 霸盤面板 (Dominion Panel) */
         #dominion-dock { 
             display: none; 
             text-align: center; 
-            animation: dominionGlow 2s infinite alternate;
+            animation: dominionGlowGlow 2s infinite alternate;
         }
         
-        @keyframes dominionGlow { 
+        @keyframes dominionGlowGlow { 
             from { box-shadow: var(--dock-shadow); } 
-            to { box-shadow: 0 0 30px rgba(212, 175, 55, 0.4), var(--dock-shadow); } 
+            to { box-shadow: 0 0 30px rgba(212, 175, 55, 0.45), var(--dock-shadow); } 
         }
         
         .dominion-status-row { 
@@ -507,10 +478,10 @@
             cursor: pointer;
         }
 
-        /* 加載遮罩樣式 */
+        /* 啟動遮罩樣式 */
         #boot-loader { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .l-spinner-ring { width: 80px; height: 80px; border: 6px solid transparent; border-top-color: var(--gold-primary); border-radius: 50%; animation: rotateSync 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1); }
-        @keyframes rotateSync { to { transform: rotate(360deg); } }
+        .l-spinner-ring { width: 80px; height: 80px; border: 6px solid transparent; border-top-color: var(--gold-primary); border-radius: 50%; animation: rotateSyncSync 1.2s infinite; }
+        @keyframes rotateSyncSync { to { transform: rotate(360deg); } }
     </style>
 </head>
 
@@ -518,7 +489,7 @@
     <div id="boot-loader">
         <div class="l-spinner-ring"></div>
         <p style="margin-top:30px; color:var(--gold-primary); font-weight:900; letter-spacing:6px; font-family:'Oswald';">DOMINION ACTIVE</p>
-        <p style="font-size:0.8rem; color:#444; margin-top:10px; font-weight:700;">正在執行物理座標對齊與統治者協議</p>
+        <p style="font-size:0.8rem; color:#444; margin-top:10px; font-weight:700;">正在啟動絕對統治協議並對齊物理座標</p>
     </div>
 
     <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
@@ -526,7 +497,7 @@
 
     <div class="header">
         <div class="u-info-section">
-            <span class="u-badge-label">Adventurer</span>
+            <span class="u-badge-label">Adventurer Profile</span>
             <div class="u-name-val" id="display-u-name">Guest</div>
         </div>
         <div class="u-info-section" style="align-items: flex-end;">
@@ -543,10 +514,10 @@
     <div id="home-page">
         <div id="jackpot-alert-banner">🔥 決勝時刻：大獎聽牌中 🔥</div>
         
-        <div class="auto-monitor-tag" style="text-align:center; padding:10px; font-size:0.75rem; color:#666;">🤖 智慧營運：大獎出貨 5 分鐘後自動執行物理洗牌</div>
+        <div class="auto-monitor-tag" style="text-align:center; padding:10px; font-size:0.75rem; color:#666;">🤖 智慧營運：大獎出貨後 5 分鐘自動執行物理洗牌</div>
         
         <div class="win-history-ribbon">
-            <div class="win-track" id="winner-scroller">正在同步全域情資中心...</div>
+            <div class="win-track" id="winner-scroller">正在連線至最新中獎情資中心...</div>
         </div>
         
         <div class="stats-hub">
@@ -571,6 +542,7 @@
         </div>
 
         <div id="lobby-prize-gallery" class="prize-showcase"></div>
+
         <div id="main-ticket-grid" class="gacha-grid"></div>
     </div>
 
@@ -602,28 +574,28 @@
         <div id="dominion-dock">
             <div class="dominion-status-row">
                 <span style="font-size:1.6rem;">👑</span>
-                <span style="font-weight:900; letter-spacing:1px; color:#fff;">霸盤統治中</span>
+                <span style="font-weight:900; letter-spacing:1px; color:#fff;">您正統治此機台</span>
                 <span class="dominion-timer-text">(<span id="dominion-timer">180</span>s)</span>
             </div>
-            <button class="btn-leave-dominion" onclick="handleVoluntaryLeave()">🏃‍♂️ 結束遊玩 (釋放全盤保護)</button>
+            <button class="btn-leave-dominion" onclick="handleVoluntaryLeave()">🏃‍♂️ 結束遊玩 (釋放全盤權限)</button>
         </div>
 
     </div>
 
 <script>
     /**
-     * [SECTION 16: 核心邏輯引擎 v5.17.2 完全展開]
-     * 秤重原則：代碼物理行數絕對守護。
+     * [SECTION 16: 核心邏輯引擎 v5.17.2 完全展開版]
+     * ⚖️ 基準守護模式：嚴禁物理縮減。
      * 功能清單：霸盤鎖定、尾刀保護、連抽修正、感官震動、視口歸位。
      */
     
-    // 1. API 與 LIFF 連線配置
+    // 1. API 與 LIFF 核心配置
     const CORE_CONFIG = { 
         API_ENDPOINT: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
     };
     
-    // 2. 系統運行狀態機
+    // 2. 系統狀態機機載變數
     let appRuntimeState = { 
         uid: "guest_id", 
         name: "冒險者", 
@@ -636,15 +608,21 @@
         timerInterval: null
     };
 
-    /** * [初始化啟動程序] 
+    /** * [初始化引導程序]
      */
     async function init() {
         
-        console.log("System v5.17.2 Physical Expansion Booting...");
+        console.log("Flagship 5.17.2 Physical Expansion Booting...");
         
-        const bootTimer = setTimeout(() => {
+        const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
-                Swal.fire({ title: "連線回應超時", text: "請重整頁面後再試。", icon: "error" });
+                Swal.fire({ 
+                    title: "連線回應超時", 
+                    text: "伺服器無回應，請重整頁面。", 
+                    icon: "error",
+                    background: '#0e0e0e',
+                    color: '#fff'
+                });
             }
         }, 15000);
 
@@ -655,7 +633,6 @@
             if (liff.isLoggedIn()) {
                 
                 const profile = await liff.getProfile(); 
-                
                 appRuntimeState.uid = profile.userId; 
                 appRuntimeState.name = profile.displayName;
                 
@@ -665,7 +642,7 @@
             
             await fetchSystemDataAndSyncUI();
             
-            clearTimeout(bootTimer);
+            clearTimeout(bootSafetyTimer);
             
         } catch (err) { 
             
@@ -673,23 +650,23 @@
             
             await fetchSystemDataAndSyncUI(); 
             
-            clearTimeout(bootTimer);
+            clearTimeout(bootSafetyTimer);
             
         }
     }
 
-    /** * [統治權釋放：主動歸還機台]
-     * 此函數對應「離開機台」按鈕，執行清盤。
+    /** * [統治權釋放：主動離開機台]
+     * 結合霸盤優化的核心函數，執行 release 動作。
      */
     function handleVoluntaryLeave() {
         
         Swal.fire({
-            title: '確定釋放統治權？',
-            text: '這將歸還全場剩餘籤位，其他玩家將可進場購買。',
+            title: '確定離開機台？',
+            text: '這將釋放您目前的統治保護權，全場空籤將歸還給自由市場。',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: '👋 確認釋放',
-            cancelButtonText: '繼續霸盤',
+            confirmButtonText: '👋 確認結束',
+            cancelButtonText: '繼續遊玩',
             confirmButtonColor: '#E74C3C',
             background: '#0e0e0e', 
             color: '#fff'
@@ -697,7 +674,7 @@
             
             if (result.isConfirmed) {
                 
-                showGlobalLoading(true, "正在釋放機台優先權...");
+                showGlobalLoading(true, "正在釋放全盤統治權...");
                 
                 fetch(CORE_CONFIG.API_ENDPOINT, { 
                     method: 'POST', 
@@ -708,7 +685,14 @@
                     }) 
                 }).then(() => {
                     
-                    Swal.fire({ title: "已歸還市場", icon: "success", timer: 1500, showConfirmButton: false, background: '#0e0e0e' });
+                    Swal.fire({ 
+                        title: "已釋放機台", 
+                        icon: "success", 
+                        timer: 1500, 
+                        showConfirmButton: false, 
+                        background: '#0e0e0e',
+                        color: '#fff'
+                    });
                     
                     fetchSystemDataAndSyncUI();
                     
@@ -717,7 +701,7 @@
         });
     }
 
-    /** * [分頁切換邏輯]
+    /** * [導航切換：UI層次管理]
      */
     async function handleNavigationSwitch(page) {
         
@@ -750,8 +734,7 @@
         }
     }
 
-    /** * [數據同步：感應統治權狀態] 
-     * 與後端 CacheService 連動，實現霸盤感應。
+    /** * [全域同步：統治權感應核心]
      */
     async function fetchSystemDataAndSyncUI() {
         
@@ -774,13 +757,13 @@
                 appRuntimeState.unitPrice = data.cost; 
                 appRuntimeState.userPoints = data.userPoints;
                 
-                // 更新 UI 點數
+                // 更新頂部點數
                 document.getElementById('display-u-pts').innerText = appRuntimeState.userPoints.toLocaleString();
                 
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
                 const currentBig = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
-                // 庫存脈衝動畫激發 (v5.16.1 Fix)
+                // [視覺焦慮模組] 庫存脈衝動畫激發
                 const remEl = document.getElementById('stat-rem');
                 remEl.innerText = currentRem;
                 
@@ -790,7 +773,7 @@
                     remEl.classList.remove('pulse-urgent');
                 }
 
-                // 大獎聽牌橫幅切換
+                // [大獎聽牌模組] 聽牌橫幅切換 (剩餘 < 20)
                 const alertBanner = document.getElementById('jackpot-alert-banner');
                 if (currentBig > 0 && currentRem < 20) {
                     alertBanner.style.display = 'block';
@@ -801,27 +784,26 @@
                 document.getElementById('stat-big').innerText = currentBig;
                 document.getElementById('stat-rate').innerText = currentRem > 0 ? (currentBig/currentRem*100).toFixed(1) + "%" : "0%";
                 
-                // 跑馬燈同步
+                // 同步跑馬燈
                 document.getElementById('winner-scroller').innerHTML = (data.history && data.history.length > 0) ? 
                     data.history.map(h => `<span class="win-item-feed">🎉 ${h.user}:【${h.prize}】</span>`).join('') : 
-                    "機台狀態：運作中。大獎機會正在等您！";
+                    "機台大獎在庫，冒險者即刻挑戰！";
 
-                // 洗牌保護判定
                 const masterBtn = document.getElementById('masterPayButton');
                 if (!data.bigPrizeExists || currentRem === 0) {
                     masterBtn.disabled = true; 
-                    masterBtn.innerText = "等待洗牌中...";
+                    masterBtn.innerText = "等待系統洗牌中...";
                 } else {
                     refreshActionDockState(); 
                 }
 
-                // [v5.17.2 核心修復：霸盤島狀態感應]
-                const myLocks = data.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
+                // [v5.17.2 核心修復：整合島統治面板感應]
+                const myActiveLocks = data.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
                 const shopDock = document.getElementById('shopping-dock');
                 const domDock = document.getElementById('dominion-dock');
 
-                if (myLocks.length > 0) {
-                    // 若擁有利權且目前沒在挑籤 -> 顯示統治面板
+                if (myActiveLocks.length > 0) {
+                    // 若擁有利權且購物車目前為空 -> 展示統治面板
                     if (appRuntimeState.selectedList.length === 0) {
                         shopDock.style.display = 'none';
                         domDock.style.display = 'block';
@@ -842,31 +824,38 @@
             
         } catch (e) {
             console.error("Critical Sync Failure:", e);
+            Swal.fire("同步超時", "請重整網頁確保數據對接穩定。", "error");
         } finally { 
             showGlobalLoading(false); 
         }
     }
 
-    /** * [核心交易流程：霸盤保護版] 
+    /** * [最終交易程序：統治鎖定與 UI 文字保護]
      */
     async function startFinalCheckoutProcess() {
         
         const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         
         if (appRuntimeState.userPoints < totalCost) { 
-            Swal.fire({ title: "能量不足", text: "餘額不足以完成扣款。", icon: "warning", background: '#0e0e0e' }); 
+            Swal.fire({ 
+                title: "餘額不足", 
+                text: "請聯繫客服加載點數。", 
+                icon: "warning", 
+                background: '#0e0e0e',
+                color: '#fff'
+            }); 
             return; 
         }
         
-        // 1. 視角歸位 (防止彈窗切斷)
+        // 1. 視角物理歸位 (v5.15.4 Fix)
         window.scrollTo(0, 0);
 
-        showGlobalLoading(true, "建立統治連接中...");
+        showGlobalLoading(true, "建立統治權連接中...");
         
         try {
             
-            // A. 物理鎖定
-            const lockCall = await fetch(CORE_CONFIG.API_ENDPOINT, {
+            // A. Lock 階段
+            const lockRes = await (await fetch(CORE_CONFIG.API_ENDPOINT, {
                 method: 'POST',
                 body: JSON.stringify({ 
                     uid: appRuntimeState.uid, 
@@ -874,15 +863,13 @@
                     mode: appRuntimeState.mode, 
                     ticketIds: appRuntimeState.selectedList 
                 })
-            });
-            
-            const lockResult = await lockCall.json();
+            })).json();
             
             showGlobalLoading(false);
             
-            if (lockResult.status !== "success") { 
+            if (lockRes.status !== "success") { 
                 
-                Swal.fire("霸盤失敗", lockResult.message || "位置遭搶佔", "error").then(async () => {
+                Swal.fire("統治權衝突", lockRes.message || "位置遭搶佔", "error").then(async () => {
                     appRuntimeState.selectedList = []; 
                     refreshActionDockState(); 
                     await fetchSystemDataAndSyncUI();
@@ -891,17 +878,17 @@
                 return; 
             }
             
-            // B. 統治保護倒數計時
+            // B. 保護計時器與感官震動
             let lockSec = 180; 
             let alreadyExt = false;
             
             const checkoutSwal = await Swal.fire({ 
-                title: '✨ 霸盤成功', 
+                title: '✨ 統治權鎖定', 
                 html: `
                     <div class="swal-scroll-wrap">
                         <div style="margin: 10px 0 20px;">
                             <div class="countdown-pulse" id="timer">03:00</div>
-                            <div style="color:#aaa; font-size:0.85rem; font-weight:900;">EXCLUSIVE DOMINION ACTIVE</div>
+                            <div style="color:var(--gold-primary); font-size:0.8rem; font-weight:900;">EXCLUSIVE DOMINION ACTIVE</div>
                         </div>
                         <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);">
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">選中枚數</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
@@ -916,12 +903,13 @@
                         <button id="btn-timer-rel" style="flex:1; padding:18px; border-radius:18px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900;">✕ 放棄交易</button>
                     </div>
                 `,
-                showConfirmButton: true, confirmButtonText: '✅ 確定扣款', 
+                showConfirmButton: true, confirmButtonText: '✅ 立即扣款', 
                 confirmButtonColor: '#2ECC71', allowOutsideClick: false, background: '#0e0e0e',
                 didOpen: () => {
                     
                     document.getElementById('btn-timer-ext').onclick = () => {
-                        if (alreadyExt) return; alreadyExt = true; 
+                        if (alreadyExt) return; 
+                        alreadyExt = true; 
                         document.getElementById('btn-timer-ext').style.opacity = "0.4";
                         lockSec += 60;
                         fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'extend', mode: appRuntimeState.mode, ticketIds: appRuntimeState.selectedList }) });
@@ -929,19 +917,24 @@
                     
                     document.getElementById('btn-timer-rel').onclick = () => Swal.clickCancel();
 
-                    timerInterval = setInterval(() => {
+                    appRuntimeState.timerInterval = setInterval(() => {
                         
-                        if (navigator.vibrate) navigator.vibrate(40); // v5.16.0 Haptic
+                        // [v5.16.0] 觸覺回饋：心跳震動感
+                        if (navigator.vibrate) {
+                            navigator.vibrate(35);
+                        }
                         
                         lockSec--;
                         const m = Math.floor(lockSec / 60).toString().padStart(2,'0');
                         const s = (lockSec % 60).toString().padStart(2,'0');
                         const el = document.getElementById('timer');
                         
-                        if (el) el.innerText = `${m}:${s}`;
+                        if (el) {
+                            el.innerText = `${m}:${s}`;
+                        }
                         
                         if (lockSec <= 0) {
-                            clearInterval(timerInterval); 
+                            clearInterval(appRuntimeState.timerInterval); 
                             Swal.close();
                             fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) });
                             fetchSystemDataAndSyncUI();
@@ -949,13 +942,13 @@
                         
                     }, 1000);
                 },
-                willClose: () => clearInterval(timerInterval)
+                willClose: () => clearInterval(appRuntimeState.timerInterval)
             });
             
-            // C. 最終扣款與開獎
+            // C. Buy 扣款程序
             if (checkoutSwal.isConfirmed) {
                 
-                showGlobalLoading(true, "正在執行絕對統治開籤...");
+                showGlobalLoading(true, "正在揭曉中獎情資...");
                 
                 const buyRes = await (await fetch(CORE_CONFIG.API_ENDPOINT, { 
                     method: 'POST', 
@@ -970,13 +963,13 @@
                 
                 if (buyRes.status === "success") {
                     
-                    // 慶祝特效判定
+                    // 慶典特效
                     if (buyRes.results.some(r => /A賞|SP|1賞|大獎/i.test(r.name))) {
                         document.getElementById('snd-success').play().catch(()=>{});
-                        confetti({ particleCount: 2200, spread: 360, colors: ['#D4AF37', '#F7E2A0', '#FFFFFF'], zIndex: 12000 });
+                        confetti({ particleCount: 2500, spread: 360, colors: ['#D4AF37', '#F7E2A0', '#FFFFFF'], zIndex: 12000 });
                     }
                     
-                    // 結果渲染 (捲動保護版)
+                    // 結果列表 (捲動保護)
                     let resHtml = `<div class="swal-scroll-wrap"><div class="res-scroll-container">`;
                     buyRes.results.forEach(r => {
                         const isG = /A賞|SP|1賞|大獎/i.test(r.name);
@@ -995,19 +988,20 @@
                     showGlobalLoading(false);
                     
                     await Swal.fire({ 
-                        title: "開獎完畢", html: resHtml, background: '#0e0e0e', 
-                        confirmButtonText: '查看寶庫', showDenyButton: true, denyButtonText: '🎲 霸盤繼續 5 抽', 
+                        title: "開獎完畢", html: resHtml, background: '#0e0e0e', color: '#fff',
+                        confirmButtonText: '查看寶庫', 
+                        showDenyButton: true, denyButtonText: '🎲 霸盤繼續 5 抽', 
                         confirmButtonColor: '#333'
                     }).then(async (res) => { 
                         
                         if (res.isDenied) { 
-                            // [Fix v5.15.1連抽死鎖] 
+                            // [Fix v5.15.1連抽修正] 強制物理延時確保統治權繼承成功
                             setTimeout(async () => {
                                 appRuntimeState.selectedList = []; 
                                 refreshActionDockState(); 
-                                await fetchSystemDataAndSyncUI(); // 重獲統治者權限
+                                await fetchSystemDataAndSyncUI(); 
                                 executeBatchSelection(5); 
-                            }, 300);
+                            }, 350);
                         } else { 
                             handleNavigationSwitch('vault'); 
                         } 
@@ -1022,25 +1016,32 @@
                 
             } else if (checkoutSwal.dismiss === Swal.DismissReason.cancel) {
                 
-                // 放棄則歸還部分
-                fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) }).then(() => fetchSystemDataAndSyncUI());
+                // 玩家放棄交易，歸還利權
+                fetch(CORE_CONFIG.API_ENDPOINT, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) 
+                }).then(() => fetchSystemDataAndSyncUI());
                 
             }
             
         } catch (e) { 
             
             showGlobalLoading(false);
-            Swal.fire("系統繁鎖", e.message || "請重新操作", "error"); 
+            Swal.fire("機台繁忙", e.message || "通訊異常，請重試。", "error"); 
             await fetchSystemDataAndSyncUI();
             
         }
     }
 
-    /** * [輔助函數：物理棋盤渲染] 
+    /** * [輔助：抽獎棋盤物理渲染] 
      */
     function renderPremiumGrid() {
+        
         const gridBox = document.getElementById('main-ticket-grid'); 
-        if (!gridBox) return;
+        
+        if (!gridBox) {
+            return;
+        }
         
         gridBox.innerHTML = appRuntimeState.tickets.map(t => {
             
@@ -1064,11 +1065,15 @@
         }).join('');
     }
 
-    /** * [輔助函數：櫥窗渲染] 
+    /** * [輔助：櫥窗資產渲染]
      */
     function renderLobbySummaries(summary) {
+        
         const gallery = document.getElementById('lobby-prize-gallery'); 
-        if (!gallery || !summary) return;
+        
+        if (!gallery || !summary) {
+            return;
+        }
         
         gallery.innerHTML = summary.map(p => {
             
@@ -1089,7 +1094,7 @@
         }).join('');
     }
 
-    /** * [交互：選號行為] 
+    /** * [交互：選籤行為感應]
      */
     function handleCellInteration(tid) {
         
@@ -1110,7 +1115,7 @@
         refreshActionDockState();
     }
 
-    /** * [交互：隨機選號] 
+    /** * [交互：隨機選號演算法]
      */
     function executeBatchSelection(num) {
         
@@ -1119,7 +1124,9 @@
         
         const selectable = appRuntimeState.tickets.filter(t => !t.isTaken && (!t.isLocked || t.lockUser === appRuntimeState.uid)).map(t => String(t.id));
         
-        if (selectable.length < num) num = selectable.length;
+        if (selectable.length < num) {
+            num = selectable.length;
+        }
         
         for (let i = 0; i < num; i++) {
             const rand = Math.floor(Math.random() * selectable.length);
@@ -1131,7 +1138,7 @@
         refreshActionDockState();
     }
 
-    /** * [UI更新：懸浮島面板切換] 
+    /** * [UI同步：懸浮島面板切換]
      */
     function refreshActionDockState() {
         
@@ -1153,12 +1160,12 @@
         } else { 
             
             payBtn.disabled = true; 
-            payBtn.innerText = "請先選號"; 
+            payBtn.innerText = "請先選號碼"; 
             
         }
     }
 
-    /** * [智慧救援程序：統治權恢復] 
+    /** * [拯救程序：恢復斷線統治權]
      */
     function checkPendingRescueProcedure() {
         
@@ -1169,16 +1176,19 @@
             window.scrollTo(0, 0);
             
             Swal.fire({
-                title: '✨ 恢復統治權',
+                title: '✨ 恢復機台統治',
                 html: `
                     <div class="swal-scroll-wrap">
-                        偵測到有 <b style="color:var(--gold-primary);">${myLocks.length}</b> 枚籤位正由您霸佔中。<br>是否恢復連線完成挑戰？
+                        偵測到您有 <b style="color:var(--gold-primary);">${myLocks.length}</b> 枚籤位正由您獨佔中。<br>是否恢復連線完成遊玩？
                     </div>
                     <div class="swal-fixed-actions">
-                        <button id="btn-rescue-ok" style="flex:1; padding:16px; border-radius:14px; background:#2ECC71; color:#fff; font-weight:900;">🚀 立即恢復</button>
-                        <button id="btn-rescue-no" style="flex:1; padding:16px; border-radius:14px; background:rgba(255,255,255,0.1); color:#fff; font-weight:900;">歸還機台</button>
+                        <button id="btn-rescue-ok" style="flex:1; padding:18px; border-radius:18px; background:#2ECC71; color:#fff; font-weight:900; border:none;">🚀 立即恢復</button>
+                        <button id="btn-rescue-no" style="flex:1; padding:18px; border-radius:18px; background:rgba(255,255,255,0.1); color:#fff; font-weight:900; border:none;">離開機台</button>
                     </div>`,
-                background: '#111', color: '#fff', showConfirmButton: false, allowOutsideClick: false,
+                background: '#111', 
+                color: '#fff', 
+                showConfirmButton: false, 
+                allowOutsideClick: false,
                 didOpen: () => {
                     
                     document.getElementById('btn-rescue-ok').onclick = () => {
@@ -1191,18 +1201,21 @@
                     
                     document.getElementById('btn-rescue-no').onclick = () => {
                         Swal.close(); 
-                        fetch(CORE_CONFIG.API_ENDPOINT, { method: 'POST', body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) }).then(() => fetchSystemDataAndSyncUI());
+                        fetch(CORE_CONFIG.API_ENDPOINT, { 
+                            method: 'POST', 
+                            body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode }) 
+                        }).then(() => fetchSystemDataAndSyncUI());
                     };
                 }
             });
         }
     }
 
-    /** * [寶庫：藏品歸納與排序] 
+    /** * [寶庫渲染：藏品歸納邏輯]
      */
     async function processAndRenderVaultCollection() {
         
-        showGlobalLoading(true, "正在掃描資產資料庫...");
+        showGlobalLoading(true, "整理個人藏品資料庫...");
         
         try {
             const endpoint = `${CORE_CONFIG.API_ENDPOINT}?uid=${appRuntimeState.uid}&action=getMyPrizes&r=${Math.random()}`;
@@ -1239,29 +1252,31 @@
             }
             
         } catch (e) {
-            console.error(e);
+            console.error("Vault UI Error:", e);
         } finally { 
             showGlobalLoading(false); 
         }
     }
 
-    /** * [通用工具：加載遮罩控制] 
+    /** * [工具：全域加載遮罩控制]
      */
     function showGlobalLoading(show) { 
         document.getElementById('boot-loader').style.display = show ? 'flex' : 'none'; 
     }
     
-    /** * [通用工具：切換獎區模式] 
+    /** * [工具：獎區模式切換]
      */
     function handleModeSelection(m) { 
-        if (appRuntimeState.mode === m) return; 
+        if (appRuntimeState.mode === m) {
+            return;
+        }
         appRuntimeState.mode = m; 
         document.querySelectorAll('.m-item-btn').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-m') === m)); 
         appRuntimeState.selectedList = []; 
         fetchSystemDataAndSyncUI(); 
     }
     
-    // 初始化執行
+    // 啟動入口
     window.onload = init;
 </script>
 </body>
