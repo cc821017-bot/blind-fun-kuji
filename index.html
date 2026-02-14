@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.15.5 旗艦商務介面修復版</title>
+    <title>盲玩樂 5.15.6 旗艦商務介面終極版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,7 +49,7 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 2: SweetAlert 極限修復 (v5.15.5 分離式佈局)]
+           [SECTION 2: SweetAlert 極限修復 (v5.15.6 UI Padding Fix)]
            ========================================================================== */
         .swal2-container { 
             z-index: 2147483647 !important; 
@@ -64,32 +64,32 @@
         }
         
         .swal2-html-container {
-            overflow: visible !important; /* [5.15.5] 解鎖容器，讓按鈕可見 */
+            overflow: visible !important; 
             margin: 0 !important;
             flex: 1 1 auto;
             display: flex;
             flex-direction: column;
         }
 
-        /* 資訊捲動區：僅包含文字資訊 */
+        /* 資訊捲動區：[v5.15.6] 增加底部 padding 防止文字被切斷 */
         .swal-scroll-wrap {
             flex: 1;
-            max-height: 35vh !important; /* 縮小高度，留空間給按鈕 */
+            max-height: 35vh !important; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
-            margin-bottom: 10px;
-            padding: 5px;
+            margin-bottom: 15px; /* 增加與按鈕的距離 */
+            padding: 5px 5px 25px 5px; /* 底部增加 25px 緩衝 */
             border-top: 1px solid rgba(255,255,255,0.1);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* [5.15.5 新增] 固定操作區：確保按鈕永遠可見，不隨資訊捲動 */
+        /* 固定操作區 */
         .swal-fixed-actions {
             display: flex;
             gap: 15px;
             margin-top: 5px;
             padding-bottom: 5px;
-            flex-shrink: 0; /* 禁止被壓縮 */
+            flex-shrink: 0; 
         }
 
         .swal2-actions {
@@ -219,7 +219,7 @@
         .pay-master-flex { display: flex; align-items: center; gap: 20px; }
         .price-summary-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .lbl-selected-count { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-        .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1; }
+        .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1.2; padding-bottom: 5px; } /* [v5.15.6] 增加 line-height 防止切斷 */
         .btn-checkout-master { flex: 2; border: none; padding: 24px; border-radius: 25px; background: linear-gradient(90deg, #D4AF37, #F7E2A0); color: #000; font-weight: 900; font-size: 1.55rem; box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45); letter-spacing: 1px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
         .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
@@ -323,7 +323,7 @@
     };
 
     async function init() {
-        console.log("Flagship 5.15.5 System Booting...");
+        console.log("Flagship 5.15.6 System Booting...");
         
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
@@ -522,23 +522,30 @@
                     <div class="swal-scroll-wrap">
                         偵測到您有 <b style="color:var(--gold-primary); font-size:1.4rem;">${myLockedTickets.length}</b> 枚籤位正在保留中。<br>是否恢復連線完成支付？
                     </div>
+                    <div class="swal-fixed-actions">
+                        <button id="btn-timer-ext" style="flex:1; padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer;">🚀 立即恢復</button>
+                        <button id="btn-timer-rel" style="flex:1; padding:16px; border-radius:14px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900; cursor:pointer;">✕ 放棄鎖定</button>
+                    </div>
                 `,
                 background: '#111', color: '#fff',
-                showCancelButton: true,
-                confirmButtonText: '🚀 立即恢復',
-                cancelButtonText: '放棄鎖定',
-                confirmButtonColor: '#2ECC71'
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    appRuntimeState.selectedList = myLockedTickets.map(t => String(t.id));
-                    appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.add('is-selected'));
-                    refreshActionDockState();
-                    startFinalCheckoutProcess(); 
-                } else {
-                    fetch(CORE_CONFIG.API_ENDPOINT, { 
-                        method: 'POST', 
-                        body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode, ticketIds: myLockedTickets.map(t => t.id) }) 
-                    }).then(() => fetchSystemDataAndSyncUI());
+                showConfirmButton: false, // 隱藏預設按鈕，使用自定義按鈕
+                allowOutsideClick: false, background: '#0e0e0e',
+                didOpen: () => {
+                    // 綁定自定義按鈕事件
+                    document.getElementById('btn-timer-ext').onclick = () => {
+                        Swal.close();
+                        appRuntimeState.selectedList = myLockedTickets.map(t => String(t.id));
+                        appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.add('is-selected'));
+                        refreshActionDockState();
+                        startFinalCheckoutProcess(); 
+                    };
+                    document.getElementById('btn-timer-rel').onclick = () => {
+                        Swal.close();
+                        fetch(CORE_CONFIG.API_ENDPOINT, { 
+                            method: 'POST', 
+                            body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode, ticketIds: myLockedTickets.map(t => t.id) }) 
+                        }).then(() => fetchSystemDataAndSyncUI());
+                    };
                 }
             });
         }
@@ -687,7 +694,7 @@
                         </div>
                         <div style="background:rgba(255,255,255,0.04); padding:20px; border-radius:20px; margin-bottom:25px; border:1px solid rgba(255,255,255,0.05);">
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span style="color:#888;">鎖定數量</span><span style="font-weight:900;">${appRuntimeState.selectedList.length} 枚</span></div>
-                            <div style="display:flex; justify-content:space-between; font-size:1.4rem; font-weight:900;"><span>總計支出</span><span class="gold-text">${totalCost.toLocaleString()} P</span></div>
+                            <div style="display:flex; justify-content:space-between; font-size:1.4rem; font-weight:900;"><span>總計支出</span><span class="gold-text val-total-cost">${totalCost.toLocaleString()} P</span></div>
                         </div>
                     </div>
                     <div class="swal-fixed-actions">
