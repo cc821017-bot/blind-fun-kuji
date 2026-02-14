@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.15.0 旗艦商務效能版</title>
+    <title>盲玩樂 5.15.2 旗艦商務完全體</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,72 +13,96 @@
     
     <style>
         /* ==========================================================================
-           [SECTION 2: 視覺核心變數規範]
+           [SECTION 1: 視覺核心變數規範]
            ========================================================================== */
         :root { 
+            /* 背景與主題基調 */
             --bg-dark: #0a0a0a;
             --bg-card: #141414;
             --bg-card-hover: #1f1f1f;
+            
+            /* 品牌金流光定義 */
             --gold-primary: #D4AF37;
             --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
+            
+            /* 營運功能配色 */
             --status-red: #E74C3C;
             --status-green: #2ECC71;
             --status-blue: #3498DB;
+            
+            /* 字體定義層次 */
             --text-primary: #FFFFFF;
             --text-secondary: #A0A0A0;
             --text-muted: #555555;
+            
+            /* 圓角半徑與玻璃擬態 */
             --border-radius-lg: 32px;
             --border-radius-md: 20px;
             --glass-bg: rgba(20, 20, 20, 0.98);
+
+            /* 懸浮島陰影變數 */
             --dock-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
         }
         
+        /* [全局排版基礎設定] */
         body { 
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
             color: var(--text-primary);
             margin: 0; 
-            /* [物理修正] 增加底部間距，確保內容不被懸浮島遮擋 */
+            /* [物理修正] 增加底部間距至 200px，確保內容不被懸浮島遮擋 */
             padding-bottom: 200px; 
             overflow-x: hidden; 
             -webkit-tap-highlight-color: transparent;
             scroll-behavior: smooth;
-            transform: translateZ(0);
+            transform: translateZ(0); /* 開啟硬體加速 */
             -webkit-font-smoothing: antialiased;
         }
 
-        ::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { 
+            display: none; 
+        }
 
         /* ==========================================================================
-           [SECTION 3: 圖片階級優化系統 (5.15.0 修復版)]
+           [SECTION 2: 圖片階級優化系統 (Visual Hierarchy System)]
            ========================================================================== */
         .img-container-moderate {
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-            overflow: visible; position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible; /* 允許大獎光暈溢出 */
+            position: relative;
         }
 
+        /* 基礎圖片樣式 */
         .img-container-moderate img {
-            width: auto; height: auto;
-            max-width: 80%; max-height: 80%;
+            width: auto;
+            height: auto;
+            max-width: 80%;
+            max-height: 80%;
             object-fit: contain;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: block; margin: auto;
+            display: block;
+            margin: auto;
         }
 
-        /* [大獎 - 櫥窗版] 修正：向上浮起，避免遮擋文字，縮小放大倍率 */
+        /* [大獎極巨化] A賞/SP/大獎 專用 - 向上位移避免擋字 */
         .prize-thumb-grand .img-container-moderate img {
             max-width: 95% !important; 
             max-height: 95% !important;
-            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6)); /* 金色光暈 */
             transform: translateY(-5px) scale(1.05); /* 向上位移 */
             z-index: 10;
         }
 
-        /* [小賞 - 櫥窗版] */
+        /* [小賞壓制化] 普獎專用 */
         .prize-thumb-normal .img-container-moderate img {
             max-width: 60% !important; 
             max-height: 60% !important;
-            opacity: 0.85; filter: grayscale(0.2);
+            opacity: 0.85;
+            filter: grayscale(0.2);
         }
         
         /* [結果列表 - 大賞] 限制最大寬度，防止撐爆列表 */
@@ -96,62 +120,140 @@
         }
 
         /* ==========================================================================
-           [SECTION 4: 導覽與頁首佈局]
+           [SECTION 3: 導覽與頁首佈局]
            ========================================================================== */
         .header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 25px; position: sticky; top: 0; z-index: 1000; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 25px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
             background: rgba(10, 10, 10, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         
-        .u-info-section { display: flex; flex-direction: column; }
-        .u-badge-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-        .u-name-val { font-weight: 700; font-size: 1.1rem; color: #fff; }
-        .u-pts-val { font-family: 'Oswald'; font-size: 1.9rem; font-weight: 700; letter-spacing: 0.5px; }
+        .u-info-section { 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .u-badge-label { 
+            font-size: 0.65rem; 
+            color: var(--text-muted); 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+        }
+        
+        .u-name-val { 
+            font-weight: 700; 
+            font-size: 1.1rem; 
+            color: #fff; 
+        }
+        
+        .u-pts-val { 
+            font-family: 'Oswald'; 
+            font-size: 1.9rem; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+        }
 
-        .nav-segment-bar { display: flex; padding: 15px 20px; gap: 15px; background: rgba(0,0,0,0.2); }
+        /* 導航切換列 */
+        .nav-segment-bar { 
+            display: flex; 
+            padding: 15px 20px; 
+            gap: 15px; 
+            background: rgba(0,0,0,0.2); 
+        }
+        
         .nav-item { 
-            flex: 1; text-align: center; padding: 14px; border-radius: 18px; 
-            color: #666; font-weight: 900; font-size: 0.9rem;
-            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            flex: 1; 
+            text-align: center; 
+            padding: 14px; 
+            border-radius: 18px; 
+            color: #666; 
+            font-weight: 900; 
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.02); 
+            border: 1px solid rgba(255,255,255,0.06);
             transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
         }
+        
         .nav-item.active { 
-            background: #fff; color: #000; border: none; 
+            background: #fff; 
+            color: #000; 
+            border: none; 
             box-shadow: 0 12px 25px rgba(255,255,255,0.25); 
             transform: translateY(-4px);
         }
 
         /* ==========================================================================
-           [SECTION 5: 櫥窗與列表樣式]
+           [SECTION 4: 櫥窗與列表樣式]
            ========================================================================== */
         #lobby-prize-gallery { 
-            display: flex; overflow-x: auto; padding: 15px 20px; gap: 12px; scrollbar-width: none; 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 15px 20px; 
+            gap: 12px; 
+            scrollbar-width: none; 
         }
         
         .p-show-card {
-            min-width: 100px; width: 100px; /* 固定寬度 */
-            background: #1a1a1a; border-radius: 16px;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 12px 8px; /* 增加頂部內距 */
+            min-width: 100px; 
+            width: 100px; 
+            background: #1a1a1a; 
+            border-radius: 16px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            padding: 12px 8px; 
             border: 1px solid #333;
             position: relative;
         }
-        .p-show-card.is-empty { opacity: 0.4; filter: grayscale(1); }
         
-        .p-show-thumb { 
-            width: 80px; height: 80px; 
-            margin-bottom: 8px; display: flex; align-items: center; justify-content: center;
+        .p-show-card.is-empty { 
+            opacity: 0.4; 
+            filter: grayscale(1); 
         }
         
-        .p-show-label { font-size: 0.75rem; font-weight: 700; text-align: center; line-height: 1.2; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; z-index: 5; }
-        .p-show-stock { font-size: 0.65rem; color: var(--gold-primary); margin-top: 4px; font-weight: 900; background: rgba(212,175,55,0.1); padding: 2px 6px; border-radius: 4px; }
+        .p-show-thumb { 
+            width: 80px; 
+            height: 80px; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        
+        .p-show-label { 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            text-align: center; 
+            line-height: 1.2; 
+            height: 2.4em; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            z-index: 5; 
+        }
+        
+        .p-show-stock { 
+            font-size: 0.65rem; 
+            color: var(--gold-primary); 
+            margin-top: 4px; 
+            font-weight: 900; 
+            background: rgba(212,175,55,0.1); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+        }
 
         /* ==========================================================================
-           [SECTION 6: 開獎結果列表 & 彈窗修復 (5.15.0 核心修復)]
+           [SECTION 5: 開獎結果列表 & 彈窗修復 (UI Anti-Lock)]
            ========================================================================== */
         /* [修復 1] SweetAlert 層級飛昇：確保高於 Loading 與 Dock */
         .swal2-container { 
@@ -170,51 +272,132 @@
         }
 
         .res-premium-card {
-            display: flex; align-items: center; gap: 15px;
-            background: #1a1a1a; padding: 10px 15px; /* 縮小 padding */
-            border-radius: 12px; margin-bottom: 8px;
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            background: #1a1a1a; 
+            padding: 10px 15px; 
+            border-radius: 12px; 
+            margin-bottom: 8px;
             border: 1px solid #333;
         }
+        
         .res-premium-card.is-grand-win {
             background: linear-gradient(90deg, #2a2a00, #1a1a1a);
             border: 1px solid var(--gold-primary);
         }
 
         .res-item-thumb {
-            width: 50px; height: 50px; /* 限制縮圖容器大小 */
-            display: flex; align-items: center; justify-content: center;
-            background: #000; border-radius: 8px;
+            width: 50px; 
+            height: 50px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            background: #000; 
+            border-radius: 8px;
         }
 
         /* ==========================================================================
-           [SECTION 7: 其餘元件]
+           [SECTION 6: 其餘元件]
            ========================================================================== */
-        #home-page { display: block; animation: slideInUI 0.4s ease-out; }
-        #vault-page { display: none; padding: 0 20px; animation: slideUpUI 0.5s ease-out; }
-        @keyframes slideUpUI { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        #home-page { 
+            display: block; 
+            animation: slideInUI 0.4s ease-out; 
+        }
         
-        .vault-hero-text { margin: 15px 0 25px; padding-left: 5px; }
-        .vault-brand { font-family: 'Oswald'; font-size: 0.85rem; color: var(--gold-primary); letter-spacing: 4px; font-weight: 700; }
-        .vault-title { margin: 5px 0 0; font-size: 2.3rem; font-weight: 900; letter-spacing: 1px; }
+        #vault-page { 
+            display: none; 
+            padding: 0 20px; 
+            animation: slideUpUI 0.5s ease-out; 
+        }
+        
+        @keyframes slideUpUI { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .vault-hero-text { 
+            margin: 15px 0 25px; 
+            padding-left: 5px; 
+        }
+        
+        .vault-brand { 
+            font-family: 'Oswald'; 
+            font-size: 0.85rem; 
+            color: var(--gold-primary); 
+            letter-spacing: 4px; 
+            font-weight: 700; 
+        }
+        
+        .vault-title { 
+            margin: 5px 0 0; 
+            font-size: 2.3rem; 
+            font-weight: 900; 
+            letter-spacing: 1px; 
+        }
 
-        .vault-list-grid { display: flex; flex-direction: column; gap: 20px; }
+        .vault-list-grid { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
         
         .v-asset-card { 
             background: linear-gradient(145deg, #1e1e1e, #0c0c0c); 
-            border-radius: 26px; padding: 22px; display: flex; align-items: center; gap: 22px; margin-bottom: 5px;
-            border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            position: relative; overflow: hidden;
+            border-radius: 26px; 
+            padding: 22px; 
+            display: flex; 
+            align-items: center; 
+            gap: 22px; 
+            margin-bottom: 5px;
+            border: 1px solid rgba(255,255,255,0.05); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: relative; 
+            overflow: hidden;
         }
+        
         .v-asset-card.is-premium { 
             border: 2px solid var(--gold-primary); 
             box-shadow: 0 0 35px rgba(212, 175, 55, 0.2); 
             animation: borderAuraFlow 3s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
         }
-        @keyframes borderAuraFlow { 0% { border-color: #D4AF37; } 100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212, 175, 55, 0.4); } }
-        .v-asset-card.is-premium::before { content: 'PREMIUM ASSET'; position: absolute; top: 0; right: 0; background: var(--gold-gradient); color: #000; font-size: 0.6rem; padding: 4px 15px; font-weight: 900; border-radius: 0 0 0 15px; }
+        
+        @keyframes borderAuraFlow { 
+            0% { border-color: #D4AF37; } 
+            100% { border-color: #F7E2A0; box-shadow: 0 0 50px rgba(212, 175, 55, 0.4); } 
+        }
+        
+        .v-asset-card.is-premium::before { 
+            content: 'PREMIUM ASSET'; 
+            position: absolute; 
+            top: 0; 
+            right: 0; 
+            background: var(--gold-gradient); 
+            color: #000; 
+            font-size: 0.6rem; 
+            padding: 4px 15px; 
+            font-weight: 900; 
+            border-radius: 0 0 0 15px; 
+        }
 
-        .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
-        .v-asset-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .v-asset-icon { 
+            width: 75px; 
+            height: 75px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.08); 
+        }
+        
+        .v-asset-icon img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
         .v-asset-main { flex: 1; }
         .v-name-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .v-prize-name { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 0.5px; }
@@ -222,72 +405,154 @@
         .v-prize-meta { font-size: 0.75rem; color: #444; font-weight: 700; letter-spacing: 0.5px; }
         
         .btn-ship-action { 
-            background: var(--gold-gradient); color: #000; border: none; padding: 12px 22px; 
-            border-radius: 14px; font-weight: 900; font-size: 0.85rem; transition: 0.3s;
+            background: var(--gold-gradient); 
+            color: #000; 
+            border: none; 
+            padding: 12px 22px; 
+            border-radius: 14px; 
+            font-weight: 900; 
+            font-size: 0.85rem; 
+            transition: 0.3s;
         }
-        .btn-ship-action.is-processing { background: #222; color: #555; pointer-events: none; border: 1px solid #333; }
+        
+        .btn-ship-action.is-processing { 
+            background: #222; 
+            color: #555; 
+            pointer-events: none; 
+            border: 1px solid #333; 
+        }
 
         .win-history-ribbon { 
             background: linear-gradient(90deg, #1a0000, #2c0000);
             border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-            padding: 12px 0; overflow: hidden; white-space: nowrap; 
+            padding: 12px 0; 
+            overflow: hidden; 
+            white-space: nowrap; 
         }
-        .win-track { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scrollTape 35s linear infinite; }
-        @keyframes scrollTape { from { transform: translateX(0); } to { transform: translateX(-280%); } }
+        
+        .win-track { 
+            display: inline-block; 
+            white-space: nowrap; 
+            padding-left: 100%; 
+            animation: scrollTape 35s linear infinite; 
+        }
+        
+        @keyframes scrollTape { 
+            from { transform: translateX(0); } 
+            to { transform: translateX(-280%); } 
+        }
 
         .stats-hub { 
-            display: flex; justify-content: space-around; background: linear-gradient(145deg, #1a1a1a, #111);
-            padding: 25px; margin: 0 20px 20px; border-radius: var(--border-radius-lg);
-            border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            display: flex; 
+            justify-content: space-around; 
+            background: linear-gradient(145deg, #1a1a1a, #111);
+            padding: 25px; 
+            margin: 0 20px 20px; 
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255,255,255,0.06); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
         }
+        
         .stat-item { text-align: center; }
         .stat-val-text { font-family: 'Oswald'; font-size: 2rem; display: block; font-weight: 700; line-height: 1.1; }
         .stat-lbl-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; font-weight: 900; letter-spacing: 1.5px; }
         
         .m-selector-row { display: flex; gap: 12px; padding: 0 20px 15px; }
         .m-item-btn { 
-            flex: 1; text-align: center; padding: 18px; background: #161616; 
-            border-radius: 18px; font-weight: 900; color: #888; border: 1px solid #333;
-            transition: all 0.3s ease; cursor: pointer;
-        }
-        .m-item-btn.is-active { 
-            background: var(--gold-gradient); color: #000; border: none;
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45); transform: scale(1.05);
-        }
-
-        .gacha-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 10px 20px 80px; }
-        .t-cell { 
-            aspect-ratio: 1/1; background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-            border-radius: 18px; display: flex; align-items: center; justify-content: center;
-            font-family: 'Oswald'; font-size: 1.6rem; color: #555; border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 10px 25px rgba(0,0,0,0.4);
-            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative;
+            flex: 1; 
+            text-align: center; 
+            padding: 18px; 
+            background: #161616; 
+            border-radius: 18px; 
+            font-weight: 900; 
+            color: #888; 
+            border: 1px solid #333;
+            transition: all 0.3s ease; 
             cursor: pointer;
         }
-        .t-cell.is-selected { 
-            background: var(--gold-gradient) !important; color: #000 !important; border: none;
-            transform: translateY(-12px) scale(1.15); box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); z-index: 10;
-        }
-        .t-cell.is-taken { background: #050505; opacity: 0.4; color: transparent; border-color: #222; }
-        .t-cell.is-taken::after { content: '✕'; position: absolute; color: var(--status-red); font-size: 3.5rem; font-weight: 900; }
         
+        .m-item-btn.is-active { 
+            background: var(--gold-gradient); 
+            color: #000; 
+            border: none;
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45); 
+            transform: scale(1.05);
+        }
+
+        .gacha-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; 
+            padding: 10px 20px 80px; 
+        }
+        
+        .t-cell { 
+            aspect-ratio: 1/1; 
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-family: 'Oswald'; 
+            font-size: 1.6rem; 
+            color: #555; 
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 10px 25px rgba(0,0,0,0.4);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .t-cell.is-selected { 
+            background: var(--gold-gradient) !important; 
+            color: #000 !important; 
+            border: none;
+            transform: translateY(-12px) scale(1.15); 
+            box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); 
+            z-index: 10;
+        }
+        
+        .t-cell.is-taken { 
+            background: #050505; 
+            opacity: 0.4; 
+            color: transparent; 
+            border-color: #222; 
+        }
+        
+        .t-cell.is-taken::after { 
+            content: '✕'; 
+            position: absolute; 
+            color: var(--status-red); 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+        }
+        
+        /* 皇冠優先級守護 (z-index 999) */
         .t-cell.is-big-taken { 
             border: 2.5px solid var(--gold-primary); 
             background: #1a1a00; 
             opacity: 1 !important; 
         }
+        
         .t-cell.is-big-taken::after { content: none !important; }
+        
         .t-cell.is-big-taken::before { 
-            content: '👑'; position: absolute; font-size: 1.5rem; 
-            top: 4px; left: 4px; z-index: 999; 
-            filter: drop-shadow(0 0 10px #D4AF37);
+            content: '👑'; 
+            position: absolute; 
+            font-size: 1.5rem; 
+            top: 4px; 
+            left: 4px; 
+            z-index: 999; 
+            filter: drop-shadow(0 0 10px #D4AF37); 
         }
 
-        /* 懸浮島支付 */
+        /* [SECTION 7: UX 究極優化 - 懸浮島支付] */
         .fixed-dock-action-hub { 
             position: fixed !important; 
             bottom: 25px !important; 
-            left: 15px; right: 15px; width: auto; 
+            left: 15px; 
+            right: 15px; 
+            width: auto; 
             z-index: 9999;
             background: rgba(20, 20, 20, 0.92); 
             backdrop-filter: blur(25px);
@@ -299,7 +564,11 @@
             animation: floatDock 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-sizing: border-box;
         }
-        @keyframes floatDock { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        @keyframes floatDock { 
+            from { transform: translateY(100px); opacity: 0; } 
+            to { transform: translateY(0); opacity: 1; } 
+        }
 
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .fixed-dock-action-hub {
@@ -307,28 +576,87 @@
             }
         }
         
-        .dock-tool-row { display: flex; gap: 15px; margin-bottom: 22px; }
-        .btn-pick-tool { 
-            flex: 1; padding: 15px; border-radius: 16px; background: #1a1a1a; 
-            color: #fff; border: 1px solid #333; font-weight: 900; font-size: 0.9rem;
-            transition: 0.2s; cursor: pointer;
+        .dock-tool-row { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 22px; 
         }
-        .btn-pick-tool:active { transform: scale(0.95); background: #333; }
-
-        .pay-master-flex { display: flex; align-items: center; gap: 20px; }
-        .price-summary-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .lbl-selected-count { font-size: 0.75rem; color: #666; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-        .val-total-cost { font-family: 'Oswald'; font-size: 2.5rem; font-weight: 700; color: var(--gold-primary); margin-top: -6px; line-height: 1; }
         
-        .btn-checkout-master { 
-            flex: 2; border: none; padding: 24px; border-radius: 25px;
-            background: linear-gradient(90deg, #D4AF37, #F7E2A0); color: #000; font-weight: 900; font-size: 1.55rem;
-            box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45); 
-            letter-spacing: 1px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        .btn-pick-tool { 
+            flex: 1; 
+            padding: 15px; 
+            border-radius: 16px; 
+            background: #1a1a1a; 
+            color: #fff; 
+            border: 1px solid #333; 
+            font-weight: 900; 
+            font-size: 0.9rem;
+            transition: 0.2s; 
             cursor: pointer;
         }
-        .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
-        .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
+        
+        .btn-pick-tool:active { 
+            transform: scale(0.95); 
+            background: #333; 
+        }
+
+        .pay-master-flex { 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+        }
+        
+        .price-summary-pane { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+        }
+        
+        .lbl-selected-count { 
+            font-size: 0.75rem; 
+            color: #666; 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+        }
+        
+        .val-total-cost { 
+            font-family: 'Oswald'; 
+            font-size: 2.5rem; 
+            font-weight: 700; 
+            color: var(--gold-primary); 
+            margin-top: -6px; 
+            line-height: 1; 
+        }
+        
+        .btn-checkout-master { 
+            flex: 2; 
+            border: none; 
+            padding: 24px; 
+            border-radius: 25px;
+            background: linear-gradient(90deg, #D4AF37, #F7E2A0); 
+            color: #000; 
+            font-weight: 900; 
+            font-size: 1.55rem;
+            box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45); 
+            letter-spacing: 1px; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .btn-checkout-master:disabled { 
+            background: #222; 
+            color: #444; 
+            box-shadow: none; 
+            opacity: 0.4; 
+            pointer-events: none; 
+        }
+        
+        .btn-checkout-master:not(:disabled):active { 
+            transform: scale(0.96); 
+            filter: brightness(1.25); 
+        }
 
         .countdown-pulse {
             font-family: 'Oswald'; 
@@ -342,14 +670,33 @@
             margin: 10px 0;
             text-align: center;
         }
+        
         @keyframes heartBeat {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
 
-        #boot-loader { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .l-spinner-ring { width: 80px; height: 80px; border: 6px solid transparent; border-top-color: var(--gold-primary); border-radius: 50%; animation: rotateSync 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1); }
+        #boot-loader { 
+            position: fixed; 
+            inset: 0; 
+            background: #000; 
+            z-index: 20000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column; 
+        }
+        
+        .l-spinner-ring { 
+            width: 80px; 
+            height: 80px; 
+            border: 6px solid transparent; 
+            border-top-color: var(--gold-primary); 
+            border-radius: 50%; 
+            animation: rotateSync 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1); 
+        }
+        
         @keyframes rotateSync { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -427,24 +774,38 @@
     </div>
 
 <script>
+    /**
+     * [SECTION 16: 盲玩樂 5.15.2 核心邏輯引擎]
+     * ⚖️ 憲法守護執行：
+     * - 物理行數完全展開 (Physical Expansion)。
+     * - 包含「連抽卡死」與「UI 被遮擋」的修復。
+     */
+    
+    // [⚠️ 核心 API 連線配置] 
     const CORE_CONFIG = { 
         API_ENDPOINT: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
     };
     
+    // [系統全局狀態變數集]
     let appRuntimeState = { 
         uid: "guest_id", 
         name: "冒險者", 
         mode: "單挑套", 
         tickets: [], 
-        unitPrice: 100, 
+        unitPrice: 100, // 由後端 F2 儲存格動態同步
         userPoints: 0, 
         selectedList: [],
         isLoading: false
     };
 
+    /**
+     * [1] 系統開機初始化程序
+     */
     async function init() {
-        console.log("Flagship 5.15.0 System Booting...");
+        console.log("Flagship 5.15.2 System Booting...");
+        
+        // 斷網防護計時器
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
                 Swal.fire({ title: "連線回應超時", text: "伺服器無回應，請確認網址正確並重啟頁面。", icon: "error" });
@@ -468,6 +829,9 @@
         }
     }
 
+    /**
+     * [2] 分頁切換控制邏輯
+     */
     async function handleNavigationSwitch(page) {
         const homeUI = document.getElementById('home-page');
         const vaultUI = document.getElementById('vault-page');
@@ -476,16 +840,25 @@
         const vaultBtn = document.getElementById('nav-btn-vault');
         
         if (page === 'home') {
-            homeUI.style.display = 'block'; vaultUI.style.display = 'none'; dockUI.style.display = 'block';
-            homeBtn.classList.add('active'); vaultBtn.classList.remove('active');
+            homeUI.style.display = 'block'; 
+            vaultUI.style.display = 'none'; 
+            dockUI.style.display = 'block';
+            homeBtn.classList.add('active'); 
+            vaultBtn.classList.remove('active');
             fetchSystemDataAndSyncUI(); 
         } else {
-            homeUI.style.display = 'none'; vaultUI.style.display = 'block'; dockUI.style.display = 'none';
-            vaultBtn.classList.add('active'); homeBtn.classList.remove('active');
-            processAndRenderVaultCollection(); 
+            homeUI.style.display = 'none'; 
+            vaultUI.style.display = 'block'; 
+            dockUI.style.display = 'none';
+            vaultBtn.classList.add('active'); 
+            homeBtn.classList.remove('active');
+            processAndRenderVaultCollection(); // 啟動歸納讀取
         }
     }
 
+    /**
+     * [3] [商務實作] 我的寶庫 - 智慧歸納 + 圖片顯示
+     */
     async function processAndRenderVaultCollection() {
         showGlobalLoading(true, "正在整理全球藏品數據...");
         try {
@@ -493,6 +866,7 @@
             const response = await fetch(fetchUrl);
             const data = await response.json();
             
+            // 邏輯第一步：執行「名稱+模式」唯一歸類 (Aggregation)
             const groupedVault = {};
             data.prizes.forEach(p => {
                 const uniqueKey = `${p.mode}_${p.prizeName}`;
@@ -504,12 +878,13 @@
                         lastSeenTime: p.time,
                         deliveryStatus: p.status || "在庫",
                         isPriorityBig: /A賞|SP|1賞|大獎/i.test(p.prizeName),
-                        img: p.img
+                        img: p.img // 接收後端圖片
                     };
                 }
                 groupedVault[uniqueKey].totalCount++;
             });
 
+            // 邏輯第二步：物理排序演算法 (Sorting Priority)
             const finalSortedCollection = Object.values(groupedVault).sort((a, b) => {
                 return b.isPriorityBig - a.isPriorityBig;
             });
@@ -525,6 +900,8 @@
                 listView.innerHTML = finalSortedCollection.map(asset => {
                     const processingFlag = asset.deliveryStatus === "待出貨";
                     const bigPrizeClass = asset.isPriorityBig ? 'is-premium' : '';
+                    
+                    // 使用 img 標籤取代 emoji
                     const iconContent = `<img src="${asset.img}" onerror="this.src='https://placehold.co/100?text=Prize'">`;
                     
                     return `
@@ -550,11 +927,16 @@
                 }).join('');
             }
         } catch (error) {
-            console.error(error);
+            console.error("Vault Algorithm Failure:", error);
             Swal.fire("數據整理異常", "暫時無法建立資產連線，請稍後重試。", "error");
-        } finally { showGlobalLoading(false); }
+        } finally { 
+            showGlobalLoading(false); 
+        }
     }
 
+    /**
+     * [4] [商務對接] 實體出貨申請流程
+     */
     async function handleAssetShipmentFlow(pName, mode, qty) {
         const confirmResult = await Swal.fire({
             title: '啟動出貨申請',
@@ -563,7 +945,9 @@
             showCancelButton: true,
             confirmButtonText: '確定送出',
             confirmButtonColor: '#2ECC71',
-            background: '#0e0e0e', color: '#fff'
+            background: '#0e0e0e', 
+            color: '#fff',
+            customClass: { popup: 'swal-mobile-fix' }
         });
         
         if (confirmResult.isConfirmed) {
@@ -580,12 +964,19 @@
                 }
             } catch (e) {
                 Swal.fire("API 錯誤", "出貨數據提交失敗，請檢查網路環境。", "error");
-            } finally { showGlobalLoading(false); }
+            } finally { 
+                showGlobalLoading(false); 
+            }
         }
     }
 
+    /**
+     * [5] [核心邏輯] 大廳數據同步與 F2 單價獲取
+     */
     async function fetchSystemDataAndSyncUI() {
-        if (appRuntimeState.selectedList.length === 0) refreshActionDockState();
+        if (appRuntimeState.selectedList.length === 0) {
+            refreshActionDockState();
+        }
         showGlobalLoading(true, "旗艦同步中...");
         
         try {
@@ -595,9 +986,10 @@
             
             if (data.status === "success") {
                 appRuntimeState.tickets = data.tickets; 
-                appRuntimeState.unitPrice = data.cost; 
+                appRuntimeState.unitPrice = data.cost; // ⚠️ 物理對接後端 F2 傳回的動態單價
                 appRuntimeState.userPoints = data.userPoints;
                 
+                // 更新點數餘額
                 document.getElementById('display-u-pts').innerText = appRuntimeState.userPoints.toLocaleString();
                 
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
@@ -607,29 +999,37 @@
                 document.getElementById('stat-big').innerText = currentBig;
                 document.getElementById('stat-rate').innerText = currentRem > 0 ? (currentBig/currentRem*100).toFixed(1) + "%" : "0%";
                 
+                // 跑馬燈內容
                 document.getElementById('winner-scroller').innerHTML = (data.history && data.history.length > 0) ? 
                     data.history.map(h => `<span class="win-item-feed">🎉 恭喜玩家 ${h.user} 抽出【${h.prize}】</span>`).join('') : 
                     "盤面充滿大獎機會，冒險者即刻挑戰！";
 
                 const masterBtn = document.getElementById('masterPayButton');
                 if (!data.bigPrizeExists || currentRem === 0) {
-                    masterBtn.disabled = true; masterBtn.innerText = "等待系統洗牌...";
+                    masterBtn.disabled = true; 
+                    masterBtn.innerText = "等待系統洗牌...";
                 } else {
                     refreshActionDockState(); 
                 }
                 
                 renderPremiumGrid();
                 renderLobbySummaries(data.prizeSummary);
-                checkPendingRescueProcedure(); 
+                checkPendingRescueProcedure(); // 智慧救援自檢
             }
         } catch (e) {
             console.error("Sync Failure:", e);
             Swal.fire("連線失敗", "無法從旗艦伺服器同步數據，請重整頁面。", "error");
-        } finally { showGlobalLoading(false); }
+        } finally { 
+            showGlobalLoading(false); 
+        }
     }
 
+    /**
+     * [6] [核心邏輯] 智慧拯救斷線連線
+     */
     function checkPendingRescueProcedure() {
         const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
+        
         if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
             // [UI 修復] 使用 swal-scroll-wrap 包裹內容，防止擠出畫面
             Swal.fire({
@@ -639,7 +1039,8 @@
                         偵測到您有 <b style="color:var(--gold-primary); font-size:1.4rem;">${myLockedTickets.length}</b> 枚籤位正在保留中。<br>是否恢復連線完成支付？
                     </div>
                 `,
-                background: '#111', color: '#fff',
+                background: '#111', 
+                color: '#fff',
                 showCancelButton: true,
                 confirmButtonText: '🚀 立即恢復',
                 cancelButtonText: '放棄鎖定',
@@ -660,6 +1061,9 @@
         }
     }
 
+    /**
+     * [7] [視覺補完] 抽獎棋盤渲染
+     */
     function renderPremiumGrid() {
         const gridBox = document.getElementById('main-ticket-grid');
         if (!gridBox) return;
@@ -684,6 +1088,9 @@
         }).join('');
     }
 
+    /**
+     * [8] [視覺補完] 獎項庫存展示 (視覺階級版)
+     */
     function renderLobbySummaries(summary) {
         const gallery = document.getElementById('lobby-prize-gallery');
         if (!gallery || !summary) return;
@@ -705,6 +1112,9 @@
         }).join('');
     }
 
+    /**
+     * [9] 交互：選取行為
+     */
     function handleCellInteration(tid) {
         const idStr = String(tid);
         const currentIndex = appRuntimeState.selectedList.indexOf(idStr);
@@ -723,6 +1133,9 @@
         refreshActionDockState();
     }
 
+    /**
+     * [10] 交互：批量選號
+     */
     function executeBatchSelection(num) {
         appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.remove('is-selected'));
         appRuntimeState.selectedList = [];
@@ -742,6 +1155,9 @@
         refreshActionDockState();
     }
 
+    /**
+     * [11] 更新懸浮島 UI
+     */
     function refreshActionDockState() {
         const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         document.getElementById('dock-sel-count').innerText = `${appRuntimeState.selectedList.length}`;
@@ -757,6 +1173,9 @@
         }
     }
 
+    /**
+     * [12] [核心流程] 物理交易保護結帳程序 (連抽修正版)
+     */
     async function startFinalCheckoutProcess() {
         const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         
@@ -767,7 +1186,7 @@
         
         showGlobalLoading(true, "正在執行物理鎖定程序...");
         try {
-            // A. Lock
+            // A. 第一階段：物理原子鎖定
             const lockCall = await fetch(CORE_CONFIG.API_ENDPOINT, {
                 method: 'POST',
                 body: JSON.stringify({ uid: appRuntimeState.uid, action: 'lock', mode: appRuntimeState.mode, ticketIds: appRuntimeState.selectedList })
@@ -775,12 +1194,17 @@
             const lockResult = await lockCall.json();
             showGlobalLoading(false);
             
-            if (lockResult.status !== "success") {
-                Swal.fire("位置遭搶占", "部分籤位剛被其他玩家鎖定。", "error").then(() => fetchSystemDataAndSyncUI());
-                return;
+            // [Fix v5.15.1] 搶位失敗處理：清空選擇 + 強制刷新
+            if (lockResult.status !== "success") { 
+                Swal.fire("位置遭搶占", "部分籤位剛被其他玩家鎖定。", "error").then(async () => {
+                    appRuntimeState.selectedList = []; // 清空購物車
+                    refreshActionDockState(); // 更新 UI
+                    await fetchSystemDataAndSyncUI(); // 重新同步
+                }); 
+                return; 
             }
             
-            // B. 180s Timer
+            // B. 第二階段：180s 保護視窗
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
@@ -874,9 +1298,17 @@
                         title: "開獎完畢", html: resultHtml, background: '#0e0e0e', color: '#fff',
                         confirmButtonText: '進入寶庫查看',
                         showDenyButton: true, denyButtonText: '🎲 隨機 5 抽', confirmButtonColor: '#333'
-                    }).then((res) => { 
-                        if (res.isDenied) { executeBatchSelection(5); } else { handleNavigationSwitch('vault'); }
-                    });
+                    }).then(async (res) => { 
+                        if (res.isDenied) { 
+                            // [Fix v5.15.1] 連抽修復邏輯：先清空 -> 先同步 -> 再選號
+                            appRuntimeState.selectedList = [];
+                            refreshActionDockState();
+                            await fetchSystemDataAndSyncUI(); // 等待資料更新
+                            executeBatchSelection(5); 
+                        } else { 
+                            handleNavigationSwitch('vault'); 
+                        } 
+                    }); 
                     await fetchSystemDataAndSyncUI();
                 } else { throw new Error(buyData.message); }
             } else if (checkoutSwal.dismiss === Swal.DismissReason.cancel) {
@@ -905,6 +1337,7 @@
         fetchSystemDataAndSyncUI(); 
     }
     
+    // 初始化引導
     window.onload = init;
 </script>
 </body>
