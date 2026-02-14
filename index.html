@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.16.0 旗艦商務增強版</title>
+    <title>盲玩樂 5.16.1 旗艦商務邏輯修復版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,10 +49,17 @@
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 2: v5.16.0 視覺增強特效 (Visual Enhancements)]
+           [SECTION 2: 視覺增強特效 (Pulse Fix)]
            ========================================================================== */
-        
-        /* 1. 庫存緊張脈衝 (Inventory Pulse) */
+        /* [v5.16.1 Fix] 必須是 inline-block 才能被 transform */
+        .stat-val-text { 
+            font-family: 'Oswald'; 
+            font-size: 2rem; 
+            display: inline-block; /* 修正點 */
+            font-weight: 700; 
+            line-height: 1.1; 
+        }
+
         .pulse-urgent {
             color: var(--status-red) !important;
             animation: textPulse 0.8s infinite alternate;
@@ -60,12 +67,11 @@
         }
         @keyframes textPulse {
             0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1.15); opacity: 0.8; }
         }
 
-        /* 2. 大獎聽牌警報 (Jackpot Alert Banner) */
         #jackpot-alert-banner {
-            display: none; /* 預設隱藏 */
+            display: none; 
             background: linear-gradient(90deg, #b38806, #f9d423, #b38806);
             color: #000;
             font-weight: 900;
@@ -85,7 +91,7 @@
         }
 
         /* ==========================================================================
-           [SECTION 3: SweetAlert 極限修復 (Inherited from v5.15.5)]
+           [SECTION 3: SweetAlert 極限修復]
            ========================================================================== */
         .swal2-container { 
             z-index: 2147483647 !important; 
@@ -113,7 +119,7 @@
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch; 
             margin-bottom: 15px;
-            padding: 5px 5px 25px 5px; /* 底部緩衝 */
+            padding: 5px 5px 25px 5px; 
             border-top: 1px solid rgba(255,255,255,0.1);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
@@ -227,7 +233,6 @@
 
         .stats-hub { display: flex; justify-content: space-around; background: linear-gradient(145deg, #1a1a1a, #111); padding: 25px; margin: 0 20px 20px; border-radius: var(--border-radius-lg); border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .stat-item { text-align: center; }
-        .stat-val-text { font-family: 'Oswald'; font-size: 2rem; display: block; font-weight: 700; line-height: 1.1; }
         .stat-lbl-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; font-weight: 900; letter-spacing: 1.5px; }
         
         .m-selector-row { display: flex; gap: 12px; padding: 0 20px 15px; }
@@ -358,7 +363,7 @@
     };
 
     async function init() {
-        console.log("Flagship 5.16.0 System Booting...");
+        console.log("Flagship 5.16.1 System Booting...");
         
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
@@ -519,7 +524,7 @@
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
                 const currentBig = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
-                // [v5.16.0] 庫存脈衝 & 聽牌橫幅控制
+                // [Pulse Logic Fix]
                 const remEl = document.getElementById('stat-rem');
                 remEl.innerText = currentRem;
                 if (currentRem < 10 && currentRem > 0) {
@@ -716,7 +721,9 @@
             showGlobalLoading(false);
             
             if (lockResult.status !== "success") { 
-                Swal.fire("位置遭搶占", "部分籤位剛被其他玩家鎖定。", "error").then(async () => {
+                // [Error Fix v5.16.1] 顯示錯誤訊息
+                let msg = lockResult.message || "位置遭搶占";
+                Swal.fire("系統提示", msg, "error").then(async () => {
                     appRuntimeState.selectedList = [];
                     refreshActionDockState();
                     await fetchSystemDataAndSyncUI();
@@ -761,7 +768,6 @@
                     document.getElementById('btn-timer-rel').onclick = () => Swal.clickCancel();
 
                     timerInterval = setInterval(() => {
-                        // [v5.16.0] 觸覺回饋
                         if (navigator.vibrate) navigator.vibrate(40);
 
                         lockSecondsRemaining--;
