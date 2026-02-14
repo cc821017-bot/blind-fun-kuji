@@ -98,6 +98,9 @@
             display: flex !important;
             flex-direction: column !important;
             padding: 15px !important;
+            background: #0e0e0e !important;
+            color: #fff !important;
+            border: 1px solid #333;
         }
         
         .swal2-html-container {
@@ -178,23 +181,26 @@
         .u-badge-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
         .u-name-val { font-weight: 700; font-size: 1.1rem; color: #fff; }
         .u-pts-val { font-family: 'Oswald'; font-size: 1.9rem; font-weight: 700; letter-spacing: 0.5px; }
+        .gold-text { color: var(--gold-primary); }
 
-        /* [v5.17.0] 離開機台按鈕 */
+        /* [v5.17.0] 離開機台按鈕 (統合保護模式) */
         #btn-leave-machine {
-            background: rgba(231, 76, 60, 0.2);
+            background: rgba(231, 76, 60, 0.15);
             border: 1px solid var(--status-red);
             color: var(--status-red);
-            font-size: 0.7rem;
-            padding: 5px 12px;
+            font-size: 0.75rem;
+            padding: 6px 14px;
             border-radius: 12px;
             font-weight: 900;
             margin-top: 5px;
             cursor: pointer;
             display: none; /* 預設隱藏，只有佔領時顯示 */
+            transition: all 0.2s;
         }
+        #btn-leave-machine:active { transform: scale(0.95); background: rgba(231, 76, 60, 0.3); }
 
         .nav-segment-bar { display: flex; padding: 15px 20px; gap: 15px; background: rgba(0,0,0,0.2); }
-        .nav-item { flex: 1; text-align: center; padding: 14px; border-radius: 18px; color: #666; font-weight: 900; font-size: 0.9rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); }
+        .nav-item { flex: 1; text-align: center; padding: 14px; border-radius: 18px; color: #666; font-weight: 900; font-size: 0.9rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); cursor: pointer; }
         .nav-item.active { background: #fff; color: #000; border: none; box-shadow: 0 12px 25px rgba(255,255,255,0.25); transform: translateY(-4px); }
 
         #lobby-prize-gallery { display: flex; overflow-x: auto; padding: 15px 20px; gap: 12px; scrollbar-width: none; }
@@ -229,7 +235,7 @@
         .v-qty-multiplier { font-family: 'Oswald'; font-size: 1.5rem; color: var(--gold-primary); font-weight: 700; text-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .v-prize-meta { font-size: 0.75rem; color: #444; font-weight: 700; letter-spacing: 0.5px; }
         
-        .btn-ship-action { background: var(--gold-gradient); color: #000; border: none; padding: 12px 22px; border-radius: 14px; font-weight: 900; font-size: 0.85rem; transition: 0.3s; }
+        .btn-ship-action { background: var(--gold-gradient); color: #000; border: none; padding: 12px 22px; border-radius: 14px; font-weight: 900; font-size: 0.85rem; transition: 0.3s; cursor: pointer; }
         .btn-ship-action.is-processing { background: #222; color: #555; pointer-events: none; border: 1px solid #333; }
 
         .win-history-ribbon { background: linear-gradient(90deg, #1a0000, #2c0000); border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding: 12px 0; overflow: hidden; white-space: nowrap; }
@@ -253,6 +259,10 @@
         .t-cell.is-big-taken { border: 2.5px solid var(--gold-primary); background: #1a1a00; opacity: 1 !important; }
         .t-cell.is-big-taken::after { content: none !important; }
         .t-cell.is-big-taken::before { content: '👑'; position: absolute; font-size: 1.5rem; top: 4px; left: 4px; z-index: 999; filter: drop-shadow(0 0 10px #D4AF37); }
+        .t-cell.is-locked { background: #222; opacity: 0.6; color: #444; border: 1px dashed #555; pointer-events: none; }
+        .t-cell.is-locked::after { content: '🔒'; position: absolute; font-size: 1.2rem; }
+        .t-cell.is-rescuing { background: #2a2a00; border: 1px solid var(--gold-primary); color: #fff; animation: pulseRescue 1s infinite; }
+        @keyframes pulseRescue { 0% { opacity: 0.8; } 50% { opacity: 1; border-color: #fff; } 100% { opacity: 0.8; } }
 
         .fixed-dock-action-hub { position: fixed !important; bottom: 25px !important; left: 15px; right: 15px; width: auto; z-index: 9999; background: rgba(20, 20, 20, 0.92); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.15); border-radius: 35px; padding: 20px; box-shadow: var(--dock-shadow); animation: floatDock 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-sizing: border-box; }
         @keyframes floatDock { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -395,7 +405,7 @@
         }
     }
 
-    // [v5.17.0] 主動釋放權限
+    // [v5.17.0] 主動釋放權限 (統合保護模式)
     function handleVoluntaryLeave() {
         Swal.fire({
             title: '確定離開機台？',
@@ -414,6 +424,7 @@
                     body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode, ticketIds: [] }) // IDs 為空代表釋放全場
                 }).then(() => {
                     Swal.fire({ title: "已釋放", icon: "success", timer: 1500, showConfirmButton: false, background: '#0e0e0e', color: '#fff' });
+                    appRuntimeState.selectedList = []; // 清空本地選擇
                     fetchSystemDataAndSyncUI();
                 });
             }
@@ -553,6 +564,18 @@
                 
                 document.getElementById('display-u-pts').innerText = appRuntimeState.userPoints.toLocaleString();
                 
+                // [增量Fix#2] 自動恢復跨區切換後的鎖定選取狀態
+                // 檢查是否有屬於我的伺服器端鎖定 (LockUser == me)
+                const myServerSideLocks = data.tickets
+                    .filter(t => t.isLocked && t.lockUser === appRuntimeState.uid)
+                    .map(t => String(t.id));
+
+                if (myServerSideLocks.length > 0) {
+                    // 聯集現有選取與服務端鎖定，確保不丟失，並去重
+                    const mergedList = [...new Set([...appRuntimeState.selectedList, ...myServerSideLocks])];
+                    appRuntimeState.selectedList = mergedList;
+                }
+
                 const currentRem = data.tickets.filter(t => !t.isTaken).length;
                 const currentBig = data.tickets.filter(t => !t.isTaken && /A賞|SP|1賞|大獎/i.test(t.prizeName)).length;
                 
@@ -579,69 +602,14 @@
                     data.history.map(h => `<span class="win-item-feed">🎉 恭喜玩家 ${h.user} 抽出【${h.prize}】</span>`).join('') : 
                     "盤面充滿大獎機會，冒險者即刻挑戰！";
 
-                const masterBtn = document.getElementById('masterPayButton');
-                if (!data.bigPrizeExists || currentRem === 0) {
-                    masterBtn.disabled = true; masterBtn.innerText = "等待系統洗牌...";
-                } else {
-                    refreshActionDockState(); 
-                }
-                
-                // [v5.17.0] 檢查是否為當前機台的統治者
-                const myActiveLocks = data.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
-                const leaveBtn = document.getElementById('btn-leave-machine');
-                if (myActiveLocks.length > 0 || appRuntimeState.selectedList.length > 0) {
-                    leaveBtn.style.display = 'block';
-                } else {
-                    leaveBtn.style.display = 'none';
-                }
-
                 renderPremiumGrid();
                 renderLobbySummaries(data.prizeSummary);
-                checkPendingRescueProcedure(); 
+                refreshActionDockState(); // 更新 Dock 狀態
             }
         } catch (e) {
             console.error("Sync Failure:", e);
             Swal.fire("連線失敗", "無法從旗艦伺服器同步數據，請重整頁面。", "error");
         } finally { showGlobalLoading(false); }
-    }
-
-    function checkPendingRescueProcedure() {
-        const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
-        if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
-            window.scrollTo(0, 0);
-            
-            Swal.fire({
-                title: '✨ 恢復保留程序',
-                html: `
-                    <div class="swal-scroll-wrap">
-                        偵測到您有 <b style="color:var(--gold-primary); font-size:1.4rem;">${myLockedTickets.length}</b> 枚籤位正在保留中。<br>是否恢復連線完成支付？
-                    </div>
-                    <div class="swal-fixed-actions">
-                        <button id="btn-timer-ext" style="flex:1; padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#fff; font-weight:900; cursor:pointer;">🚀 立即恢復</button>
-                        <button id="btn-timer-rel" style="flex:1; padding:16px; border-radius:14px; border:1px solid var(--status-red); background:rgba(231, 76, 60, 0.1); color:var(--status-red); font-weight:900; cursor:pointer;">✕ 放棄鎖定</button>
-                    </div>
-                `,
-                background: '#111', color: '#fff',
-                showConfirmButton: false,
-                allowOutsideClick: false, background: '#0e0e0e',
-                didOpen: () => {
-                    document.getElementById('btn-timer-ext').onclick = () => {
-                        Swal.close();
-                        appRuntimeState.selectedList = myLockedTickets.map(t => String(t.id));
-                        appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.add('is-selected'));
-                        refreshActionDockState();
-                        startFinalCheckoutProcess(); 
-                    };
-                    document.getElementById('btn-timer-rel').onclick = () => {
-                        Swal.close();
-                        fetch(CORE_CONFIG.API_ENDPOINT, { 
-                            method: 'POST', 
-                            body: JSON.stringify({ uid: appRuntimeState.uid, action: 'release', mode: appRuntimeState.mode, ticketIds: myLockedTickets.map(t => t.id) }) 
-                        }).then(() => fetchSystemDataAndSyncUI());
-                    };
-                }
-            });
-        }
     }
 
     function renderPremiumGrid() {
@@ -657,7 +625,13 @@
                 clsList += isBigP ? " is-taken is-big-taken" : " is-taken";
                 displayId = ""; 
             } else if (t.isLocked) {
-                clsList += (t.lockUser === appRuntimeState.uid) ? " is-rescuing" : " is-locked";
+                // 如果鎖定者是自己，顯示 "is-rescuing" 樣式 (黃色框)
+                // 如果是別人，顯示 "is-locked" (灰色鎖)
+                if (t.lockUser === appRuntimeState.uid) {
+                    clsList += " is-selected is-rescuing"; // 視為已選中
+                } else {
+                    clsList += " is-locked";
+                }
             } else if (appRuntimeState.selectedList.includes(String(t.id))) {
                 clsList += " is-selected";
             }
@@ -726,18 +700,31 @@
         refreshActionDockState();
     }
 
+    // [v5.17.0 Fix#1] 重新設計保護模式與 UI 顯示
     function refreshActionDockState() {
         const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         document.getElementById('dock-sel-count').innerText = `${appRuntimeState.selectedList.length}`;
         document.getElementById('dock-total-cost').innerText = total.toLocaleString();
         
         const payBtn = document.getElementById('masterPayButton');
+        const leaveBtn = document.getElementById('btn-leave-machine');
+
+        // 檢查是否有屬於自己的鎖定 (來自伺服器的 LockUser check)
+        const hasMyLock = appRuntimeState.tickets.some(t => t.isLocked && t.lockUser === appRuntimeState.uid);
+
         if (appRuntimeState.selectedList.length > 0) { 
             payBtn.disabled = false;
-            payBtn.innerText = `立即支付扣款`; 
+            // 如果有鎖定權，按鈕顯示 "統治中"
+            payBtn.innerHTML = hasMyLock ? `<span>⚡ 統治中：確認扣款</span>` : `立即支付扣款`;
+            
+            // 只要有選號或有鎖定，就顯示離開按鈕
+            leaveBtn.style.display = 'block'; 
         } else { 
             payBtn.disabled = true;
-            payBtn.innerText = "請先選擇號碼"; 
+            payBtn.innerText = "請先選擇號碼";
+            
+            // 即使沒選號，但如果還霸佔著機台 (hasMyLock)，依然要顯示離開按鈕供釋放
+            leaveBtn.style.display = hasMyLock ? 'block' : 'none';
         }
     }
 
