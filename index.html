@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>盲玩樂 5.14.2 旗艦商務補完版</title>
+    <title>盲玩樂 5.14.3 旗艦商務修復版</title>
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,100 +13,85 @@
     
     <style>
         /* ==========================================================================
-           [SECTION 2: 視覺核心變數規範 (Luxury V5.1)]
-           嚴格遵循基準點 5.0.0 配色方案，並擴充懸浮島陰影變數。
+           [SECTION 2: 視覺核心變數規範]
            ========================================================================== */
         :root { 
-            /* 背景與主題基調 */
             --bg-dark: #0a0a0a;
             --bg-card: #141414;
             --bg-card-hover: #1f1f1f;
-            
-            /* 品牌金流光定義 */
             --gold-primary: #D4AF37;
             --gold-gradient: linear-gradient(135deg, #F7E2A0, #D4AF37, #A67C00);
-            
-            /* 營運功能配色 */
             --status-red: #E74C3C;
             --status-green: #2ECC71;
             --status-blue: #3498DB;
-            
-            /* 字體定義層次 */
             --text-primary: #FFFFFF;
             --text-secondary: #A0A0A0;
             --text-muted: #555555;
-            
-            /* 圓角半徑與玻璃擬態 */
             --border-radius-lg: 32px;
             --border-radius-md: 20px;
             --glass-bg: rgba(20, 20, 20, 0.98);
-
-            /* 懸浮島陰影變數 */
             --dock-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
         }
         
-        /* [全局排版基礎設定] */
         body { 
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background: radial-gradient(circle at top center, #1a1a2e, var(--bg-dark));
             color: var(--text-primary);
             margin: 0; 
-            /* [物理修正] 增加底部間距至 200px，確保內容不被懸浮島遮擋 */
             padding-bottom: 200px; 
             overflow-x: hidden; 
             -webkit-tap-highlight-color: transparent;
             scroll-behavior: smooth;
-            transform: translateZ(0); /* 開啟硬體加速 */
+            transform: translateZ(0);
             -webkit-font-smoothing: antialiased;
         }
 
         ::-webkit-scrollbar { display: none; }
 
         /* ==========================================================================
-           [SECTION 3: 圖片階級優化系統 (Visual Hierarchy System)]
-           [5.14.2 重大更新]：強化開獎彈窗的圖片階級控制。
+           [SECTION 3: 圖片階級優化系統 (5.14.3 修復版)]
            ========================================================================== */
         .img-container-moderate {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: visible; /* 允許大獎光暈溢出 */
-            position: relative;
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            overflow: visible; position: relative;
         }
 
-        /* 基礎圖片樣式 */
         .img-container-moderate img {
-            width: auto;
-            height: auto;
-            max-width: 75%;
-            max-height: 75%;
+            width: auto; height: auto;
+            max-width: 80%; max-height: 80%;
             object-fit: contain;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: block;
-            margin: auto;
+            display: block; margin: auto;
         }
 
-        /* [大獎極巨化] A賞/SP/大獎 專用 */
-        /* 適用範圍：大廳櫥窗 + 開獎結果彈窗 */
-        .prize-thumb-grand .img-container-moderate img,
-        .res-item-thumb.prize-thumb-grand img {
-            max-width: 120% !important; /* [5.14.2] 再次加大 */
-            max-height: 120% !important;
-            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8)); /* 強烈金光 */
-            transform: scale(1.2);
+        /* [大獎 - 櫥窗版] 修正：向上浮起，避免遮擋文字，縮小放大倍率 */
+        .prize-thumb-grand .img-container-moderate img {
+            max-width: 95% !important; 
+            max-height: 95% !important;
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
+            transform: translateY(-5px) scale(1.05); /* 向上位移 */
             z-index: 10;
         }
 
-        /* [小賞壓制化] 普獎專用 */
-        /* 適用範圍：大廳櫥窗 + 開獎結果彈窗 */
-        .prize-thumb-normal .img-container-moderate img,
+        /* [小賞 - 櫥窗版] */
+        .prize-thumb-normal .img-container-moderate img {
+            max-width: 60% !important; 
+            max-height: 60% !important;
+            opacity: 0.85; filter: grayscale(0.2);
+        }
+        
+        /* [結果列表 - 大賞] 限制最大寬度，防止撐爆列表 */
+        .res-item-thumb.prize-thumb-grand img {
+            max-width: 70px !important;
+            max-height: 70px !important;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.8));
+        }
+
+        /* [結果列表 - 小賞] 強制縮小，節省空間 */
         .res-item-thumb.prize-thumb-normal img {
-            max-width: 50% !important; /* [5.14.2] 再次縮小 */
-            max-height: 50% !important;
-            opacity: 0.8;
-            filter: grayscale(0.3); /* 壓制色彩 */
+            max-width: 45px !important;
+            max-height: 45px !important;
+            opacity: 0.7;
         }
 
         /* ==========================================================================
@@ -126,7 +111,6 @@
         .u-name-val { font-weight: 700; font-size: 1.1rem; color: #fff; }
         .u-pts-val { font-family: 'Oswald'; font-size: 1.9rem; font-weight: 700; letter-spacing: 0.5px; }
 
-        /* 導航切換列 */
         .nav-segment-bar { display: flex; padding: 15px 20px; gap: 15px; background: rgba(0,0,0,0.2); }
         .nav-item { 
             flex: 1; text-align: center; padding: 14px; border-radius: 18px; 
@@ -141,8 +125,65 @@
         }
 
         /* ==========================================================================
-           [SECTION 5: 我的寶庫]
+           [SECTION 5: 櫥窗與列表樣式修正]
            ========================================================================== */
+        #lobby-prize-gallery { 
+            display: flex; overflow-x: auto; padding: 15px 20px; gap: 12px; scrollbar-width: none; 
+        }
+        
+        .p-show-card {
+            min-width: 100px; width: 100px; /* 固定寬度 */
+            background: #1a1a1a; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 12px 8px; /* 增加頂部內距 */
+            border: 1px solid #333;
+            position: relative;
+        }
+        .p-show-card.is-empty { opacity: 0.4; filter: grayscale(1); }
+        
+        .p-show-thumb { 
+            width: 80px; height: 80px; 
+            margin-bottom: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .p-show-label { font-size: 0.75rem; font-weight: 700; text-align: center; line-height: 1.2; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; z-index: 5; }
+        .p-show-stock { font-size: 0.65rem; color: var(--gold-primary); margin-top: 4px; font-weight: 900; background: rgba(212,175,55,0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* ==========================================================================
+           [SECTION 6: 開獎結果列表 (5.14.3 關鍵修復)]
+           ========================================================================== */
+        /* 捲動容器：限制高度，開啟捲動，防止按鈕被擠出 */
+        .res-scroll-container {
+            max-height: 50vh; /* 佔據螢幕高度一半 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* iOS 平滑捲動 */
+            margin-bottom: 15px;
+            padding: 0 5px;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .res-premium-card {
+            display: flex; align-items: center; gap: 15px;
+            background: #1a1a1a; padding: 10px 15px; /* 縮小 padding */
+            border-radius: 12px; margin-bottom: 8px;
+            border: 1px solid #333;
+        }
+        .res-premium-card.is-grand-win {
+            background: linear-gradient(90deg, #2a2a00, #1a1a1a);
+            border: 1px solid var(--gold-primary);
+        }
+
+        .res-item-thumb {
+            width: 50px; height: 50px; /* 限制縮圖容器大小 */
+            display: flex; align-items: center; justify-content: center;
+            background: #000; border-radius: 8px;
+        }
+
+        /* ==========================================================================
+           [SECTION 7: 其餘元件]
+           ========================================================================== */
+        #home-page { display: block; animation: slideInUI 0.4s ease-out; }
         #vault-page { display: none; padding: 0 20px; animation: slideUpUI 0.5s ease-out; }
         @keyframes slideUpUI { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -152,15 +193,12 @@
 
         .vault-list-grid { display: flex; flex-direction: column; gap: 20px; }
         
-        /* 收藏資產卡片樣式 */
         .v-asset-card { 
             background: linear-gradient(145deg, #1e1e1e, #0c0c0c); 
             border-radius: 26px; padding: 22px; display: flex; align-items: center; gap: 22px; margin-bottom: 5px;
             border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.6);
             position: relative; overflow: hidden;
         }
-        
-        /* 大獎置頂邊框特效 */
         .v-asset-card.is-premium { 
             border: 2px solid var(--gold-primary); 
             box-shadow: 0 0 35px rgba(212, 175, 55, 0.2); 
@@ -171,11 +209,9 @@
 
         .v-asset-icon { width: 75px; height: 75px; background: rgba(255,255,255,0.03); border-radius: 18px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
         .v-asset-icon img { width: 100%; height: 100%; object-fit: cover; }
-        
         .v-asset-main { flex: 1; }
         .v-name-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .v-prize-name { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 0.5px; }
-        
         .v-qty-multiplier { font-family: 'Oswald'; font-size: 1.5rem; color: var(--gold-primary); font-weight: 700; text-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .v-prize-meta { font-size: 0.75rem; color: #444; font-weight: 700; letter-spacing: 0.5px; }
         
@@ -185,11 +221,6 @@
         }
         .btn-ship-action.is-processing { background: #222; color: #555; pointer-events: none; border: 1px solid #333; }
 
-        /* ==========================================================================
-           [SECTION 6: 探索大廳棋盤]
-           ========================================================================== */
-        #home-page { display: block; animation: slideInUI 0.4s ease-out; }
-        
         .win-history-ribbon { 
             background: linear-gradient(90deg, #1a0000, #2c0000);
             border-bottom: 1px solid rgba(212, 175, 55, 0.2);
@@ -198,7 +229,6 @@
         .win-track { display: inline-block; white-space: nowrap; padding-left: 100%; animation: scrollTape 35s linear infinite; }
         @keyframes scrollTape { from { transform: translateX(0); } to { transform: translateX(-280%); } }
 
-        /* 數據監控中心 */
         .stats-hub { 
             display: flex; justify-content: space-around; background: linear-gradient(145deg, #1a1a1a, #111);
             padding: 25px; margin: 0 20px 20px; border-radius: var(--border-radius-lg);
@@ -208,7 +238,6 @@
         .stat-val-text { font-family: 'Oswald'; font-size: 2rem; display: block; font-weight: 700; line-height: 1.1; }
         .stat-lbl-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; font-weight: 900; letter-spacing: 1.5px; }
         
-        /* 模式 Tabs */
         .m-selector-row { display: flex; gap: 12px; padding: 0 20px 15px; }
         .m-item-btn { 
             flex: 1; text-align: center; padding: 18px; background: #161616; 
@@ -220,7 +249,6 @@
             box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45); transform: scale(1.05);
         }
 
-        /* 棋盤佈局 */
         .gacha-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 10px 20px 80px; }
         .t-cell { 
             aspect-ratio: 1/1; background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
@@ -234,32 +262,23 @@
             background: var(--gold-gradient) !important; color: #000 !important; border: none;
             transform: translateY(-12px) scale(1.15); box-shadow: 0 20px 50px rgba(212, 175, 55, 0.6); z-index: 10;
         }
-        
-        /* [5.14.2 修正] 普獎被拿走：保持紅X
-        */
         .t-cell.is-taken { background: #050505; opacity: 0.4; color: transparent; border-color: #222; }
         .t-cell.is-taken::after { content: '✕'; position: absolute; color: var(--status-red); font-size: 3.5rem; font-weight: 900; }
         
-        /* [5.14.2 修正] 大獎被拿走：移除紅X，保持亮度，顯示皇冠 
-           opacity: 1 !important 強制不透明
-        */
+        /* [皇冠修正] */
         .t-cell.is-big-taken { 
             border: 2.5px solid var(--gold-primary); 
             background: #1a1a00; 
             opacity: 1 !important; 
         }
-        .t-cell.is-big-taken::after { 
-            content: none !important; /* 核心修正：移除紅X */ 
-        }
+        .t-cell.is-big-taken::after { content: none !important; }
         .t-cell.is-big-taken::before { 
             content: '👑'; position: absolute; font-size: 1.5rem; 
             top: 4px; left: 4px; z-index: 999; 
             filter: drop-shadow(0 0 10px #D4AF37);
         }
 
-        /* ==========================================================================
-           [SECTION 7: UX 究極優化 - 懸浮島支付]
-           ========================================================================== */
+        /* 懸浮島支付 */
         .fixed-dock-action-hub { 
             position: fixed !important; 
             bottom: 25px !important; 
@@ -306,7 +325,6 @@
         .btn-checkout-master:disabled { background: #222; color: #444; box-shadow: none; opacity: 0.4; pointer-events: none; }
         .btn-checkout-master:not(:disabled):active { transform: scale(0.96); filter: brightness(1.25); }
 
-        /* [倒數計時強化] */
         .countdown-pulse {
             font-family: 'Oswald'; 
             font-size: 5.5rem !important; 
@@ -325,7 +343,6 @@
             100% { transform: scale(1); }
         }
 
-        /* [高級連線載入介面] */
         #boot-loader { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .l-spinner-ring { width: 80px; height: 80px; border: 6px solid transparent; border-top-color: var(--gold-primary); border-radius: 50%; animation: rotateSync 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1); }
         @keyframes rotateSync { to { transform: rotate(360deg); } }
@@ -374,7 +391,7 @@
             <div class="m-item-btn" data-m="B區" onclick="handleModeSelection('B區')">B區</div>
         </div>
 
-        <div id="lobby-prize-gallery" class="prize-showcase" style="display:flex; overflow-x:auto; padding:15px 20px; gap:18px; scrollbar-width:none;"></div>
+        <div id="lobby-prize-gallery" class="prize-showcase"></div>
 
         <div id="main-ticket-grid" class="gacha-grid"></div>
     </div>
@@ -405,20 +422,11 @@
     </div>
 
 <script>
-    /**
-     * [SECTION 16: 盲玩樂 5.14.2 核心邏輯引擎]
-     * ⚖️ 憲法守護執行：
-     * - 修正開獎結果圖片大小階級。
-     * - 修正 grid 皇冠與紅X衝突問題。
-     */
-    
-    // [⚠️ 核心 API 連線配置] 
     const CORE_CONFIG = { 
         API_ENDPOINT: "https://script.google.com/macros/s/AKfycbzU0-KQm1jMqh2K7oWlkQNEy-PD9gqjBxExLZXH32Q2uuIlRyPhkcM5Gsu8yKPL4pM/exec", 
         LIFF_ID: "2009072982-6smlV2gu" 
     };
     
-    // [系統全局狀態變數集]
     let appRuntimeState = { 
         uid: "guest_id", 
         name: "冒險者", 
@@ -430,9 +438,8 @@
         isLoading: false
     };
 
-    /** [1] 系統開機初始化 */
     async function init() {
-        console.log("Flagship 5.14.2 System Booting...");
+        console.log("Flagship 5.14.3 System Booting...");
         const bootSafetyTimer = setTimeout(() => {
             if (document.getElementById('boot-loader').style.display !== 'none') {
                 Swal.fire({ title: "連線回應超時", text: "伺服器無回應，請確認網址正確並重啟頁面。", icon: "error" });
@@ -456,7 +463,6 @@
         }
     }
 
-    /** [2] 分頁切換 */
     async function handleNavigationSwitch(page) {
         const homeUI = document.getElementById('home-page');
         const vaultUI = document.getElementById('vault-page');
@@ -475,7 +481,6 @@
         }
     }
 
-    /** [3] 我的寶庫 */
     async function processAndRenderVaultCollection() {
         showGlobalLoading(true, "正在整理全球藏品數據...");
         try {
@@ -545,7 +550,6 @@
         } finally { showGlobalLoading(false); }
     }
 
-    /** [4] 出貨申請 */
     async function handleAssetShipmentFlow(pName, mode, qty) {
         const confirmResult = await Swal.fire({
             title: '啟動出貨申請',
@@ -575,7 +579,6 @@
         }
     }
 
-    /** [5] 數據同步 */
     async function fetchSystemDataAndSyncUI() {
         if (appRuntimeState.selectedList.length === 0) refreshActionDockState();
         showGlobalLoading(true, "旗艦同步中...");
@@ -620,7 +623,6 @@
         } finally { showGlobalLoading(false); }
     }
 
-    /** [6] 斷線拯救 */
     function checkPendingRescueProcedure() {
         const myLockedTickets = appRuntimeState.tickets.filter(t => t.isLocked && t.lockUser === appRuntimeState.uid);
         if (myLockedTickets.length > 0 && appRuntimeState.selectedList.length === 0) {
@@ -648,7 +650,6 @@
         }
     }
 
-    /** [7] 棋盤渲染 (含皇冠修正) */
     function renderPremiumGrid() {
         const gridBox = document.getElementById('main-ticket-grid');
         if (!gridBox) return;
@@ -659,7 +660,6 @@
             let displayId = t.id;
             
             if (t.isTaken) {
-                // [修正] 這裡只添加 class，具體樣式由 CSS 控制 (皇冠與紅X互斥)
                 clsList += isBigP ? " is-taken is-big-taken" : " is-taken";
                 displayId = ""; 
             } else if (t.isLocked) {
@@ -674,7 +674,6 @@
         }).join('');
     }
 
-    /** [8] 庫存展示 */
     function renderLobbySummaries(summary) {
         const gallery = document.getElementById('lobby-prize-gallery');
         if (!gallery || !summary) return;
@@ -696,7 +695,6 @@
         }).join('');
     }
 
-    /** [9] 選號交互 */
     function handleCellInteration(tid) {
         const idStr = String(tid);
         const currentIndex = appRuntimeState.selectedList.indexOf(idStr);
@@ -715,7 +713,6 @@
         refreshActionDockState();
     }
 
-    /** [10] 批量選號 */
     function executeBatchSelection(num) {
         appRuntimeState.selectedList.forEach(id => document.getElementById(`t-${id}`)?.classList.remove('is-selected'));
         appRuntimeState.selectedList = [];
@@ -735,7 +732,6 @@
         refreshActionDockState();
     }
 
-    /** [11] 更新 UI */
     function refreshActionDockState() {
         const total = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         document.getElementById('dock-sel-count').innerText = `${appRuntimeState.selectedList.length}`;
@@ -751,7 +747,6 @@
         }
     }
 
-    /** [12] 結帳流程 (含開獎結果修正) */
     async function startFinalCheckoutProcess() {
         const totalCost = appRuntimeState.selectedList.length * appRuntimeState.unitPrice;
         
@@ -762,7 +757,6 @@
         
         showGlobalLoading(true, "正在執行物理鎖定程序...");
         try {
-            // A. Lock
             const lockCall = await fetch(CORE_CONFIG.API_ENDPOINT, {
                 method: 'POST',
                 body: JSON.stringify({ uid: appRuntimeState.uid, action: 'lock', mode: appRuntimeState.mode, ticketIds: appRuntimeState.selectedList })
@@ -775,7 +769,6 @@
                 return;
             }
             
-            // B. 180s Timer
             let lockSecondsRemaining = 180; 
             let alreadyExtended = false;
             
@@ -827,7 +820,6 @@
                 willClose: () => clearInterval(timerInterval)
             });
             
-            // C. Buy Action
             if (checkoutSwal.isConfirmed) {
                 showGlobalLoading(true, "正在揭曉中獎結果...");
                 const finalCall = await fetch(CORE_CONFIG.API_ENDPOINT, { 
@@ -845,7 +837,6 @@
                     let resultHtml = `<div class="res-scroll-container">`;
                     buyData.results.forEach(r => {
                         const isG = /A賞|SP|1賞|大獎/i.test(r.name);
-                        // [修正] 這裡注入 sizeClass 到 HTML，確保彈窗內的圖片也被極巨化
                         const sizeClass = isG ? 'prize-thumb-grand' : 'prize-thumb-normal';
                         
                         resultHtml += `
@@ -881,14 +872,12 @@
         }
     }
 
-    /** [助手] Loading */
     function showGlobalLoading(show, text = "LOADING...") {
         const el = document.getElementById('boot-loader');
         el.style.display = show ? 'flex' : 'none';
         if (show) el.querySelector('p').innerText = text;
     }
 
-    /** [助手] 模式切換 */
     function handleModeSelection(m) { 
         if (appRuntimeState.mode === m) return;
         appRuntimeState.mode = m; 
